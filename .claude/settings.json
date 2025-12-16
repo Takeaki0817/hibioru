@@ -1,0 +1,95 @@
+{
+	"permissions": {
+		"allow": [
+			"SlashCommand(/kiro:*)",
+			"mcp__playwright-test",
+			"mcp__chrome-devtools",
+			"mcp__serena",
+			"mcp__MCP_DOCKER",
+			"mcp__supabase",
+			"mcp__next-devtools",
+			"mcp__ide",
+			"Bash(pnpm:*)",
+			"Bash(npm:*)",
+			"Bash(npx:*)",
+			"Bash(git status:*)",
+			"Bash(git diff:*)",
+			"Bash(git add:*)",
+			"Bash(git commit:*)",
+			"Bash(git log:*)",
+			"Bash(git branch:*)",
+			"Bash(git checkout:*)",
+			"Bash(docker:*)",
+			"Bash(docker-compose:*)",
+			"Bash(ls:*)",
+			"Bash(cd:*)",
+			"Bash(mkdir:*)",
+			"Bash(touch:*)",
+			"Bash(cp:*)",
+			"Bash(mv:*)",
+			"Bash(tree:*)",
+			"WebSearch"
+		],
+		"deny": [
+			"Bash(rm -rf:*)",
+			"Bash(rm -fr:*)",
+			"Bash(sudo rm:*)",
+			"Bash(dd:*)",
+			"Bash(mkfs:*)",
+			"Bash(git push --force:*)",
+			"Bash(git push -f:*)",
+			"Read(.env*)",
+			"Read(*.env)",
+			"Read(.env.*)",
+			"Read(*/.env*)",
+			"Read(*/secrets*)",
+			"Read(*secret*)",
+			"Read(*.pem)",
+			"Read(*.key)",
+			"Read(*.p12)",
+			"Read(*.pfx)",
+			"Read(*credentials*)",
+			"Read(*password*)",
+			"Read(*.cert)",
+			"Read(*.crt)",
+			"Read(id_rsa*)",
+			"Read(id_dsa*)",
+			"Read(id_ecdsa*)",
+			"Read(id_ed25519*)",
+			"Read(*.keystore)",
+			"Read(*.jks)",
+			"Read(*token*)",
+			"Read(.aws/credentials)",
+			"Read(.ssh/*)"
+		]
+	},
+	"hooks": {
+		"Stop": [
+			{
+				"matcher": "",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "afplay ~/Library/Sounds/notification.aiff"
+					}
+				]
+			}
+		],
+		"Notification": [
+			{
+				"matcher": "",
+				"hooks": [
+					{
+						"type": "command",
+						"command": "afplay ~/Library/Sounds/caution.aiff"
+					}
+				]
+			}
+		]
+	},
+	"statusLine": {
+		"type": "command",
+		"command": "~/.claude/statusline.js"
+	},
+	"alwaysThinkingEnabled": true
+}
