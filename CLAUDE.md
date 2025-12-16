@@ -5,8 +5,16 @@ Kiro-style Spec Driven Development implementation on AI-DLC (AI Development Life
 ## Project: ヒビオル (hibioru)
 
 **コンセプト**: 「日々を織る」 - ADHD当事者のための瞬間記録アプリ
-**技術スタック**: Next.js App Router + Supabase + Vercel
+**技術スタック**: Next.js 16 App Router + Supabase + Vercel
 **開発フェーズ**: Phase 1 MVP（自分用）
+
+### 技術バージョン
+
+- **Next.js**: v16 (App Router)
+- **Tailwind CSS**: v4
+- **TypeScript**: Latest
+- **Node.js**: 20+
+- **Package Manager**: pnpm
 
 ### 実装状態
 
@@ -60,8 +68,45 @@ Kiro-style Spec Driven Development implementation on AI-DLC (AI Development Life
 - Check `.kiro/specs/` for active specifications
 - Use `/kiro:spec-status [feature-name]` to check progress
 
+---
+
+## MCP Servers
+
+このプロジェクトでは以下のMCPサーバーが利用可能です（`.mcp.json`参照）：
+
+### 開発・デバッグ支援
+
+- **mcp__next-devtools**: Next.js関連の初期構築、エラー解決、設定に使用
+  - Next.js 16の設定やトラブルシューティングに活用
+
+- **mcp__supabase**: Supabase関連の操作、データベース管理、デバッグに使用
+  - Database、Storage、Auth、Functions、Branchingに対応
+
+- **mcp__serena**: IDE assistant - コンテキスト対応の開発支援
+
+- **mcp__vercel-awesome-ai**: Vercelデプロイ・設定に使用
+
+- **mcp__gcloud**: Google Cloud関連の操作に使用
+
+### 使用方針
+
+**初期構築時**: 各スタック専用のMCPサーバーを優先的に参照
+
+**エラー解決時**: 該当するスタックのMCPサーバーを使用してトラブルシューティング
+
+**設定変更時**: MCPサーバーを通じて最新のベストプラクティスを確認
+
+例：
+- Next.js関連の問題 → `mcp__next-devtools` を使用
+- Supabaseの設定 → `mcp__supabase` を使用
+- デプロイ設定 → `mcp__vercel-awesome-ai` を使用
+
+---
+
 ## Development Guidelines
 - Think in English, generate responses in Japanese. All Markdown content written to project files (e.g., requirements.md, design.md, tasks.md, research.md, validation reports) MUST be written in the target language configured for this specification (see spec.json.language).
+- **MUST use Next.js 16** (App Router) and **Tailwind CSS v4** for all implementation.
+- When building or troubleshooting Next.js/Supabase/Vercel features, utilize the corresponding MCP servers.
 
 ## Minimal Workflow
 - Phase 0 (optional): `/kiro:steering`, `/kiro:steering-custom`

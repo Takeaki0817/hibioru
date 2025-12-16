@@ -12,10 +12,11 @@
 
 ## コア技術
 
-- **言語**: TypeScript
-- **フレームワーク**: Next.js (App Router)
-- **ランタイム**: Node.js
-- **スタイリング**: Tailwind CSS
+- **言語**: TypeScript (Latest)
+- **フレームワーク**: Next.js 16 (App Router)
+- **ランタイム**: Node.js 20+
+- **スタイリング**: Tailwind CSS v4
+- **パッケージマネージャー**: pnpm
 
 ---
 
@@ -138,6 +139,26 @@ GET /api/export?format=json|markdown
 
 本人の投稿データをAI（Claude等）に渡して振り返り・分析に活用。
 Phase 2以降でMCPサーバー対応予定。
+
+---
+
+## MCP Servers（開発支援ツール）
+
+プロジェクトでは以下のMCPサーバーを利用可能（`.mcp.json`参照）：
+
+| サーバー名 | 用途 |
+|-----------|------|
+| **mcp__next-devtools** | Next.js 16の初期構築、設定、トラブルシューティング |
+| **mcp__supabase** | Supabase操作（Database、Auth、Storage、Functions等） |
+| **mcp__serena** | IDE assistant、コンテキスト対応の開発支援 |
+| **mcp__vercel-awesome-ai** | Vercelデプロイ・設定支援 |
+| **mcp__gcloud** | Google Cloud関連操作 |
+
+### 使用方針
+
+- **初期構築**: 各技術スタックに対応するMCPサーバーを優先的に使用
+- **エラー解決**: 該当するMCPサーバーを通じてトラブルシューティング
+- **ベストプラクティス**: MCPサーバー経由で最新の推奨設定を確認
 
 ---
 _標準とパターンを記載、全依存関係のリストではない_
