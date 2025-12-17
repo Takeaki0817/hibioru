@@ -31,15 +31,45 @@ export function useScrollSync(
 
   // スクロール位置から日付を算出
   const getDateAtPosition = useCallback(
-    (_scrollTop: number): Date => {
-      // TODO: 実際のDOM要素の位置から日付を計算
-      // 簡易実装: 最初のエントリの日付を返す
-      if (entries.length > 0) {
-        return new Date(entries[0].date)
+    // scrollTopパラメータは将来的な位置計算の拡張用に維持
+    (scrollTop: number): Date => {
+      // 現在は引数を直接使用せずDOM位置から算出
+      void scrollTop
+      const container = containerRef.current
+      if (!container || entries.length === 0) {
+        return new Date()
       }
-      return new Date()
+
+      // 各エントリ要素の位置を確認して、現在のスクロール位置に対応するものを特定
+      const entryElements = container.querySelectorAll('[data-date]')
+      const containerRect = container.getBoundingClientRect()
+
+      // ビューポート上部に最も近い要素を探す
+      let closestElement: Element | null = null
+      let closestDistance = Infinity
+
+      for (const element of entryElements) {
+        const rect = element.getBoundingClientRect()
+        // コンテナの上端からの相対的な距離を計算
+        const distance = Math.abs(rect.top - containerRect.top)
+
+        if (distance < closestDistance && rect.top >= containerRect.top - rect.height) {
+          closestDistance = distance
+          closestElement = element
+        }
+      }
+
+      if (closestElement) {
+        const dateStr = closestElement.getAttribute('data-date')
+        if (dateStr) {
+          return new Date(dateStr)
+        }
+      }
+
+      // フォールバック: 最初のエントリの日付
+      return new Date(entries[0].date)
     },
-    [entries]
+    [entries, containerRef]
   )
 
   // スクロールイベントハンドラ（デバウンス付き）
@@ -65,18 +95,31 @@ export function useScrollSync(
 
   // 指定日付へスクロール
   const scrollToDate = useCallback(
-    (_date: Date) => {
+    (targetDate: Date) => {
       if (!containerRef.current) return
 
       setIsSnapping(true)
 
-      // TODO: 日付からスクロール位置を計算してスムーズスクロール
-      // 簡易実装
-      containerRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      })
+      // 指定日付の要素を検索してスクロール
+      const container = containerRef.current
+      const dateStr = targetDate.toISOString().split('T')[0]
+      const targetElement = container.querySelector(`[data-date="${dateStr}"]`)
 
+      if (targetElement) {
+        // 対象要素が見つかった場合、その位置までスクロール
+        targetElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        })
+      } else {
+        // 対象要素が見つからない場合、トップへスクロール
+        container.scrollTo({
+          top: 0,
+          behavior: 'smooth',
+        })
+      }
+
+      // スナップ状態を解除
       setTimeout(() => {
         setIsSnapping(false)
       }, 500)
