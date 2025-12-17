@@ -189,3 +189,37 @@ export async function hasEntryOnDate(
     }
   }
 }
+
+/**
+ * ストリークを途切れさせる（current_streakを0にリセット）
+ */
+export async function breakStreak(
+  userId: string
+): Promise<Result<void, StreakError>> {
+  try {
+    const supabase = await createClient()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase as any)
+      .from('streaks')
+      .update({ current_streak: 0 })
+      .eq('user_id', userId)
+
+    if (error) {
+      return {
+        ok: false,
+        error: { code: 'DB_ERROR', message: error.message }
+      }
+    }
+
+    return { ok: true, value: undefined }
+  } catch (error) {
+    return {
+      ok: false,
+      error: {
+        code: 'DB_ERROR',
+        message: error instanceof Error ? error.message : '不明なエラー'
+      }
+    }
+  }
+}

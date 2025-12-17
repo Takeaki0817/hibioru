@@ -1,10 +1,11 @@
 -- 新規ユーザー作成トリガー
--- auth.usersへの挿入時に自動的にpublic.usersにレコードを作成
+-- auth.usersへの挿入時に自動的にpublic.usersとstreaksにレコードを作成
 
--- トリガー関数: auth.usersへの挿入時にpublic.usersに自動挿入
+-- トリガー関数: auth.usersへの挿入時にpublic.usersとstreaksに自動挿入
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
+  -- usersテーブルにレコード作成
   INSERT INTO public.users (id, email, display_name, avatar_url)
   VALUES (
     NEW.id,
@@ -12,6 +13,24 @@ BEGIN
     COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.email),
     NEW.raw_user_meta_data->>'avatar_url'
   );
+
+  -- streaksテーブルにレコード作成（初期値）
+  INSERT INTO public.streaks (
+    user_id,
+    current_streak,
+    longest_streak,
+    last_entry_date,
+    hotsure_remaining,
+    hotsure_used_dates
+  ) VALUES (
+    NEW.id,
+    0,
+    0,
+    NULL,
+    2,
+    '{}'::date[]
+  );
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
