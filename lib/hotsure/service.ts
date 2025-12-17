@@ -21,7 +21,8 @@ export async function getHotsureInfo(
 ): Promise<HotsureInfo | null> {
   const supabase = await createClient()
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('streaks')
     .select('hotsure_remaining, hotsure_used_dates')
     .eq('user_id', userId)
@@ -32,9 +33,10 @@ export async function getHotsureInfo(
     return null
   }
 
+  const streakData = data as { hotsure_remaining: number; hotsure_used_dates: string[] }
   return {
-    remaining: data.hotsure_remaining,
-    usedDates: data.hotsure_used_dates,
+    remaining: streakData.hotsure_remaining,
+    usedDates: streakData.hotsure_used_dates,
     maxPerWeek: MAX_HOTSURE_PER_WEEK,
   }
 }
@@ -79,7 +81,8 @@ export async function consumeHotsure(
   const supabase = await createClient()
 
   // RPC関数を呼び出し（FOR UPDATEで同時実行を防止）
-  const { data, error } = await supabase.rpc('consume_hotsure', {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc('consume_hotsure', {
     p_user_id: userId,
   })
 
@@ -116,7 +119,8 @@ export async function resetHotsureWeekly(): Promise<ResetHotsureResult> {
   const supabase = await createClient()
 
   // RPC関数を呼び出し
-  const { data, error } = await supabase.rpc('reset_hotsure_weekly')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc('reset_hotsure_weekly')
 
   if (error) {
     console.error('Failed to reset hotsure weekly:', error)

@@ -19,10 +19,15 @@
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
     "@supabase/supabase-js": "^2.88.0",
+    "@tanstack/react-query": "^5.90.12",
+    "@tanstack/react-virtual": "^3.13.13",
     "browser-image-compression": "^2.0.2",
+    "date-fns": "^4.1.0",
     "next": "16.0.10",
     "react": "19.2.1",
-    "react-dom": "19.2.1"
+    "react-day-picker": "^9.12.0",
+    "react-dom": "19.2.1",
+    "react-swipeable": "^7.0.2"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
@@ -33,6 +38,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.0.10",
     "eslint-config-prettier": "^10.1.8",
@@ -41,6 +47,7 @@
     "prettier": "^3.7.4",
     "tailwindcss": "^4",
     "ts-jest": "^29.4.6",
-    "typescript": "^5"
+    "typescript": "^5",
+    "web-push": "^3.6.7"
   }
 }
