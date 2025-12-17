@@ -36,8 +36,56 @@ pnpm build
 # リント
 pnpm lint
 
-# Supabaseローカル起動
-supabase start
+# Supabase（Docker）
+pnpm db:start    # 起動
+pnpm db:stop     # 停止
+pnpm db:reset    # DBリセット（マイグレーション再適用）
+pnpm db:types    # 型定義生成
+```
+
+## ローカル開発環境（重要）
+
+**開発時は必ずローカルのSupabase（Docker）を使用すること。**
+
+### 環境の使い分け
+
+| 環境 | 用途 | 設定ファイル |
+|------|------|-------------|
+| **ローカル** | 開発・テスト | `.env.local` |
+| **本番** | Vercelデプロイ | `.env.production` |
+
+### ローカル環境のURL
+
+| サービス | URL |
+|---------|-----|
+| Next.js | http://localhost:3000 |
+| Supabase API | http://127.0.0.1:54321 |
+| Supabase Studio | http://127.0.0.1:54323 |
+| PostgreSQL | postgresql://postgres:postgres@127.0.0.1:54322/postgres |
+| Mailpit（メール確認） | http://127.0.0.1:54324 |
+
+### 開発開始手順
+
+```bash
+# 1. Docker Desktop が起動していることを確認
+# 2. Supabase起動
+pnpm db:start
+
+# 3. 開発サーバー起動
+pnpm dev
+```
+
+### スキーマ変更時
+
+```bash
+# 新しいマイグレーション作成
+pnpm db:migration:new <name>
+
+# ローカルに適用
+pnpm db:reset
+
+# 本番に適用（リモートリンク後）
+pnpm db:push
 ```
 
 ## MCP (Model Context Protocol) の活用
