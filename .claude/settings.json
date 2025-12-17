@@ -31,13 +31,8 @@
 			"WebSearch"
 		],
 		"deny": [
-			"Bash(rm -rf:*)",
-			"Bash(rm -fr:*)",
-			"Bash(sudo rm:*)",
 			"Bash(dd:*)",
 			"Bash(mkfs:*)",
-			"Bash(git push --force:*)",
-			"Bash(git push -f:*)",
 			"Read(.env*)",
 			"Read(*.env)",
 			"Read(.env.*)",

@@ -27,8 +27,14 @@
 			"url": "https://mcp.vercel.com/my-team/my-awesome-project"
 		},
 		"gcloud": {
-			"command": "npx",
-			"args": ["-y", "@google-cloud/gcloud-mcp"]
+			"type": "stdio",
+			"command": "node",
+			"args": [
+				"/Users/takeaki0817/WorkSpace/01_Private/apps/gcloud-mcp/packages/gcloud-mcp/dist/bundle.js"
+			],
+			"env": {
+				"GOOGLE_CLOUD_PROJECT": "claude-mcp-467500"
+			}
 		}
 	}
 }
