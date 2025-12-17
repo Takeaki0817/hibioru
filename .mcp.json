@@ -1,32 +1,11 @@
 {
   "mcpServers": {
-    "next-devtools": {
+    "playwright-test": {
       "command": "npx",
-      "args": ["-y", "next-devtools-mcp@latest"]
-    },
-    "serena": {
-      "type": "stdio",
-      "command": "uvx",
       "args": [
-        "--from",
-        "git+https://github.com/oraios/serena",
-        "serena-mcp-server",
-        "--context",
-        "ide-assistant",
-        "--project",
-        "/Users/takeaki0817/WorkSpace/01_Private/apps/hibioru"
-      ],
-      "env": {}
-    },
-    "supabase": {
-      "type": "http",
-      "url": "https://mcp.supabase.com/mcp?project_ref=ywfotxkfnsqzybndymsw&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching%2Cstorage"
-    },
-    "playwright": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["@playwright/mcp@latest"],
-      "env": {}
+        "playwright",
+        "run-test-mcp-server"
+      ]
     }
   }
 }

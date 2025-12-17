@@ -9,6 +9,7 @@
       "mcp__supabase",
       "mcp__next-devtools",
       "mcp__ide",
+      "mcp__playwright",
       "Bash(pnpm:*)",
       "Bash(npm:*)",
       "Bash(npx:*)",
