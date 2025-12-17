@@ -3,7 +3,11 @@ import { redirect } from 'next/navigation'
 import { ProfileSection } from '@/components/mypage/ProfileSection'
 import { StreakDisplay } from '@/components/mypage/StreakDisplay'
 import { HotsureDisplay } from '@/components/mypage/HotsureDisplay'
+import { NotificationSettings } from '@/components/mypage/NotificationSettings'
+import { ExportSection } from '@/components/mypage/ExportSection'
 import { LogoutButton } from '@/components/mypage/LogoutButton'
+import { getStreakInfo } from '@/lib/streak/service'
+import { getNotificationSettings } from '@/lib/notification/service'
 
 export default async function MypagePage() {
   const supabase = await createClient()
@@ -14,14 +18,26 @@ export default async function MypagePage() {
     redirect('/login')
   }
 
-  // TODO: 実際のストリーク・ほつれデータをDBから取得
-  // 現在はダミーデータを使用
+  // 実際のストリーク・ほつれデータをDBから取得
+  const streakResult = await getStreakInfo(user.id)
   const stats = {
-    currentStreak: 5,
-    longestStreak: 10,
-    hotsureRemaining: 2,
+    currentStreak: streakResult.ok ? streakResult.value.currentStreak : 0,
+    longestStreak: streakResult.ok ? streakResult.value.longestStreak : 0,
+    hotsureRemaining: streakResult.ok ? streakResult.value.hotsureRemaining : 2,
     hotsureMax: 2,
   }
+
+  // 通知設定を取得
+  const notificationResult = await getNotificationSettings(user.id)
+  const notificationSettings = notificationResult.ok
+    ? notificationResult.value
+    : {
+        user_id: user.id,
+        enabled: false,
+        main_reminder_time: '21:00',
+        chase_reminder_enabled: true,
+        chase_reminder_delay_minutes: 60,
+      }
 
   return (
     <div className="container mx-auto p-4 max-w-2xl">
@@ -40,6 +56,16 @@ export default async function MypagePage() {
           remaining={stats.hotsureRemaining}
           max={stats.hotsureMax}
         />
+      </div>
+
+      {/* 通知設定セクション */}
+      <div className="mt-6">
+        <NotificationSettings initialSettings={notificationSettings} />
+      </div>
+
+      {/* データエクスポートセクション */}
+      <div className="mt-6">
+        <ExportSection />
       </div>
 
       {/* ログアウトボタン */}
