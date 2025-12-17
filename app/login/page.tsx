@@ -1,27 +1,19 @@
 'use client'
 
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { classifyAuthError, parseErrorParam } from '@/lib/auth/errors'
 import type { AuthError } from '@/lib/types/auth'
 
 function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
-  const [error, setError] = useState<AuthError | null>(null)
   const searchParams = useSearchParams()
   const supabase = createClient()
 
-  // URLパラメータからエラーを取得
-  useEffect(() => {
-    const errorParam = searchParams.get('error')
-    if (errorParam === 'auth_failed') {
-      setError({
-        type: 'auth',
-        message: 'ログインできませんでした。もう一度お試しください。',
-        retryable: true,
-      })
-    }
-  }, [searchParams])
+  // URLパラメータからエラーを取得（初期値として設定）
+  const errorParam = searchParams.get('error')
+  const [error, setError] = useState<AuthError | null>(() => parseErrorParam(errorParam))
 
   const handleGoogleLogin = async () => {
     try {
@@ -36,30 +28,18 @@ function LoginContent() {
       })
 
       if (signInError) {
-        // ネットワークエラーの判定
-        if (signInError.message.includes('network') || signInError.message.includes('fetch')) {
-          setError({
-            type: 'network',
-            message: 'ネットワークに接続できませんでした。接続を確認して、もう一度お試しください。',
-            retryable: true,
-          })
-        } else {
-          setError({
-            type: 'auth',
-            message: 'ログインできませんでした。もう一度お試しください。',
-            retryable: true,
-          })
-        }
+        setError(classifyAuthError(signInError))
         setIsLoading(false)
       }
-    } catch {
-      setError({
-        type: 'unknown',
-        message: '問題が発生しました。しばらくしてからお試しください。',
-        retryable: true,
-      })
+    } catch (err) {
+      setError(classifyAuthError(err))
       setIsLoading(false)
     }
+  }
+
+  // エラー時の再試行
+  const handleRetry = () => {
+    setError(null)
   }
 
   return (
@@ -74,9 +54,17 @@ function LoginContent() {
         </div>
 
         <div className="mt-8">
-          {error && (
+          {error && error.message && (
             <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-800">{error.message}</p>
+              {error.retryable && (
+                <button
+                  onClick={handleRetry}
+                  className="mt-2 text-sm text-red-600 underline hover:text-red-800"
+                >
+                  もう一度試す
+                </button>
+              )}
             </div>
           )}
 
