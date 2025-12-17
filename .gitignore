@@ -41,3 +41,9 @@ Thumbs.db
 # Local settings
 .claude/settings.local.json
 .serena/
+
+# Playwright MCP
+.playwright-mcp/
+
+# Backup files
+_.mcp.json
