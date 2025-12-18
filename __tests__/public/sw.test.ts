@@ -15,7 +15,7 @@ import {
   parseNotificationPayload,
   type NotificationPayload,
   DEFAULT_NOTIFICATION_OPTIONS,
-} from '@/lib/notification/sw-handlers';
+} from '@/features/notification/sw-handlers';
 
 describe('Service Worker - プッシュ通知受信ハンドラ', () => {
   describe('parseNotificationPayload', () => {

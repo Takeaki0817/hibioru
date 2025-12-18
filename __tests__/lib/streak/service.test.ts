@@ -43,7 +43,7 @@ describe('StreakService', () => {
         }),
       })
 
-      const { getStreakInfo } = await import('@/lib/streak/service')
+      const { getStreakInfo } = await import('@/features/streak/api/service')
 
       // Act
       const result = await getStreakInfo(userId)
@@ -74,7 +74,7 @@ describe('StreakService', () => {
         }),
       })
 
-      const { getStreakInfo } = await import('@/lib/streak/service')
+      const { getStreakInfo } = await import('@/features/streak/api/service')
 
       // Act
       const result = await getStreakInfo(userId)
@@ -140,7 +140,7 @@ describe('StreakService', () => {
         }),
       })
 
-      const { updateStreakOnEntry } = await import('@/lib/streak/service')
+      const { updateStreakOnEntry } = await import('@/features/streak/api/service')
 
       // Act
       const result = await updateStreakOnEntry(userId)
@@ -194,7 +194,7 @@ describe('StreakService', () => {
         }),
       })
 
-      const { updateStreakOnEntry } = await import('@/lib/streak/service')
+      const { updateStreakOnEntry } = await import('@/features/streak/api/service')
 
       // Act
       const result = await updateStreakOnEntry(userId)
@@ -253,7 +253,7 @@ describe('StreakService', () => {
         }),
       })
 
-      const { updateStreakOnEntry } = await import('@/lib/streak/service')
+      const { updateStreakOnEntry } = await import('@/features/streak/api/service')
 
       // Act
       const result = await updateStreakOnEntry(userId)
@@ -281,7 +281,7 @@ describe('StreakService', () => {
         }),
       })
 
-      const { breakStreak } = await import('@/lib/streak/service')
+      const { breakStreak } = await import('@/features/streak/api/service')
 
       // Act
       const result = await breakStreak(userId)
@@ -303,7 +303,7 @@ describe('StreakService', () => {
         }),
       })
 
-      const { breakStreak } = await import('@/lib/streak/service')
+      const { breakStreak } = await import('@/features/streak/api/service')
 
       // Act
       const result = await breakStreak(userId)
@@ -334,7 +334,7 @@ describe('StreakService', () => {
         }),
       })
 
-      const { hasEntryOnDate } = await import('@/lib/streak/service')
+      const { hasEntryOnDate } = await import('@/features/streak/api/service')
 
       // Act
       const result = await hasEntryOnDate(userId, date)
@@ -363,7 +363,7 @@ describe('StreakService', () => {
         }),
       })
 
-      const { hasEntryOnDate } = await import('@/lib/streak/service')
+      const { hasEntryOnDate } = await import('@/features/streak/api/service')
 
       // Act
       const result = await hasEntryOnDate(userId, date)

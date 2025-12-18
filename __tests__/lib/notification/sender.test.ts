@@ -16,7 +16,7 @@ import {
   type SendResult,
   type NotificationPayload,
   type DispatchError,
-} from '@/lib/notification/sender';
+} from '@/features/notification/api/sender';
 
 // web-pushライブラリのモック
 const mockSendNotification = jest.fn();
@@ -27,19 +27,19 @@ jest.mock('web-push', () => ({
 
 // 購読サービスのモック
 const mockGetSubscriptions = jest.fn();
-jest.mock('@/lib/notification/subscription', () => ({
+jest.mock('@/features/notification/api/subscription', () => ({
   getSubscriptions: (...args: unknown[]) => mockGetSubscriptions(...args),
   removeInvalidSubscription: jest.fn().mockResolvedValue({ ok: true, value: undefined }),
 }));
 
 // ログサービスのモック
 const mockLogNotification = jest.fn();
-jest.mock('@/lib/notification/log', () => ({
+jest.mock('@/features/notification/api/log', () => ({
   logNotification: (...args: unknown[]) => mockLogNotification(...args),
 }));
 
 // VAPID設定のモック
-jest.mock('@/lib/notification/config', () => ({
+jest.mock('@/features/notification/config', () => ({
   getVapidConfig: jest.fn().mockReturnValue({
     publicKey: 'test-public-key',
     privateKey: 'test-private-key',

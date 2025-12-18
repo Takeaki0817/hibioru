@@ -4,7 +4,7 @@
  * 環境変数から通知設定を読み込む機能をテストします。
  */
 
-import { getVapidConfig, validateVapidConfig } from '@/lib/notification/config';
+import { getVapidConfig, validateVapidConfig } from '@/features/notification/config';
 
 describe('通知設定', () => {
   // 元の環境変数を保存
