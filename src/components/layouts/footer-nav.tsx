@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { Button } from '@/components/ui/button'
 
 export function FooterNav() {
   const pathname = usePathname()
@@ -38,21 +39,22 @@ export function FooterNav() {
   ]
 
   return (
-    <nav className="shrink-0 bg-white border-t border-gray-200 pb-safe">
+    <nav className="shrink-0 bg-background border-t border-border pb-safe">
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
 
           if (item.isCenter) {
             return (
-              <Link
+              <Button
                 key={item.href}
-                href={item.href}
-                className="flex items-center justify-center w-14 h-14 -mt-4 bg-gray-900 text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors"
+                asChild
+                size="icon-lg"
+                className="w-14 h-14 -mt-4 rounded-full shadow-lg"
                 aria-label={item.label}
               >
-                {item.icon}
-              </Link>
+                <Link href={item.href}>{item.icon}</Link>
+              </Button>
             )
           }
 
@@ -61,7 +63,7 @@ export function FooterNav() {
               key={item.href}
               href={item.href}
               className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-                isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'
+                isActive ? 'text-primary font-medium' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {item.icon}

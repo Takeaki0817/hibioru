@@ -7,6 +7,7 @@ import { ImageAttachment } from './image-attachment'
 import { createEntry, updateEntry } from '@/features/entry/api/service'
 import { uploadImage } from '@/features/entry/api/image-service'
 import { saveDraft, loadDraft, clearDraft } from '@/features/entry/api/draft-storage'
+import { Button } from '@/components/ui/button'
 
 interface EntryFormProps {
   mode: 'create' | 'edit'
@@ -124,18 +125,19 @@ export function EntryForm({ mode, initialEntry, userId, onSuccess }: EntryFormPr
       </div>
 
       {error && (
-        <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg">
+        <div className="mt-4 p-3 bg-destructive/10 text-destructive rounded-lg">
           {error}
         </div>
       )}
 
-      <button
+      <Button
         type="submit"
+        size="lg"
         disabled={isSubmitting || content.trim().length === 0}
-        className="mt-4 w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="mt-4 w-full"
       >
         {isSubmitting ? '送信中...' : mode === 'create' ? '記録する' : '更新する'}
-      </button>
+      </Button>
     </form>
   )
 }
