@@ -15,7 +15,7 @@ import {
   getSubscriptions,
   removeInvalidSubscription,
   SubscriptionError,
-} from '@/lib/notification/subscription';
+} from '@/features/notification/api/subscription';
 
 // Supabaseクライアントのモック
 const mockSupabaseClient = {

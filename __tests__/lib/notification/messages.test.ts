@@ -15,7 +15,7 @@ import {
   FOLLOW_UP_1_MESSAGES,
   FOLLOW_UP_2_MESSAGES,
   type NotificationMessage,
-} from '@/lib/notification/messages';
+} from '@/features/notification/messages';
 
 describe('通知文言生成', () => {
   describe('メッセージ定数', () => {

@@ -12,7 +12,7 @@ import {
   getNextFollowUpTime,
   shouldSendFollowUp,
   cancelFollowUps,
-} from '@/lib/notification/followup';
+} from '@/features/notification/api/followup';
 import { createClient } from '@/lib/supabase/server';
 
 // モック設定
