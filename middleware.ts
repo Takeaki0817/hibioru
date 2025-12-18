@@ -35,9 +35,10 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // 未認証ユーザーをログインページへリダイレクト
-  // /login と /auth/callback は認証不要
+  // /, /login, /auth/callback は認証不要
   if (
     !user &&
+    request.nextUrl.pathname !== '/' &&
     !request.nextUrl.pathname.startsWith('/login') &&
     !request.nextUrl.pathname.startsWith('/auth/callback')
   ) {
@@ -46,10 +47,17 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // 認証済みユーザーがログインページにアクセスした場合はホームへ
+  // 認証済みユーザーがログインページにアクセスした場合はタイムラインへ
   if (user && request.nextUrl.pathname === '/login') {
     const url = request.nextUrl.clone()
-    url.pathname = '/'
+    url.pathname = '/timeline'
+    return NextResponse.redirect(url)
+  }
+
+  // 認証済みユーザーがルートにアクセスした場合はタイムラインへ
+  if (user && request.nextUrl.pathname === '/') {
+    const url = request.nextUrl.clone()
+    url.pathname = '/timeline'
     return NextResponse.redirect(url)
   }
 
