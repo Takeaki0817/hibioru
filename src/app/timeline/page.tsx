@@ -2,7 +2,12 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { TimelineClient } from './TimelineClient'
 
-export default async function TimelinePage() {
+export default async function TimelinePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>
+}) {
+  const { date: initialDate } = await searchParams
   const supabase = await createClient()
 
   // 認証チェック
@@ -29,5 +34,5 @@ export default async function TimelinePage() {
     .lt('created_at', tomorrow.toISOString())
     .order('created_at', { ascending: false })
 
-  return <TimelineClient userId={user.id} initialEntries={todayEntries || []} />
+  return <TimelineClient userId={user.id} initialEntries={todayEntries || []} initialDate={initialDate} />
 }
