@@ -5,8 +5,8 @@
  */
 
 import { renderHook, act } from '@testing-library/react'
-import { useScrollSync } from '@/hooks/timeline/useScrollSync'
-import type { TimelineEntry } from '@/lib/timeline/types'
+import { useScrollSync } from '@/features/timeline/hooks/use-scroll-sync'
+import type { TimelineEntry } from '@/features/timeline/types'
 
 // requestAnimationFrameのモック
 const originalRAF = global.requestAnimationFrame

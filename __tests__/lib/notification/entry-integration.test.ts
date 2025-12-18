@@ -13,7 +13,7 @@ import {
   EntryCreatedEvent,
   EntryIntegrationError,
   EntryIntegrationResult,
-} from '@/lib/notification/entry-integration';
+} from '@/features/notification/api/entry-integration';
 
 // Supabaseクライアントのモック
 const mockSupabaseClient = {
@@ -25,17 +25,17 @@ jest.mock('@/lib/supabase/server', () => ({
 }));
 
 // log.ts関数のモック
-jest.mock('@/lib/notification/log', () => ({
+jest.mock('@/features/notification/api/log', () => ({
   updateEntryRecorded: jest.fn(),
 }));
 
 // followup.ts関数のモック
-jest.mock('@/lib/notification/followup', () => ({
+jest.mock('@/features/notification/api/followup', () => ({
   cancelFollowUps: jest.fn(),
 }));
 
-import { updateEntryRecorded } from '@/lib/notification/log';
-import { cancelFollowUps } from '@/lib/notification/followup';
+import { updateEntryRecorded } from '@/features/notification/api/log';
+import { cancelFollowUps } from '@/features/notification/api/followup';
 
 const mockedUpdateEntryRecorded = updateEntryRecorded as jest.MockedFunction<
   typeof updateEntryRecorded

@@ -41,7 +41,7 @@ describe('HotsureService', () => {
         }),
       })
 
-      const { getHotsureInfo } = await import('@/lib/hotsure/service')
+      const { getHotsureInfo } = await import('@/features/hotsure/api/service')
 
       // Act
       const result = await getHotsureInfo(userId)
@@ -70,7 +70,7 @@ describe('HotsureService', () => {
         }),
       })
 
-      const { getHotsureInfo } = await import('@/lib/hotsure/service')
+      const { getHotsureInfo } = await import('@/features/hotsure/api/service')
 
       // Act
       const result = await getHotsureInfo(userId)
@@ -100,7 +100,7 @@ describe('HotsureService', () => {
         }),
       })
 
-      const { canUseHotsure } = await import('@/lib/hotsure/service')
+      const { canUseHotsure } = await import('@/features/hotsure/api/service')
 
       // Act
       const result = await canUseHotsure(userId)
@@ -128,7 +128,7 @@ describe('HotsureService', () => {
         }),
       })
 
-      const { canUseHotsure } = await import('@/lib/hotsure/service')
+      const { canUseHotsure } = await import('@/features/hotsure/api/service')
 
       // Act
       const result = await canUseHotsure(userId)
@@ -152,7 +152,7 @@ describe('HotsureService', () => {
         error: null,
       })
 
-      const { consumeHotsure } = await import('@/lib/hotsure/service')
+      const { consumeHotsure } = await import('@/features/hotsure/api/service')
 
       // Act
       const result = await consumeHotsure(userId)
@@ -177,7 +177,7 @@ describe('HotsureService', () => {
         error: null,
       })
 
-      const { consumeHotsure } = await import('@/lib/hotsure/service')
+      const { consumeHotsure } = await import('@/features/hotsure/api/service')
 
       // Act
       const result = await consumeHotsure(userId)
@@ -199,7 +199,7 @@ describe('HotsureService', () => {
         error: null,
       })
 
-      const { resetHotsureWeekly } = await import('@/lib/hotsure/service')
+      const { resetHotsureWeekly } = await import('@/features/hotsure/api/service')
 
       // Act
       const result = await resetHotsureWeekly()
@@ -217,7 +217,7 @@ describe('HotsureService', () => {
         error: { message: 'Database error' },
       })
 
-      const { resetHotsureWeekly } = await import('@/lib/hotsure/service')
+      const { resetHotsureWeekly } = await import('@/features/hotsure/api/service')
 
       // Act
       const result = await resetHotsureWeekly()

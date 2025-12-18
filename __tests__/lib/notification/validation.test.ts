@@ -16,7 +16,7 @@ import {
   validateNotificationSettings,
   type ValidationResult,
   type NotificationSettingsInput,
-} from '@/lib/notification/validation';
+} from '@/features/notification/api/validation';
 
 describe('通知設定バリデーション', () => {
   describe('validatePrimaryTime', () => {
