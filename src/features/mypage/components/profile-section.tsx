@@ -1,6 +1,6 @@
 import type { User } from '@supabase/supabase-js'
 import Image from 'next/image'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
 interface ProfileSectionProps {
   user: User
@@ -13,7 +13,10 @@ export function ProfileSection({ user }: ProfileSectionProps) {
 
   return (
     <Card>
-      <CardContent className="pt-6">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg">アカウント</CardTitle>
+      </CardHeader>
+      <CardContent>
         <div className="flex items-center gap-4">
           {/* アバター画像 */}
           <div className="relative w-16 h-16 rounded-full overflow-hidden bg-muted">
