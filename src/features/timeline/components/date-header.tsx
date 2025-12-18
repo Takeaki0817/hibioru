@@ -9,6 +9,7 @@ import {
   CarouselItem,
   type CarouselApi,
 } from '@/components/ui/carousel'
+import { Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 // ウィンドウサイズ（前後の日数）
@@ -293,17 +294,17 @@ export function DateHeader({
   )
 
   return (
-    <header className="sticky top-0 z-10 flex h-[80px] items-center justify-between border-b border-gray-200 bg-white px-4 shadow-sm dark:border-gray-700 dark:bg-gray-900">
+    <header className="sticky top-0 z-10 flex h-[80px] items-center justify-between border-b border-border bg-background px-4 shadow-sm">
       {/* 左: ロゴ */}
-      <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+      <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
         ヒビオル
       </span>
 
       {/* 中央: カルーセル日付 */}
       <div className="relative w-[180px]">
-        {/* 中央の固定マーカー */}
+        {/* 中央の固定マーカー（Sage Green） */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-          <div className="h-8 w-9 rounded bg-gray-900 dark:bg-gray-100" />
+          <div className="h-8 w-9 rounded-lg bg-primary-400 dark:bg-primary-500" />
         </div>
 
         <Carousel
@@ -324,22 +325,27 @@ export function DateHeader({
               const isCenter = index === selectedIndex
               const dateKey = format(date, 'yyyy-MM-dd')
               const isActive = !activeDates || activeDates.has(dateKey)
+              const hasRecord = activeDates?.has(dateKey)
 
               return (
                 <CarouselItem key={dateKey} className="basis-1/5 pl-1">
                   <button
                     onClick={() => handleDateClick(index)}
                     className={cn(
-                      'w-full rounded px-1 py-1 text-center transition-all',
+                      'relative w-full rounded-lg px-1 py-1 text-center transition-all',
                       isCenter
-                        ? 'text-xl font-bold text-white dark:text-gray-900'
+                        ? 'text-xl font-bold text-white'
                         : isActive
-                          ? 'text-sm text-gray-500 dark:text-gray-400'
-                          : 'cursor-not-allowed text-sm text-gray-300 dark:text-gray-600'
+                          ? 'text-sm text-muted-foreground hover:text-foreground'
+                          : 'cursor-not-allowed text-sm text-muted-foreground/40'
                     )}
                     aria-label={format(date, 'M月d日', { locale: ja })}
                   >
                     {day}
+                    {/* 記録ありドットインジケーター */}
+                    {!isCenter && hasRecord && (
+                      <span className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-accent-300" />
+                    )}
                   </button>
                 </CarouselItem>
               )
@@ -351,9 +357,17 @@ export function DateHeader({
       {/* 右: 月（カレンダーボタン） */}
       <button
         onClick={onToggleCalendar}
-        className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+        className={cn(
+          'flex items-center gap-1.5 px-3 py-1.5 rounded-lg',
+          'text-sm font-medium',
+          'text-primary-600 dark:text-primary-400',
+          'bg-primary-100 hover:bg-primary-200',
+          'dark:bg-primary-100 dark:hover:bg-primary-200',
+          'transition-all active:scale-95'
+        )}
         aria-label="カレンダーを開く"
       >
+        <Calendar className="w-4 h-4" />
         {monthStr}
       </button>
     </header>

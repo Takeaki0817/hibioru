@@ -29,7 +29,7 @@ export function TimelineList({
   const containerRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const todayStr = useMemo(() => getTodayStr(), [])
-  const [visibleDate, setVisibleDate] = useState<string>(todayStr)
+  const [_visibleDate, setVisibleDate] = useState<string>(todayStr)
   const dateRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const observerRef = useRef<IntersectionObserver | null>(null)
   const topObserverRef = useRef<IntersectionObserver | null>(null)
@@ -231,9 +231,9 @@ export function TimelineList({
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
         <div className="space-y-3 w-full max-w-md px-4">
-          <Skeleton className="h-24 w-full rounded-lg" />
-          <Skeleton className="h-24 w-full rounded-lg" />
-          <Skeleton className="h-24 w-full rounded-lg" />
+          <Skeleton className="h-24 w-full rounded-lg bg-primary-100" />
+          <Skeleton className="h-24 w-full rounded-lg bg-primary-100" />
+          <Skeleton className="h-24 w-full rounded-lg bg-primary-100" />
         </div>
         <p className="text-muted-foreground">読み込み中...</p>
       </div>
@@ -289,9 +289,11 @@ export function TimelineList({
               <div className="pt-3 text-center text-sm text-gray-400 dark:text-gray-500">
                 {dateKey.replace(/-/g, '/')}
               </div>
-              {dateEntries.map((entry) => (
-                <EntryCard key={entry.id} entry={entry} />
-              ))}
+              {[...dateEntries]
+                .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+                .map((entry) => (
+                  <EntryCard key={entry.id} entry={entry} />
+                ))}
             </div>
           </div>
         )
