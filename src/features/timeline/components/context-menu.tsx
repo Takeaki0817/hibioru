@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useCallback } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 
 export interface ContextMenuProps {
   position: { x: number; y: number }
@@ -11,6 +11,7 @@ export interface ContextMenuProps {
 
 export function ContextMenu({ position, entryId, onClose }: ContextMenuProps) {
   const router = useRouter()
+  const menuRef = useRef<HTMLDivElement>(null)
 
   // 編集
   const handleEdit = useCallback(() => {
@@ -30,17 +31,37 @@ export function ContextMenu({ position, entryId, onClose }: ContextMenuProps) {
     onClose()
   }, [onClose])
 
+  // Escapeキーで閉じる
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose()
+      }
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [onClose])
+
+  // フォーカス管理
+  useEffect(() => {
+    menuRef.current?.focus()
+  }, [])
+
   return (
     <>
       {/* 背景オーバーレイ */}
       <div
         className="fixed inset-0 z-40 bg-black/20"
         onClick={handleBackdropClick}
+        aria-hidden="true"
       />
 
       {/* メニュー */}
       <div
-        className="fixed z-50 w-48 rounded-lg border border-gray-200 bg-white shadow-lg"
+        ref={menuRef}
+        role="menu"
+        tabIndex={-1}
+        className="fixed z-50 w-48 rounded-md border bg-popover p-1 text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95"
         style={{
           left: `${position.x}px`,
           top: `${position.y}px`,
@@ -48,14 +69,16 @@ export function ContextMenu({ position, entryId, onClose }: ContextMenuProps) {
         }}
       >
         <button
+          role="menuitem"
           onClick={handleEdit}
-          className="w-full px-4 py-3 text-left text-sm hover:bg-gray-100"
+          className="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground"
         >
           編集
         </button>
         <button
+          role="menuitem"
           onClick={handleDelete}
-          className="w-full px-4 py-3 text-left text-sm text-red-600 hover:bg-red-50"
+          className="relative flex w-full cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm text-destructive outline-none transition-colors hover:bg-destructive/10 focus:bg-destructive/10"
         >
           削除
         </button>

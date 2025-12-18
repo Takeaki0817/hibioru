@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import type { TimelineEntry } from '../types'
 import { ContextMenu } from './context-menu'
+import { Card, CardContent } from '@/components/ui/card'
 
 export interface EntryCardProps {
   entry: TimelineEntry
@@ -49,8 +50,8 @@ export function EntryCard({ entry }: EntryCardProps) {
 
   return (
     <>
-      <div
-        className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm transition-shadow hover:shadow-md"
+      <Card
+        className="cursor-pointer transition-shadow hover:shadow-md"
         onClick={handleTap}
         onTouchStart={handlePressStart}
         onTouchEnd={handlePressEnd}
@@ -58,22 +59,24 @@ export function EntryCard({ entry }: EntryCardProps) {
         onMouseUp={handlePressEnd}
         onMouseLeave={handlePressEnd}
       >
-        <div className="text-sm text-gray-500">
-          {entry.createdAt.toLocaleTimeString('ja-JP', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </div>
-        <div className="mt-2 whitespace-pre-wrap break-words">{entry.content}</div>
-        {entry.imageUrl && (
-          <img
-            src={entry.imageUrl}
-            alt="投稿画像"
-            className="mt-3 max-h-64 w-full rounded object-cover"
-            loading="lazy"
-          />
-        )}
-      </div>
+        <CardContent className="pt-4 pb-4">
+          <div className="text-sm text-muted-foreground">
+            {entry.createdAt.toLocaleTimeString('ja-JP', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </div>
+          <div className="mt-2 whitespace-pre-wrap break-words">{entry.content}</div>
+          {entry.imageUrl && (
+            <img
+              src={entry.imageUrl}
+              alt="投稿画像"
+              className="mt-3 max-h-64 w-full rounded object-cover"
+              loading="lazy"
+            />
+          )}
+        </CardContent>
+      </Card>
 
       {showMenu && (
         <ContextMenu
