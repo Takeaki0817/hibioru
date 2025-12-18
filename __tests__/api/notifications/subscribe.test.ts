@@ -11,7 +11,7 @@ import { NextRequest } from 'next/server';
 const mockSubscribe = jest.fn();
 const mockUnsubscribe = jest.fn();
 
-jest.mock('@/lib/notification/subscription', () => ({
+jest.mock('@/features/notification/api/subscription', () => ({
   subscribe: (...args: unknown[]) => mockSubscribe(...args),
   unsubscribe: (...args: unknown[]) => mockUnsubscribe(...args),
 }));

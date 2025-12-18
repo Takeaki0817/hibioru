@@ -31,12 +31,12 @@ jest.mock('web-push', () => ({
 }));
 
 // 実装モジュールのインポート
-import { subscribe, unsubscribe, getSubscriptions, removeInvalidSubscription } from '@/lib/notification/subscription';
-import { logNotification, updateEntryRecorded } from '@/lib/notification/log';
-import { validateNotificationSettings, validatePrimaryTime, validateFollowUpIntervalMinutes, validateFollowUpMaxCount, validateActiveDays } from '@/lib/notification/validation';
-import { shouldSendFollowUp, calculateFollowUpSchedule, cancelFollowUps } from '@/lib/notification/followup';
-import { sendToAllDevices, sendNotification, shouldSkipNotification } from '@/lib/notification/sender';
-import { handleEntryCreated } from '@/lib/notification/entry-integration';
+import { subscribe, unsubscribe, getSubscriptions, removeInvalidSubscription } from '@/features/notification/api/subscription';
+import { logNotification, updateEntryRecorded } from '@/features/notification/api/log';
+import { validateNotificationSettings, validatePrimaryTime, validateFollowUpIntervalMinutes, validateFollowUpMaxCount, validateActiveDays } from '@/features/notification/api/validation';
+import { shouldSendFollowUp, calculateFollowUpSchedule, cancelFollowUps } from '@/features/notification/api/followup';
+import { sendToAllDevices, sendNotification, shouldSkipNotification } from '@/features/notification/api/sender';
+import { handleEntryCreated } from '@/features/notification/api/entry-integration';
 import webpush from 'web-push';
 
 // ============================================================

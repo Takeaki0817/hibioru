@@ -16,13 +16,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 技術スタック
 
-- **フレームワーク**: Next.js (App Router)
+- **フレームワーク**: Next.js 16 (App Router, Turbopack)
 - **言語**: TypeScript（strictモード、any禁止）
-- **スタイリング**: Tailwind CSS
-- **バックエンド/DB**: Supabase (PostgreSQL, Auth, Storage)
+- **スタイリング**: Tailwind CSS v4
+- **バックエンド/DB**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
 - **認証**: Google OAuth (Supabase Auth)
 - **ホスティング**: Vercel
-- **PWA**: マルチデバイス対応、Web Push API
+- **PWA**: Web Push API、Service Worker
 
 ## 開発コマンド
 
@@ -36,134 +36,94 @@ pnpm build
 # リント
 pnpm lint
 
+# テスト
+pnpm test                    # 全テスト実行
+pnpm test:watch              # ウォッチモード
+pnpm test -- path/to/test    # 単一テスト実行
+
 # Supabase（Docker）
-pnpm db:start    # 起動
-pnpm db:stop     # 停止
-pnpm db:reset    # DBリセット（マイグレーション再適用）
-pnpm db:types    # 型定義生成
+pnpm db:start                # 起動
+pnpm db:stop                 # 停止
+pnpm db:reset                # DBリセット（マイグレーション再適用）
+pnpm db:types                # 型定義生成
+pnpm db:migration:new <name> # 新規マイグレーション
 ```
 
-## ローカル開発環境（重要）
+## ローカル開発環境
 
 **開発時は必ずローカルのSupabase（Docker）を使用すること。**
-
-### 環境の使い分け
-
-| 環境 | 用途 | 設定ファイル |
-|------|------|-------------|
-| **ローカル** | 開発・テスト | `.env.local` |
-| **本番** | Vercelデプロイ | `.env.production` |
-
-### ローカル環境のURL
 
 | サービス | URL |
 |---------|-----|
 | Next.js | http://localhost:3000 |
 | Supabase API | http://127.0.0.1:54321 |
 | Supabase Studio | http://127.0.0.1:54323 |
-| PostgreSQL | postgresql://postgres:postgres@127.0.0.1:54322/postgres |
-| Mailpit（メール確認） | http://127.0.0.1:54324 |
-
-### 開発開始手順
+| Mailpit | http://127.0.0.1:54324 |
 
 ```bash
-# 1. Docker Desktop が起動していることを確認
-# 2. Supabase起動
-pnpm db:start
-
-# 3. 開発サーバー起動
+# 開発開始手順
+pnpm db:start  # Docker Desktop起動後
 pnpm dev
 ```
 
-### スキーマ変更時
+## アーキテクチャ
 
-```bash
-# 新しいマイグレーション作成
-pnpm db:migration:new <name>
+[bulletproof-react](https://github.com/alan2207/bulletproof-react) の設計思想を採用した**Featuresベースアーキテクチャ**。
 
-# ローカルに適用
-pnpm db:reset
-
-# 本番に適用（リモートリンク後）
-pnpm db:push
-```
-
-## MCP (Model Context Protocol) の活用
-
-環境構築やトラブルシューティングを行う際は、`.mcp.json`に登録されているMCPサーバーを積極的に活用すること。
-
-### 登録済みMCPサーバー
-
-| MCP | 用途 |
-|-----|------|
-| **next-devtools** | Next.js開発ツール、ビルドエラー診断、ルート確認 |
-| **serena** | コードベース探索、シンボル検索、リファクタリング支援 |
-| **supabase** | DB操作、マイグレーション、Edge Functions、ドキュメント検索 |
-| **vercel-awesome-ai** | デプロイ状況確認、ビルドログ、Vercelドキュメント検索 |
-| **gcloud** | Google Cloud関連操作 |
-
-### Context7によるドキュメント確認
-
-ライブラリやフレームワークの使い方を確認する際は、Context7を使用して最新のドキュメントを取得すること。
+### 依存関係の方向
 
 ```
-# Context7の使用手順
-1. resolve-library-id でライブラリIDを取得
-2. get-library-docs でドキュメントを取得
-
-# 例: Next.jsのドキュメントを確認
-resolve-library-id: "next.js"
-get-library-docs: "/vercel/next.js" topic="app-router"
+共有パーツ ← フィーチャー ← アプリケーション層
 ```
 
-### トラブルシューティング時の推奨手順
+**クロスフィーチャーインポートは禁止**。機能間の依存が必要な場合はアプリケーション層で統合。
 
-1. **Next.js関連**: `nextjs_index` → `nextjs_call` でランタイムエラー確認
-2. **Supabase関連**: `mcp__supabase__get_logs` でログ確認、`mcp__supabase__search_docs` でドキュメント検索
-3. **デプロイ関連**: `mcp__vercel-awesome-ai__get_deployment_build_logs` でビルドログ確認
-4. **ライブラリ使用法**: Context7の `get-library-docs` で最新ドキュメント取得
-
-## プロジェクト構造
+### ディレクトリ構造
 
 ```
-/app                 # Next.js App Router ページ・レイアウト
-/components          # 再利用可能なUIコンポーネント
-  /ui/               # 汎用UIプリミティブ
-  /timeline/         # タイムライン関連
-  /calendar/         # カレンダー関連
-  /entry/            # 投稿カード、入力フォーム
-  /streak/           # 継続記録表示
-/lib                 # ビジネスロジック、ユーティリティ
-  /supabase/         # Supabaseクライアント、クエリ
-  /streak/           # ストリーク計算ロジック
-  /hotsure/          # ほつれ消費ロジック
-  /notification/     # 通知関連
-  /types/            # 共通型定義
-/supabase            # マイグレーション、シード
-/docs                # プロジェクトドキュメント
+src/                          # @/エイリアスのルート
+├── app/                      # Next.js App Router（ルーティング専用）
+├── features/                 # 機能単位モジュール
+│   ├── entry/               # エントリ入力・編集
+│   ├── timeline/            # タイムライン表示
+│   ├── streak/              # ストリーク（継続記録）
+│   ├── hotsure/             # ほつれ（スキップ）
+│   ├── notification/        # プッシュ通知
+│   ├── auth/                # 認証
+│   └── mypage/              # マイページ
+├── components/              # 共有UIコンポーネント
+│   ├── layouts/             # レイアウト系
+│   ├── providers/           # コンテキストプロバイダー
+│   └── ui/                  # 汎用UIプリミティブ
+└── lib/                     # 共通ライブラリ
+    ├── supabase/            # Supabaseクライアント
+    └── types/               # 型定義（database.ts等）
 ```
 
-## 主要なドキュメント
+### フィーチャーの構造
 
-- `docs/PROJECT.md` - プロジェクト背景、意思決定
-- `docs/REQUIREMENTS.md` - 要件定義書（画面設計、データ設計含む）
-- `.kiro/steering/` - AI向けプロジェクトコンテキスト
+```
+src/features/{feature}/
+├── api/                     # ビジネスロジック、Server Actions
+├── components/              # 機能固有コンポーネント
+├── hooks/                   # 機能固有フック
+├── __tests__/               # テストファイル
+└── types.ts                 # 型定義
+```
 
-## コーディング規約
+### コーディング規約
 
-### ファイル命名
-- コンポーネント: PascalCase (`EntryCard.tsx`)
-- ロジック・ユーティリティ: camelCase (`calculateStreak.ts`)
-- 定数: SCREAMING_SNAKE_CASE
+- **ファイル命名**: kebab-case（`entry-form.tsx`, `use-timeline.ts`）
+- **バレルファイル禁止**: `index.ts`は使用しない。直接インポートを推奨
+- **Server/Client**: デフォルトはServer Component。インタラクティブな部分のみ`'use client'`
 
-### インポート順序
-1. 外部ライブラリ
-2. 内部モジュール（`@/`パスエイリアス）
-3. 相対インポート（同一機能内のみ）
+```typescript
+// 良い例
+import { createEntry } from '@/features/entry/api/service'
 
-### Server/Client Components
-- デフォルトはServer Component
-- インタラクティブな部分のみ`'use client'`
+// 避ける例
+import { createEntry } from '@/features/entry' // index.ts経由
+```
 
 ## 用語定義
 
@@ -172,6 +132,13 @@ get-library-docs: "/vercel/next.js" topic="app-router"
 | ヒビオル | サービス名（日々 + 織る） |
 | ほつれ | 継続を守るためのスキップ機能 |
 | ほつれ直し | ほつれを使って途切れを防ぐこと |
+
+## 主要ドキュメント
+
+- `docs/ARCHITECTURE.md` - 詳細なアーキテクチャガイド
+- `docs/PROJECT.md` - プロジェクト背景、意思決定
+- `docs/REQUIREMENTS.md` - 要件定義書
+- `.kiro/steering/` - AI向けプロジェクトコンテキスト
 
 ---
 

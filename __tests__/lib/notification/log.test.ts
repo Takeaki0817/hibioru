@@ -16,7 +16,7 @@ import {
   NotificationLogInput,
   NotificationLog,
   LogError,
-} from '@/lib/notification/log';
+} from '@/features/notification/api/log';
 
 // Supabaseクライアントのモック
 const mockSupabaseClient = {
