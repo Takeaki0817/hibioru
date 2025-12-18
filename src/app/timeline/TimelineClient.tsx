@@ -18,18 +18,31 @@ export function TimelineClient({ userId }: TimelineClientProps) {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [activeDates, setActiveDates] = useState<Set<string>>(new Set())
   const scrollToDateRef = useRef<((date: Date) => void) | null>(null)
+  const carouselDateChangeRef = useRef<((date: Date) => void) | null>(null)
+  const syncSourceRef = useRef<'carousel' | 'timeline' | null>(null)
   const [, startTransition] = useTransition()
 
-  // ヘッダーの日付をタップした時、TimelineListをスクロール
+  // ヘッダーの日付変更（カルーセルスライド）→ TimelineListをスクロール
   const handleDateChange = useCallback((date: Date) => {
+    if (syncSourceRef.current === 'timeline') return // TimelineListからの同期中は無視
+    syncSourceRef.current = 'carousel'
     setCurrentDate(date)
     scrollToDateRef.current?.(date)
+    requestAnimationFrame(() => {
+      syncSourceRef.current = null
+    })
   }, [])
 
-  // TimelineListのスクロールで日付が変わった時（低優先度で更新）
+  // TimelineListのスクロールで日付が変わった時 → カルーセルも同期
   const handleScrollDateChange = useCallback((date: Date) => {
+    if (syncSourceRef.current === 'carousel') return // カルーセルからの同期中は無視
+    syncSourceRef.current = 'timeline'
     startTransition(() => {
       setCurrentDate(date)
+    })
+    carouselDateChangeRef.current?.(date)
+    requestAnimationFrame(() => {
+      syncSourceRef.current = null
     })
   }, [])
 
@@ -41,6 +54,7 @@ export function TimelineClient({ userId }: TimelineClientProps) {
           activeDates={activeDates}
           onDateChange={handleDateChange}
           onToggleCalendar={() => setIsCalendarOpen(!isCalendarOpen)}
+          externalDateChangeRef={carouselDateChangeRef}
         />
 
         <main className="flex-1 overflow-hidden">
