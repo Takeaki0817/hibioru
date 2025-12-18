@@ -2,6 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import type { NotificationSettings as NotificationSettingsType } from '../types'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
 
 interface NotificationSettingsProps {
   initialSettings: NotificationSettingsType
@@ -182,90 +186,73 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
 
   if (!isSupported) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-bold mb-4">通知設定</h2>
-        <p className="text-gray-600">
-          このブラウザは通知機能をサポートしていません。
-        </p>
-      </div>
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-xl">通知設定</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            このブラウザは通知機能をサポートしていません。
+          </p>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-bold mb-4">通知設定</h2>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl">通知設定</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {error && (
+          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
+            {error}
+          </div>
+        )}
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-          {error}
+        {/* 通知許可状態 */}
+        {permission === 'denied' && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-400 text-sm">
+            通知が拒否されています。ブラウザの設定から通知を許可してください。
+          </div>
+        )}
+
+        {/* 通知のオン/オフ */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <Label htmlFor="notification-toggle">通知を受け取る</Label>
+              <p className="text-sm text-muted-foreground">
+                毎日決まった時刻にリマインド通知を送ります
+              </p>
+            </div>
+            <Switch
+              id="notification-toggle"
+              checked={enabled}
+              onCheckedChange={handleToggleNotification}
+              disabled={isLoading || permission === 'denied'}
+            />
+          </div>
         </div>
-      )}
 
-      {/* 通知許可状態 */}
-      {permission === 'denied' && (
-        <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 text-sm">
-          通知が拒否されています。ブラウザの設定から通知を許可してください。
-        </div>
-      )}
-
-      {/* 通知のオン/オフ */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <label htmlFor="notification-toggle" className="font-medium">
-              通知を受け取る
-            </label>
-            <p className="text-sm text-gray-500 mt-1">
-              毎日決まった時刻にリマインド通知を送ります
+        {/* リマインド時刻設定 */}
+        {enabled && (
+          <div className="space-y-2">
+            <Label htmlFor="reminder-time">リマインド時刻</Label>
+            <Input
+              id="reminder-time"
+              type="time"
+              value={reminderTime}
+              disabled={isLoading}
+              onChange={(e) => handleTimeChange(e.target.value)}
+            />
+            <p className="text-sm text-muted-foreground">
+              毎日この時刻に記録のリマインドが届きます
             </p>
           </div>
-          <button
-            id="notification-toggle"
-            type="button"
-            role="switch"
-            aria-checked={enabled}
-            disabled={isLoading || permission === 'denied'}
-            onClick={handleToggleNotification}
-            className={`
-              relative inline-flex h-6 w-11 items-center rounded-full
-              transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
-              ${enabled ? 'bg-orange-500' : 'bg-gray-200'}
-              ${isLoading || permission === 'denied' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-            `}
-          >
-            <span
-              className={`
-                inline-block h-4 w-4 transform rounded-full bg-white transition-transform
-                ${enabled ? 'translate-x-6' : 'translate-x-1'}
-              `}
-            />
-          </button>
-        </div>
-      </div>
-
-      {/* リマインド時刻設定 */}
-      {enabled && (
-        <div>
-          <label htmlFor="reminder-time" className="block font-medium mb-2">
-            リマインド時刻
-          </label>
-          <input
-            id="reminder-time"
-            type="time"
-            value={reminderTime}
-            disabled={isLoading}
-            onChange={(e) => handleTimeChange(e.target.value)}
-            className="
-              block w-full px-3 py-2 border border-gray-300 rounded-md
-              focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500
-              disabled:opacity-50 disabled:cursor-not-allowed
-            "
-          />
-          <p className="text-sm text-gray-500 mt-2">
-            毎日この時刻に記録のリマインドが届きます
-          </p>
-        </div>
-      )}
-    </div>
+        )}
+      </CardContent>
+    </Card>
   )
 }

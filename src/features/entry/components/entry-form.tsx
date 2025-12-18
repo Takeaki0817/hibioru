@@ -1,27 +1,101 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Trash2 } from 'lucide-react'
 import type { Entry, CompressedImage } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
-import { createEntry, updateEntry } from '@/features/entry/api/service'
+import { createEntry, updateEntry, deleteEntry } from '@/features/entry/api/service'
 import { uploadImage } from '@/features/entry/api/image-service'
 import { saveDraft, loadDraft, clearDraft } from '@/features/entry/api/draft-storage'
+import { MotionButton } from '@/components/ui/motion-button'
+import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+// 外部から呼び出せるメソッド
+export interface EntryFormHandle {
+  submit: () => void
+}
+
+// 状態変更コールバック
+export interface EntryFormState {
+  isSubmitting: boolean
+  canSubmit: boolean
+  isSuccess: boolean
+}
 
 interface EntryFormProps {
   mode: 'create' | 'edit'
   initialEntry?: Entry
   userId: string
   onSuccess?: () => void
+  hideSubmitButton?: boolean
+  onStateChange?: (state: EntryFormState) => void
 }
 
-export function EntryForm({ mode, initialEntry, userId, onSuccess }: EntryFormProps) {
+// 成功アニメーション
+const successVariants = {
+  initial: { scale: 0, opacity: 0 },
+  animate: {
+    scale: 1,
+    opacity: 1,
+    transition: { type: 'spring' as const, stiffness: 400, damping: 15 },
+  },
+  exit: { scale: 0, opacity: 0 },
+}
+
+// チェックマークのパスアニメーション
+const checkmarkVariants = {
+  initial: { pathLength: 0 },
+  animate: {
+    pathLength: 1,
+    transition: { duration: 0.4, ease: 'easeOut' as const },
+  },
+}
+
+// フォームのアニメーション
+const formVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: { type: 'spring' as const, stiffness: 300, damping: 25 },
+  },
+}
+
+export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function EntryForm(
+  { mode, initialEntry, userId, onSuccess, hideSubmitButton, onStateChange },
+  ref
+) {
   const [content, setContent] = useState(initialEntry?.content || '')
   const [image, setImage] = useState<CompressedImage | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [isFocused, setIsFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
+
+  // 送信可能かどうか
+  const canSubmit = !isSubmitting && !isDeleting && !isSuccess && content.trim().length > 0
+
+  // 外部から送信を呼び出せるようにする
+  useImperativeHandle(ref, () => ({
+    submit: () => {
+      if (canSubmit && formRef.current) {
+        formRef.current.requestSubmit()
+      }
+    },
+  }))
+
+  // 状態変更を親に通知
+  useEffect(() => {
+    onStateChange?.({ isSubmitting, canSubmit, isSuccess })
+  }, [isSubmitting, canSubmit, isSuccess, onStateChange])
 
   // 下書き復元（新規作成時のみ）
   useEffect(() => {
@@ -29,7 +103,6 @@ export function EntryForm({ mode, initialEntry, userId, onSuccess }: EntryFormPr
       const draft = loadDraft()
       if (draft) {
         setContent(draft.content)
-        // TODO: 画像プレビューの復元
       }
     }
   }, [mode])
@@ -42,7 +115,7 @@ export function EntryForm({ mode, initialEntry, userId, onSuccess }: EntryFormPr
       saveDraft({
         content,
         imagePreview: image?.previewUrl || null,
-        savedAt: new Date().toISOString()
+        savedAt: new Date().toISOString(),
       })
     }, 300)
 
@@ -76,9 +149,10 @@ export function EntryForm({ mode, initialEntry, userId, onSuccess }: EntryFormPr
       }
 
       // エントリ作成/更新
-      const result = mode === 'create'
-        ? await createEntry({ content, imageUrl })
-        : await updateEntry(initialEntry!.id, { content, imageUrl })
+      const result =
+        mode === 'create'
+          ? await createEntry({ content, imageUrl })
+          : await updateEntry(initialEntry!.id, { content, imageUrl })
 
       if (!result.ok) {
         setError(result.error.message)
@@ -91,51 +165,262 @@ export function EntryForm({ mode, initialEntry, userId, onSuccess }: EntryFormPr
         clearDraft()
       }
 
-      // 成功
-      if (onSuccess) {
-        onSuccess()
-      } else {
-        router.push('/')
-      }
+      // 成功アニメーション表示
+      setIsSuccess(true)
+      setIsSubmitting(false)
+
+      // 少し待ってから遷移
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          router.push('/')
+        }
+      }, 800)
     } catch (err) {
       setError(err instanceof Error ? err.message : '投稿に失敗しました')
       setIsSubmitting(false)
     }
   }
 
-  return (
-    <form onSubmit={handleSubmit} className="min-h-screen p-4 flex flex-col">
-      <textarea
-        ref={textareaRef}
-        value={content}
-        onChange={(e) => setContent(e.target.value)}
-        placeholder="今日はどんな日？ 絵文字1つでもOK"
-        className="flex-1 w-full resize-none border-none outline-none text-lg p-4 min-h-32"
-        disabled={isSubmitting}
-      />
+  // 削除処理
+  const handleDelete = async () => {
+    if (!initialEntry) return
 
-      <div className="mt-4">
+    setError(null)
+    setIsDeleting(true)
+
+    try {
+      const result = await deleteEntry(initialEntry.id)
+
+      if (!result.ok) {
+        setError(result.error.message)
+        setIsDeleting(false)
+        setShowDeleteConfirm(false)
+        return
+      }
+
+      // タイムラインに戻る
+      router.push('/timeline')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '削除に失敗しました')
+      setIsDeleting(false)
+      setShowDeleteConfirm(false)
+    }
+  }
+
+  return (
+    <motion.form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      className="flex-1 p-4 flex flex-col bg-background overflow-auto"
+      variants={formVariants}
+      initial="initial"
+      animate="animate"
+    >
+      {/* ヘッダー */}
+      <div className="mb-4">
+        <h1 className="text-lg font-medium text-muted-foreground flex items-center gap-2">
+          <span>💭</span>
+          <span>今日はどんな日？</span>
+        </h1>
+      </div>
+
+      {/* テキストエリア */}
+      <div
+        className={cn(
+          'relative flex-1 rounded-xl border-2 transition-all duration-200',
+          isFocused
+            ? 'border-primary-300 shadow-[0_0_0_4px] shadow-primary-100 dark:shadow-primary-900/30'
+            : 'border-border',
+          isSuccess && 'border-primary-400'
+        )}
+      >
+        <textarea
+          ref={textareaRef}
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          placeholder="絵文字1つでもOK 🌟"
+          className={cn(
+            'w-full resize-none border-none outline-none text-base p-4 min-h-32 rounded-xl',
+            'bg-transparent placeholder:text-muted-foreground/60',
+            'leading-relaxed'
+          )}
+          disabled={isSubmitting || isSuccess}
+        />
+
+        {/* 成功オーバーレイ */}
+        <AnimatePresence>
+          {isSuccess && (
+            <motion.div
+              className="absolute inset-0 flex items-center justify-center bg-background/90 rounded-xl"
+              variants={successVariants}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <div className="flex flex-col items-center gap-3">
+                <motion.div className="w-16 h-16 rounded-full bg-primary-400 flex items-center justify-center">
+                  <motion.svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <motion.path
+                      d="M5 13l4 4L19 7"
+                      variants={checkmarkVariants}
+                      initial="initial"
+                      animate="animate"
+                    />
+                  </motion.svg>
+                </motion.div>
+                <motion.p
+                  className="text-primary-500 font-medium"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  記録しました！
+                </motion.p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      {/* 画像添付 & 削除ボタン */}
+      <div className="mt-4 flex items-center justify-between">
         <ImageAttachment
           image={image}
           onImageSelect={setImage}
           onImageRemove={() => setImage(null)}
-          disabled={isSubmitting}
+          disabled={isSubmitting || isSuccess}
         />
+
+        {/* 削除ボタン（編集モードのみ） */}
+        {mode === 'edit' && (
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirm(true)}
+            disabled={isSubmitting || isDeleting || isSuccess}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm',
+              'text-muted-foreground hover:text-destructive',
+              'hover:bg-destructive/10 transition-colors',
+              'disabled:opacity-50 disabled:cursor-not-allowed'
+            )}
+          >
+            <Trash2 className="w-4 h-4" />
+            <span>削除</span>
+          </button>
+        )}
       </div>
 
-      {error && (
-        <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-lg">
-          {error}
-        </div>
+      {/* エラー表示 */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="mt-4 p-3 bg-destructive/10 text-destructive rounded-lg text-sm"
+          >
+            {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 送信ボタン（hideSubmitButtonがfalseの場合のみ表示） */}
+      {!hideSubmitButton && (
+        <MotionButton
+          type="submit"
+          variant="sage"
+          size="xl"
+          disabled={!canSubmit}
+          className="mt-4 w-full"
+        >
+          {isSubmitting ? (
+            <span className="flex items-center gap-2">
+              <motion.span
+                animate={{ rotate: 360 }}
+                transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                className="inline-block w-5 h-5 border-2 border-white/30 border-t-white rounded-full"
+              />
+              送信中...
+            </span>
+          ) : isSuccess ? (
+            '完了！'
+          ) : mode === 'create' ? (
+            '記録する →'
+          ) : (
+            '更新する'
+          )}
+        </MotionButton>
       )}
 
-      <button
-        type="submit"
-        disabled={isSubmitting || content.trim().length === 0}
-        className="mt-4 w-full py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isSubmitting ? '送信中...' : mode === 'create' ? '記録する' : '更新する'}
-      </button>
-    </form>
+      {/* 削除確認ダイアログ */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+            onClick={() => !isDeleting && setShowDeleteConfirm(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="bg-background rounded-xl p-6 max-w-sm w-full shadow-lg"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-semibold mb-2">記録を削除しますか？</h3>
+              <p className="text-sm text-muted-foreground mb-6">
+                この操作は取り消せません。
+              </p>
+              <div className="flex gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowDeleteConfirm(false)}
+                  disabled={isDeleting}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  className="flex-1"
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                >
+                  {isDeleting ? (
+                    <span className="flex items-center gap-2">
+                      <motion.span
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                      />
+                      削除中...
+                    </span>
+                  ) : (
+                    '削除する'
+                  )}
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </motion.form>
   )
-}
+})

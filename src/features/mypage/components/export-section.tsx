@@ -1,6 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 type ExportFormat = 'json' | 'markdown'
 
@@ -75,105 +80,79 @@ export function ExportSection() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <h2 className="text-xl font-bold mb-4">データエクスポート</h2>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl">データエクスポート</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {error && (
+          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
+            {error}
+          </div>
+        )}
 
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded text-red-600 text-sm">
-          {error}
+        {message && (
+          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-600 dark:bg-green-950 dark:border-green-800 dark:text-green-400 text-sm">
+            {message}
+          </div>
+        )}
+
+        {/* エクスポート形式選択 */}
+        <div className="mb-6">
+          <Label className="mb-2">エクスポート形式</Label>
+          <RadioGroup
+            value={format}
+            onValueChange={(value) => setFormat(value as ExportFormat)}
+            className="flex gap-4"
+          >
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="json" id="format-json" />
+              <Label htmlFor="format-json" className="font-normal cursor-pointer">JSON</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="markdown" id="format-markdown" />
+              <Label htmlFor="format-markdown" className="font-normal cursor-pointer">Markdown</Label>
+            </div>
+          </RadioGroup>
         </div>
-      )}
 
-      {message && (
-        <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-600 text-sm">
-          {message}
-        </div>
-      )}
-
-      {/* エクスポート形式選択 */}
-      <div className="mb-6">
-        <label className="block font-medium mb-2">エクスポート形式</label>
-        <div className="flex gap-4">
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="format"
-              value="json"
-              checked={format === 'json'}
-              onChange={(e) => setFormat(e.target.value as ExportFormat)}
-              className="mr-2"
+        {/* 期間指定 */}
+        <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="from-date">開始日</Label>
+            <Input
+              id="from-date"
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              disabled={isLoading}
             />
-            <span>JSON</span>
-          </label>
-          <label className="flex items-center">
-            <input
-              type="radio"
-              name="format"
-              value="markdown"
-              checked={format === 'markdown'}
-              onChange={(e) => setFormat(e.target.value as ExportFormat)}
-              className="mr-2"
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="to-date">終了日</Label>
+            <Input
+              id="to-date"
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              disabled={isLoading}
             />
-            <span>Markdown</span>
-          </label>
+          </div>
         </div>
-      </div>
 
-      {/* 期間指定 */}
-      <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="from-date" className="block font-medium mb-2">
-            開始日
-          </label>
-          <input
-            id="from-date"
-            type="date"
-            value={fromDate}
-            onChange={(e) => setFromDate(e.target.value)}
-            disabled={isLoading}
-            className="
-              block w-full px-3 py-2 border border-gray-300 rounded-md
-              focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500
-              disabled:opacity-50 disabled:cursor-not-allowed
-            "
-          />
-        </div>
-        <div>
-          <label htmlFor="to-date" className="block font-medium mb-2">
-            終了日
-          </label>
-          <input
-            id="to-date"
-            type="date"
-            value={toDate}
-            onChange={(e) => setToDate(e.target.value)}
-            disabled={isLoading}
-            className="
-              block w-full px-3 py-2 border border-gray-300 rounded-md
-              focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500
-              disabled:opacity-50 disabled:cursor-not-allowed
-            "
-          />
-        </div>
-      </div>
+        <p className="text-sm text-muted-foreground mb-4">
+          期間を指定しない場合は、すべてのデータをエクスポートします
+        </p>
 
-      <p className="text-sm text-gray-500 mb-4">
-        期間を指定しない場合は、すべてのデータをエクスポートします
-      </p>
-
-      {/* エクスポートボタン */}
-      <button
-        onClick={handleExport}
-        disabled={isLoading}
-        className="
-          w-full px-4 py-2 bg-orange-500 text-white font-medium rounded-md
-          hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2
-          disabled:opacity-50 disabled:cursor-not-allowed
-          transition-colors
-        "
-      >
-        {isLoading ? 'エクスポート中...' : 'エクスポート'}
-      </button>
-    </div>
+        {/* エクスポートボタン */}
+        <Button
+          onClick={handleExport}
+          disabled={isLoading}
+          className="w-full"
+        >
+          {isLoading ? 'エクスポート中...' : 'エクスポート'}
+        </Button>
+      </CardContent>
+    </Card>
   )
 }

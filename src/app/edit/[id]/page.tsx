@@ -2,7 +2,8 @@ import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getEntry } from '@/features/entry/api/service'
 import { isEditable } from '@/features/entry/utils'
-import { EntryForm } from '@/features/entry/components/entry-form'
+import { EditEntryClient } from './EditEntryClient'
+import { NotEditableClient } from './NotEditableClient'
 
 export default async function EditEntryPage({
   params
@@ -31,19 +32,8 @@ export default async function EditEntryPage({
 
   // 24時間チェック
   if (!isEditable(entry)) {
-    return (
-      <main className="min-h-screen p-4 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-xl font-bold mb-2">編集できません</h1>
-          <p className="text-gray-600">編集可能期間（24時間）を過ぎています</p>
-        </div>
-      </main>
-    )
+    return <NotEditableClient entryDate={entry.created_at} />
   }
 
-  return (
-    <main>
-      <EntryForm mode="edit" initialEntry={entry} userId={user.id} />
-    </main>
-  )
+  return <EditEntryClient entry={entry} userId={user.id} />
 }
