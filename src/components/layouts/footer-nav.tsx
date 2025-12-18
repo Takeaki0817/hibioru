@@ -2,71 +2,149 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import { motion } from 'framer-motion'
+import { CalendarDays, MessageCirclePlus, User, Check, type LucideIcon } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
-export function FooterNav() {
+// 中央ボタンのカスタマイズ用props
+interface CenterButtonProps {
+  icon?: LucideIcon
+  onClick: () => void
+  disabled?: boolean
+  isLoading?: boolean
+}
+
+interface FooterNavProps {
+  centerButton?: CenterButtonProps
+}
+
+// ボタンのアニメーション
+const buttonVariants = {
+  tap: { scale: 0.95 },
+  hover: { scale: 1.05 },
+}
+
+const centerButtonVariants = {
+  tap: { scale: 0.92 },
+  hover: { scale: 1.08, y: -2 },
+}
+
+export function FooterNav({ centerButton }: FooterNavProps) {
   const pathname = usePathname()
 
   const navItems = [
     {
       href: '/timeline',
       label: 'タイムライン',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-        </svg>
-      ),
+      icon: CalendarDays,
     },
     {
       href: '/new',
-      label: '投稿',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      ),
+      label: '記録',
+      icon: MessageCirclePlus,
       isCenter: true,
     },
     {
       href: '/mypage',
       label: 'マイページ',
-      icon: (
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-        </svg>
-      ),
+      icon: User,
     },
   ]
 
   return (
-    <nav className="shrink-0 bg-white border-t border-gray-200 pb-safe">
+    <nav className="shrink-0 bg-background border-t border-border pb-safe">
       <div className="flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
+          const Icon = item.icon
 
           if (item.isCenter) {
+            // カスタム中央ボタン（送信ボタン等）
+            if (centerButton) {
+              const CenterIcon = centerButton.icon || Check
+              return (
+                <motion.div
+                  key="center-button"
+                  variants={!centerButton.disabled ? centerButtonVariants : undefined}
+                  whileTap={!centerButton.disabled ? 'tap' : undefined}
+                  whileHover={!centerButton.disabled ? 'hover' : undefined}
+                  className="relative -mt-6"
+                >
+                  <button
+                    type="button"
+                    onClick={centerButton.onClick}
+                    disabled={centerButton.disabled || centerButton.isLoading}
+                    className={cn(
+                      'flex items-center justify-center w-16 h-16 rounded-full shadow-lg',
+                      'transition-colors',
+                      'focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2',
+                      centerButton.disabled || centerButton.isLoading
+                        ? 'bg-muted text-muted-foreground cursor-not-allowed'
+                        : 'bg-primary-500 text-white hover:bg-primary-600'
+                    )}
+                    aria-label={centerButton.isLoading ? '送信中' : '送信'}
+                  >
+                    {centerButton.isLoading ? (
+                      <motion.span
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                        className="inline-block w-7 h-7 border-3 border-white/30 border-t-white rounded-full"
+                      />
+                    ) : (
+                      <CenterIcon className="w-8 h-8" />
+                    )}
+                  </button>
+                </motion.div>
+              )
+            }
+
+            // デフォルトの中央ボタン（/newへのリンク）
             return (
-              <Link
+              <motion.div
                 key={item.href}
-                href={item.href}
-                className="flex items-center justify-center w-14 h-14 -mt-4 bg-gray-900 text-white rounded-full shadow-lg hover:bg-gray-800 transition-colors"
-                aria-label={item.label}
+                variants={centerButtonVariants}
+                whileTap="tap"
+                whileHover="hover"
+                className="relative -mt-6"
               >
-                {item.icon}
-              </Link>
+                <Link
+                  href={item.href}
+                  className={cn(
+                    'flex items-center justify-center w-16 h-16 rounded-full shadow-lg',
+                    'bg-primary-500 text-white',
+                    'hover:bg-primary-600 transition-colors',
+                    'focus:outline-none focus:ring-2 focus:ring-primary-400 focus:ring-offset-2'
+                  )}
+                  aria-label={item.label}
+                >
+                  <Icon className="w-8 h-8" />
+                </Link>
+              </motion.div>
             )
           }
 
           return (
-            <Link
+            <motion.div
               key={item.href}
-              href={item.href}
-              className={`flex flex-col items-center justify-center flex-1 h-full transition-colors ${
-                isActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'
-              }`}
+              variants={buttonVariants}
+              whileTap="tap"
+              className="flex-1"
             >
-              {item.icon}
-              <span className="text-xs mt-1">{item.label}</span>
-            </Link>
+              <Link
+                href={item.href}
+                className={cn(
+                  'flex flex-col items-center justify-center h-full py-2 transition-colors',
+                  isActive
+                    ? 'text-primary-500 dark:text-primary-400'
+                    : 'text-muted-foreground hover:text-foreground'
+                )}
+              >
+                <Icon className={cn('w-6 h-6', isActive && 'stroke-[2.5]')} />
+                <span className={cn('text-xs mt-1', isActive && 'font-medium')}>
+                  {item.label}
+                </span>
+              </Link>
+            </motion.div>
           )
         })}
       </div>

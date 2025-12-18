@@ -4,23 +4,11 @@ import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { format } from 'date-fns'
 import { useTimeline } from '../hooks/use-timeline'
 import { EntryCard } from './entry-card'
+import { Button } from '@/components/ui/button'
+import { Skeleton } from '@/components/ui/skeleton'
 
 // 1ページあたりの日付数
 const DATES_PER_PAGE = 5
-
-// 日付文字列の前後1日を計算（Date操作なし）
-function getAdjacentDates(dateStr: string): { prev: string; next: string } {
-  const [year, month, day] = dateStr.split('-').map(Number)
-  const date = new Date(year, month - 1, day)
-
-  date.setDate(day - 1)
-  const prev = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-
-  date.setDate(date.getDate() + 2) // -1した分を戻して+1
-  const next = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-
-  return { prev, next }
-}
 
 // 今日の日付文字列を取得
 const getTodayStr = () => format(new Date(), 'yyyy-MM-dd')
@@ -41,7 +29,7 @@ export function TimelineList({
   const containerRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const todayStr = useMemo(() => getTodayStr(), [])
-  const [visibleDate, setVisibleDate] = useState<string>(todayStr)
+  const [_visibleDate, setVisibleDate] = useState<string>(todayStr)
   const dateRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const observerRef = useRef<IntersectionObserver | null>(null)
   const topObserverRef = useRef<IntersectionObserver | null>(null)
@@ -84,18 +72,12 @@ export function TimelineList({
   // さらに古い日付があるか
   const hasMoreOlderDates = displayedDates.length < allDates.length || hasNextPage
 
-  // レンダリング対象の日付（visibleDate ± 1日）
-  const renderDates = useMemo(() => {
-    const { prev, next } = getAdjacentDates(visibleDate)
-    return new Set([prev, visibleDate, next])
-  }, [visibleDate])
-
   // 日付divへスクロール
   const scrollToDate = useCallback((date: Date) => {
     const dateKey = format(date, 'yyyy-MM-dd')
     const element = dateRefs.current.get(dateKey)
     if (element) {
-      element.scrollIntoView({ behavior: 'instant', block: 'start' })
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }, [])
 
@@ -144,9 +126,14 @@ export function TimelineList({
   }, [displayedDates])
 
   // Intersection Observerで可視日付を検出
+  // 検出ライン: コンテナ上端から100pxの位置（1pxの高さ）
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
+
+    // 検出ラインを上端から100pxの位置に1pxの高さで作成
+    const containerHeight = container.clientHeight
+    const bottomMargin = -(containerHeight - 101)
 
     observerRef.current = new IntersectionObserver(
       (observerEntries) => {
@@ -164,7 +151,7 @@ export function TimelineList({
       },
       {
         root: container,
-        rootMargin: '-10% 0px -80% 0px',
+        rootMargin: `-100px 0px ${bottomMargin}px 0px`,
         threshold: 0,
       }
     )
@@ -242,8 +229,13 @@ export function TimelineList({
 
   if (isLoading && entries.length === 0) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="text-gray-500">読み込み中...</div>
+      <div className="flex h-full flex-col items-center justify-center gap-4">
+        <div className="space-y-3 w-full max-w-md px-4">
+          <Skeleton className="h-24 w-full rounded-lg bg-primary-100" />
+          <Skeleton className="h-24 w-full rounded-lg bg-primary-100" />
+          <Skeleton className="h-24 w-full rounded-lg bg-primary-100" />
+        </div>
+        <p className="text-muted-foreground">読み込み中...</p>
       </div>
     )
   }
@@ -251,14 +243,11 @@ export function TimelineList({
   if (isError) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
-        <div className="text-red-600">エラーが発生しました</div>
-        <div className="text-sm text-gray-500">{error?.message}</div>
-        <button
-          onClick={() => refetch()}
-          className="rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700"
-        >
+        <div className="text-destructive">エラーが発生しました</div>
+        <div className="text-sm text-muted-foreground">{error?.message}</div>
+        <Button onClick={() => refetch()}>
           再試行
-        </button>
+        </Button>
       </div>
     )
   }
@@ -266,7 +255,7 @@ export function TimelineList({
   if (entries.length === 0) {
     return (
       <div className="flex h-full items-center justify-center">
-        <div className="text-center text-gray-500">
+        <div className="text-center text-muted-foreground">
           <p>まだ投稿がありません</p>
           <p className="mt-2 text-sm">最初の記録を作成しましょう</p>
         </div>
@@ -281,34 +270,31 @@ export function TimelineList({
 
       {/* ローディングインジケータ */}
       {hasMoreOlderDates && (
-        <div className="flex justify-center py-4 text-sm text-gray-400">
+        <div className="flex justify-center py-4 text-sm text-muted-foreground">
           上にスクロールで過去の記録を読み込み
         </div>
       )}
 
       {displayedDates.map((dateKey) => {
         const dateEntries = groupedEntries.get(dateKey) || []
-        const shouldRender = renderDates.has(dateKey)
 
         return (
           <div
             key={dateKey}
             ref={setDateRef(dateKey)}
             data-date={dateKey}
-            className="min-h-full border-b border-gray-100"
+            className="min-h-full border-b border-border"
           >
-            {shouldRender ? (
-              <div className="space-y-2 px-4 py-2">
-                {dateEntries.map((entry) => (
+            <div className="space-y-2 px-4 py-2">
+              <div className="pt-3 text-center text-sm text-gray-400 dark:text-gray-500">
+                {dateKey.replace(/-/g, '/')}
+              </div>
+              {[...dateEntries]
+                .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+                .map((entry) => (
                   <EntryCard key={entry.id} entry={entry} />
                 ))}
-              </div>
-            ) : (
-              // プレースホルダー（レンダリングしない日付用）
-              <div className="flex h-full items-center justify-center text-gray-300">
-                {dateKey}
-              </div>
-            )}
+            </div>
           </div>
         )
       })}

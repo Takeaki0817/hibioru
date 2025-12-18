@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useTransition } from 'react'
+import { useState, useRef, useCallback, useTransition, useEffect } from 'react'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { DateHeader } from '@/features/timeline/components/date-header'
 import { MonthCalendar } from '@/features/timeline/components/month-calendar'
@@ -11,25 +11,54 @@ import type { Entry } from '@/lib/types/database'
 export interface TimelineClientProps {
   userId: string
   initialEntries: Entry[]
+  initialDate?: string // YYYY-MM-DD形式
 }
 
-export function TimelineClient({ userId }: TimelineClientProps) {
-  const [currentDate, setCurrentDate] = useState(new Date())
+export function TimelineClient({ userId, initialDate }: TimelineClientProps) {
+  // 初期日付を解析
+  const parsedInitialDate = initialDate ? new Date(initialDate) : new Date()
+  const [currentDate, setCurrentDate] = useState(parsedInitialDate)
   const [isCalendarOpen, setIsCalendarOpen] = useState(false)
   const [activeDates, setActiveDates] = useState<Set<string>>(new Set())
   const scrollToDateRef = useRef<((date: Date) => void) | null>(null)
+  const carouselDateChangeRef = useRef<((date: Date) => void) | null>(null)
+  const syncSourceRef = useRef<'carousel' | 'timeline' | null>(null)
   const [, startTransition] = useTransition()
 
-  // ヘッダーの日付をタップした時、TimelineListをスクロール
+  // initialDateが指定されている場合、その日付にスクロール
+  useEffect(() => {
+    if (initialDate && scrollToDateRef.current) {
+      const targetDate = new Date(initialDate)
+      // 少し遅延させてDOMが準備できてからスクロール
+      const timer = setTimeout(() => {
+        scrollToDateRef.current?.(targetDate)
+        carouselDateChangeRef.current?.(targetDate)
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [initialDate])
+
+  // ヘッダーの日付変更（カルーセルスライド）→ TimelineListをスクロール
   const handleDateChange = useCallback((date: Date) => {
+    if (syncSourceRef.current === 'timeline') return // TimelineListからの同期中は無視
+    syncSourceRef.current = 'carousel'
     setCurrentDate(date)
     scrollToDateRef.current?.(date)
+    requestAnimationFrame(() => {
+      syncSourceRef.current = null
+    })
   }, [])
 
-  // TimelineListのスクロールで日付が変わった時（低優先度で更新）
+  // TimelineListのスクロールで日付が変わった時 → カルーセルも同期
   const handleScrollDateChange = useCallback((date: Date) => {
+    if (syncSourceRef.current === 'carousel') return // カルーセルからの同期中は無視
+    syncSourceRef.current = 'timeline'
     startTransition(() => {
       setCurrentDate(date)
+    })
+    carouselDateChangeRef.current?.(date)
+    requestAnimationFrame(() => {
+      syncSourceRef.current = null
     })
   }, [])
 
@@ -41,6 +70,7 @@ export function TimelineClient({ userId }: TimelineClientProps) {
           activeDates={activeDates}
           onDateChange={handleDateChange}
           onToggleCalendar={() => setIsCalendarOpen(!isCalendarOpen)}
+          externalDateChangeRef={carouselDateChangeRef}
         />
 
         <main className="flex-1 overflow-hidden">

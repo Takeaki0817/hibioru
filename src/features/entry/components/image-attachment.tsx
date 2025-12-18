@@ -3,6 +3,8 @@
 import { useState, useRef } from 'react'
 import type { CompressedImage } from '@/features/entry/types'
 import { compressImage } from '@/features/entry/api/image-service'
+import { Button } from '@/components/ui/button'
+import { Progress } from '@/components/ui/progress'
 
 interface ImageAttachmentProps {
   image: CompressedImage | null
@@ -69,19 +71,14 @@ export function ImageAttachment({
           />
           <label
             htmlFor="image-upload"
-            className="inline-flex items-center px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-lg cursor-pointer disabled:opacity-50"
+            className="inline-flex items-center px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg cursor-pointer transition-colors"
           >
             {isCompressing ? '圧縮中...' : '画像を添付'}
           </label>
           {isCompressing && (
             <div className="mt-2">
-              <div className="w-full bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-blue-500 h-2 rounded-full transition-all"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <p className="text-sm text-gray-600 mt-1">{Math.round(progress)}%</p>
+              <Progress value={progress} className="w-full" />
+              <p className="text-sm text-muted-foreground mt-1">{Math.round(progress)}%</p>
             </div>
           )}
         </div>
@@ -94,13 +91,15 @@ export function ImageAttachment({
             alt="プレビュー"
             className="max-w-full rounded-lg"
           />
-          <button
+          <Button
+            variant="destructive"
+            size="sm"
             onClick={handleRemove}
-            className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-lg hover:bg-red-600"
+            className="absolute top-2 right-2"
           >
             削除
-          </button>
-          <p className="text-sm text-gray-600 mt-2">
+          </Button>
+          <p className="text-sm text-muted-foreground mt-2">
             元サイズ: {(image.originalSize / 1024).toFixed(1)}KB →{' '}
             圧縮後: {(image.compressedSize / 1024).toFixed(1)}KB
           </p>
@@ -108,7 +107,7 @@ export function ImageAttachment({
       )}
 
       {error && (
-        <p className="text-sm text-red-600">{error}</p>
+        <p className="text-sm text-destructive">{error}</p>
       )}
     </div>
   )

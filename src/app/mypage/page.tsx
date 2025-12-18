@@ -4,6 +4,7 @@ import { ProfileSection } from '@/features/mypage/components/profile-section'
 import { StreakDisplay } from '@/features/streak/components/streak-display'
 import { HotsureDisplay } from '@/features/hotsure/components/hotsure-display'
 import { NotificationSettings } from '@/features/notification/components/notification-settings'
+import { AppearanceSection } from '@/features/mypage/components/appearance-section'
 import { ExportSection } from '@/features/mypage/components/export-section'
 import { LogoutButton } from '@/features/mypage/components/logout-button'
 import { FooterNav } from '@/components/layouts/footer-nav'
@@ -41,42 +42,49 @@ export default async function MypagePage() {
       }
 
   return (
-    <>
-      <div className="container mx-auto p-4 max-w-2xl pb-24">
-        <h1 className="text-2xl font-bold mb-6">マイページ</h1>
+    <div className="flex h-dvh flex-col">
+      <main className="flex-1 overflow-auto">
+        <div className="container mx-auto p-4 max-w-2xl pb-6">
+          <h1 className="text-2xl font-bold mb-6">マイページ</h1>
 
-        {/* プロフィールセクション */}
-        <ProfileSection user={user} />
+          {/* プロフィールセクション */}
+          <ProfileSection user={user} />
 
-        {/* 統計情報セクション */}
-        <div className="mt-6 space-y-4">
-          <StreakDisplay
-            currentStreak={stats.currentStreak}
-            longestStreak={stats.longestStreak}
-          />
-          <HotsureDisplay
-            remaining={stats.hotsureRemaining}
-            max={stats.hotsureMax}
-          />
+          {/* 統計情報セクション */}
+          <div className="mt-6 space-y-4">
+            <StreakDisplay
+              currentStreak={stats.currentStreak}
+              longestStreak={stats.longestStreak}
+            />
+            <HotsureDisplay
+              remaining={stats.hotsureRemaining}
+              max={stats.hotsureMax}
+            />
+          </div>
+
+          {/* 通知設定セクション */}
+          <div className="mt-6">
+            <NotificationSettings initialSettings={notificationSettings} />
+          </div>
+
+          {/* 外観設定セクション */}
+          <div className="mt-6">
+            <AppearanceSection />
+          </div>
+
+          {/* データエクスポートセクション */}
+          <div className="mt-6">
+            <ExportSection />
+          </div>
+
+          {/* ログアウトボタン */}
+          <div className="mt-8">
+            <LogoutButton />
+          </div>
         </div>
-
-        {/* 通知設定セクション */}
-        <div className="mt-6">
-          <NotificationSettings initialSettings={notificationSettings} />
-        </div>
-
-        {/* データエクスポートセクション */}
-        <div className="mt-6">
-          <ExportSection />
-        </div>
-
-        {/* ログアウトボタン */}
-        <div className="mt-8">
-          <LogoutButton />
-        </div>
-      </div>
+      </main>
 
       <FooterNav />
-    </>
+    </div>
   )
 }
