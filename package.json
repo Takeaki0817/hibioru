@@ -17,7 +17,8 @@
     "db:push": "supabase db push",
     "db:pull": "supabase db pull",
     "db:diff": "supabase db diff",
-    "db:types": "supabase gen types typescript --local > lib/types/database.generated.ts"
+    "db:types": "supabase gen types typescript --local > lib/types/database.generated.ts",
+    "vapid:generate": "npx tsx scripts/generate-vapid-keys.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
