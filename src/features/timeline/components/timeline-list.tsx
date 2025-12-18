@@ -10,20 +10,6 @@ import { Skeleton } from '@/components/ui/skeleton'
 // 1ページあたりの日付数
 const DATES_PER_PAGE = 5
 
-// 日付文字列の前後1日を計算（Date操作なし）
-function getAdjacentDates(dateStr: string): { prev: string; next: string } {
-  const [year, month, day] = dateStr.split('-').map(Number)
-  const date = new Date(year, month - 1, day)
-
-  date.setDate(day - 1)
-  const prev = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-
-  date.setDate(date.getDate() + 2) // -1した分を戻して+1
-  const next = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
-
-  return { prev, next }
-}
-
 // 今日の日付文字列を取得
 const getTodayStr = () => format(new Date(), 'yyyy-MM-dd')
 
@@ -86,18 +72,12 @@ export function TimelineList({
   // さらに古い日付があるか
   const hasMoreOlderDates = displayedDates.length < allDates.length || hasNextPage
 
-  // レンダリング対象の日付（visibleDate ± 1日）
-  const renderDates = useMemo(() => {
-    const { prev, next } = getAdjacentDates(visibleDate)
-    return new Set([prev, visibleDate, next])
-  }, [visibleDate])
-
   // 日付divへスクロール
   const scrollToDate = useCallback((date: Date) => {
     const dateKey = format(date, 'yyyy-MM-dd')
     const element = dateRefs.current.get(dateKey)
     if (element) {
-      element.scrollIntoView({ behavior: 'instant', block: 'start' })
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' })
     }
   }, [])
 
@@ -146,9 +126,14 @@ export function TimelineList({
   }, [displayedDates])
 
   // Intersection Observerで可視日付を検出
+  // 検出ライン: コンテナ上端から100pxの位置（1pxの高さ）
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
+
+    // 検出ラインを上端から100pxの位置に1pxの高さで作成
+    const containerHeight = container.clientHeight
+    const bottomMargin = -(containerHeight - 101)
 
     observerRef.current = new IntersectionObserver(
       (observerEntries) => {
@@ -166,7 +151,7 @@ export function TimelineList({
       },
       {
         root: container,
-        rootMargin: '-10% 0px -80% 0px',
+        rootMargin: `-100px 0px ${bottomMargin}px 0px`,
         threshold: 0,
       }
     )
@@ -292,7 +277,6 @@ export function TimelineList({
 
       {displayedDates.map((dateKey) => {
         const dateEntries = groupedEntries.get(dateKey) || []
-        const shouldRender = renderDates.has(dateKey)
 
         return (
           <div
@@ -301,18 +285,14 @@ export function TimelineList({
             data-date={dateKey}
             className="min-h-full border-b border-border"
           >
-            {shouldRender ? (
-              <div className="space-y-2 px-4 py-2">
-                {dateEntries.map((entry) => (
-                  <EntryCard key={entry.id} entry={entry} />
-                ))}
+            <div className="space-y-2 px-4 py-2">
+              <div className="pt-3 text-center text-sm text-gray-400 dark:text-gray-500">
+                {dateKey.replace(/-/g, '/')}
               </div>
-            ) : (
-              // プレースホルダー（レンダリングしない日付用）
-              <div className="flex h-full items-center justify-center text-muted-foreground/50">
-                {dateKey}
-              </div>
-            )}
+              {dateEntries.map((entry) => (
+                <EntryCard key={entry.id} entry={entry} />
+              ))}
+            </div>
           </div>
         )
       })}
