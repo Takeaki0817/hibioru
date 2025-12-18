@@ -2,92 +2,80 @@
 
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
-import { useSwipeNavigation } from '../hooks/use-swipe-navigation'
 
 export interface DateHeaderProps {
   currentDate: Date
-  hasHotsure?: boolean
+  activeDates?: Set<string> // 記録がある日付（YYYY-MM-DD形式）
   onDateChange?: (date: Date) => void
   onToggleCalendar?: () => void
 }
 
 export function DateHeader({
   currentDate,
-  hasHotsure = false,
+  activeDates,
   onDateChange,
   onToggleCalendar,
 }: DateHeaderProps) {
-  // 前日・翌日へ移動
-  const handlePrevDay = () => {
-    const newDate = new Date(currentDate)
-    newDate.setDate(newDate.getDate() - 1)
-    onDateChange?.(newDate)
+  // 前後2日を含む5日間の日付を生成
+  const getDates = () => {
+    const dates: Date[] = []
+    for (let i = -2; i <= 2; i++) {
+      const date = new Date(currentDate)
+      date.setDate(date.getDate() + i)
+      dates.push(date)
+    }
+    return dates
   }
 
-  const handleNextDay = () => {
-    const newDate = new Date(currentDate)
-    newDate.setDate(newDate.getDate() + 1)
-    onDateChange?.(newDate)
+  const dates = getDates()
+  const monthStr = format(currentDate, 'M月', { locale: ja })
+
+  // 日付をタップしてジャンプ
+  const handleDateClick = (date: Date) => {
+    onDateChange?.(date)
   }
-
-  // スワイプジェスチャー
-  const { handlers } = useSwipeNavigation({
-    onSwipeLeft: handleNextDay,
-    onSwipeRight: handlePrevDay,
-  })
-
-  // 日付フォーマット: YYYY年MM月DD日（曜日）
-  const dateStr = format(currentDate, 'yyyy年MM月dd日（E）', { locale: ja })
 
   return (
-    <div
-      {...handlers}
-      className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 shadow-sm"
-    >
-      <button
-        onClick={handlePrevDay}
-        className="text-gray-600 hover:text-gray-900"
-        aria-label="前の日"
-      >
-        <svg
-          className="h-6 w-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
-      </button>
+    <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
+      {/* 左: ロゴ */}
+      <span className="text-lg font-bold text-gray-900">ヒビオル</span>
 
-      <div className="flex items-center gap-2">
-        <span className="text-lg font-medium">{dateStr}</span>
-        {hasHotsure && <span className="text-xl">🧵</span>}
+      {/* 中央: 日付5日間 */}
+      <div className="flex items-center gap-1">
+        {dates.map((date, index) => {
+          const day = date.getDate()
+          const isCenter = index === 2
+          const dateKey = format(date, 'yyyy-MM-dd')
+          const isActive = !activeDates || activeDates.has(dateKey)
+
+          return (
+            <button
+              key={date.toISOString()}
+              onClick={() => isActive && handleDateClick(date)}
+              disabled={!isActive}
+              className={`min-w-[28px] rounded px-1 py-0.5 text-center text-sm ${
+                isCenter
+                  ? 'bg-gray-900 font-bold text-white'
+                  : isActive
+                    ? 'text-gray-500 hover:bg-gray-100'
+                    : 'cursor-not-allowed text-gray-300'
+              }`}
+              aria-label={format(date, 'M月d日', { locale: ja })}
+            >
+              {day}
+            </button>
+          )
+        })}
       </div>
 
+      {/* 右: 月（カレンダーボタン） */}
       <button
         onClick={onToggleCalendar}
-        className="text-gray-600 hover:text-gray-900"
+        className="text-sm text-gray-600 hover:text-gray-900"
         aria-label="カレンダーを開く"
       >
-        <svg
-          className="h-6 w-6"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
+        {monthStr}
       </button>
-    </div>
+    </header>
   )
 }
