@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { EntryForm } from '@/features/entry/components/entry-form'
+import { NewEntryClient } from './NewEntryClient'
 
 export default async function NewEntryPage() {
   const supabase = await createClient()
@@ -10,9 +10,5 @@ export default async function NewEntryPage() {
     redirect('/login')
   }
 
-  return (
-    <main>
-      <EntryForm mode="create" userId={user.id} />
-    </main>
-  )
+  return <NewEntryClient userId={user.id} />
 }
