@@ -256,10 +256,15 @@ export function DateHeader({
     setSelectedIndex(index)
     prevIndexRef.current = index
 
-    // 端に近づいたらウィンドウをシフト
+    // 端に近づいたらウィンドウをシフトして中央に再センタリング
     if (index < 5 || index > TOTAL_DAYS - 6) {
       setWindowCenter(selectedDate)
-      isInitialized.current = false // 再初期化フラグ
+      isInitialized.current = false
+      requestAnimationFrame(() => {
+        api.scrollTo(CENTER_INDEX, true)
+        setSelectedIndex(CENTER_INDEX)
+        prevIndexRef.current = CENTER_INDEX
+      })
     }
 
     onDateChange?.(selectedDate)
