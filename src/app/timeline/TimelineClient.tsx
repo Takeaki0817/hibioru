@@ -35,7 +35,7 @@ export function TimelineClient({ userId }: TimelineClientProps) {
 
   return (
     <QueryProvider>
-      <div className="flex h-screen flex-col">
+      <div className="flex h-dvh flex-col">
         <DateHeader
           currentDate={currentDate}
           activeDates={activeDates}
@@ -43,14 +43,14 @@ export function TimelineClient({ userId }: TimelineClientProps) {
           onToggleCalendar={() => setIsCalendarOpen(!isCalendarOpen)}
         />
 
-        <div className="flex-1 overflow-hidden pb-20">
+        <main className="flex-1 overflow-hidden">
           <TimelineList
             userId={userId}
             onDateChange={handleScrollDateChange}
             onActiveDatesChange={setActiveDates}
             scrollToDateRef={scrollToDateRef}
           />
-        </div>
+        </main>
 
         <MonthCalendar
           userId={userId}

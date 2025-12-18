@@ -295,7 +295,7 @@ export function TimelineList({
             key={dateKey}
             ref={setDateRef(dateKey)}
             data-date={dateKey}
-            className="min-h-[100lvh] border-b border-gray-100"
+            className="min-h-full border-b border-gray-100"
           >
             {shouldRender ? (
               <div className="space-y-2 px-4 py-2">
@@ -305,7 +305,7 @@ export function TimelineList({
               </div>
             ) : (
               // プレースホルダー（レンダリングしない日付用）
-              <div className="flex h-[100lvh] items-center justify-center text-gray-300">
+              <div className="flex h-full items-center justify-center text-gray-300">
                 {dateKey}
               </div>
             )}
