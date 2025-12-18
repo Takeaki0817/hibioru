@@ -4,9 +4,14 @@ import { createClient } from '@/lib/supabase/server'
 import type { EntryInsert, EntryUpdate } from '@/lib/types/database'
 import type { Entry, CreateEntryInput, UpdateEntryInput, EntryError, Result } from './types'
 import { isEditable } from './utils'
+import { handleEntryCreated } from '@/lib/notification/entry-integration'
 
 /**
  * 新規エントリを作成
+ *
+ * エントリー作成成功時に以下の通知連携処理を実行します:
+ * - 当日の通知ログのentry_recorded_atを更新（Requirement 6.1）
+ * - 追いリマインドのキャンセル（Requirement 4.4）
  */
 export async function createEntry(
   input: CreateEntryInput
@@ -49,7 +54,20 @@ export async function createEntry(
       }
     }
 
-    return { ok: true, value: data as Entry }
+    const entry = data as Entry
+
+    // 通知連携処理（エントリー作成成功後に非同期で実行）
+    // この処理の失敗はエントリー作成結果に影響しない
+    handleEntryCreated({
+      userId: userData.user.id,
+      entryId: entry.id,
+      createdAt: new Date(entry.created_at),
+    }).catch((err) => {
+      // 通知連携処理のエラーはログに出力するがエントリー作成には影響しない
+      console.error('通知連携処理に失敗しました:', err)
+    })
+
+    return { ok: true, value: entry }
   } catch (error) {
     return {
       ok: false,

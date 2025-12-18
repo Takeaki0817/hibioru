@@ -86,6 +86,7 @@ export interface Database {
           endpoint: string
           p256dh: string
           auth: string
+          user_agent: string | null
           created_at: string
         }
         Insert: {
@@ -94,12 +95,14 @@ export interface Database {
           endpoint: string
           p256dh: string
           auth: string
+          user_agent?: string | null
           created_at?: string
         }
         Update: {
           endpoint?: string
           p256dh?: string
           auth?: string
+          user_agent?: string | null
         }
       }
       notification_settings: {
