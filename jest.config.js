@@ -5,7 +5,7 @@ const config = {
   roots: ['<rootDir>'],
   testMatch: ['**/__tests__/**/*.test.ts'],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
   collectCoverageFrom: [
     'lib/**/*.ts',
