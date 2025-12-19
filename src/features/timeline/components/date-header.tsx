@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/carousel'
 import { Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useTimelineStore } from '../stores/timeline-store'
 
 // ウィンドウサイズ（前後の日数）
 const WINDOW_DAYS = 15
@@ -21,7 +22,6 @@ export interface DateHeaderProps {
   currentDate: Date
   activeDates?: Set<string> // 記録がある日付（YYYY-MM-DD形式）
   onDateChange?: (date: Date) => void
-  onToggleCalendar?: () => void
   // 外部からの日付変更を受け付けるref
   externalDateChangeRef?: React.MutableRefObject<((date: Date) => void) | null>
 }
@@ -30,9 +30,10 @@ export function DateHeader({
   currentDate,
   activeDates,
   onDateChange,
-  onToggleCalendar,
   externalDateChangeRef,
 }: DateHeaderProps) {
+  // Zustandストアからカレンダー開閉関数を取得
+  const toggleCalendar = useTimelineStore((s) => s.toggleCalendar)
   const [api, setApi] = useState<CarouselApi>()
   const [windowCenter, setWindowCenter] = useState(currentDate)
   const [selectedIndex, setSelectedIndex] = useState(CENTER_INDEX)
@@ -361,7 +362,7 @@ export function DateHeader({
 
       {/* 右: 月（カレンダーボタン） */}
       <button
-        onClick={onToggleCalendar}
+        onClick={toggleCalendar}
         className={cn(
           'flex items-center gap-1.5 px-3 py-1.5 rounded-lg',
           'text-sm font-medium',

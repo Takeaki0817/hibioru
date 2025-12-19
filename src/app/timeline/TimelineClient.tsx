@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback, useTransition, useEffect } from 'react'
+import { useRef, useCallback, useTransition, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { QueryProvider } from '@/components/providers/QueryProvider'
@@ -8,6 +8,11 @@ import { DateHeader } from '@/features/timeline/components/date-header'
 import { MonthCalendar } from '@/features/timeline/components/month-calendar'
 import { TimelineList } from '@/features/timeline/components/timeline-list'
 import { FooterNav } from '@/components/layouts/footer-nav'
+import {
+  TimelineStoreProvider,
+  useTimelineStore,
+  useTimelineStoreApi,
+} from '@/features/timeline/stores/timeline-store'
 import type { Entry } from '@/lib/types/database'
 
 export interface TimelineClientProps {
@@ -16,18 +21,38 @@ export interface TimelineClientProps {
   initialDate?: string // YYYY-MM-DD形式
 }
 
-export function TimelineClient({ userId, initialDate }: TimelineClientProps) {
+// 内部コンポーネント（Providerの中で使用）
+function TimelineContent({
+  userId,
+  initialDate,
+}: {
+  userId: string
+  initialDate?: string
+}) {
   const router = useRouter()
+  const [, startTransition] = useTransition()
+
+  // Zustandストアから状態取得
+  const currentDate = useTimelineStore((s) => s.currentDate)
+  const activeDates = useTimelineStore((s) => s.activeDates)
+  const syncSource = useTimelineStore((s) => s.syncSource)
+  const setCurrentDate = useTimelineStore((s) => s.setCurrentDate)
+  const setSyncSource = useTimelineStore((s) => s.setSyncSource)
+
+  // ストアAPIに直接アクセス（初期化用）
+  const storeApi = useTimelineStoreApi()
 
   // 初期日付を解析
   const parsedInitialDate = initialDate ? new Date(initialDate) : new Date()
-  const [currentDate, setCurrentDate] = useState(parsedInitialDate)
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false)
-  const [activeDates, setActiveDates] = useState<Set<string>>(new Set())
+
+  // 初期日付をストアに設定
+  useEffect(() => {
+    storeApi.setState({ currentDate: parsedInitialDate })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // スクロール制御用ref（子コンポーネントから関数を受け取る）
   const scrollToDateRef = useRef<((date: Date) => void) | null>(null)
   const carouselDateChangeRef = useRef<((date: Date) => void) | null>(null)
-  const syncSourceRef = useRef<'carousel' | 'timeline' | null>(null)
-  const [, startTransition] = useTransition()
 
   // initialDateが指定されている場合、その日付にスクロール
   useEffect(() => {
@@ -57,70 +82,75 @@ export function TimelineClient({ userId, initialDate }: TimelineClientProps) {
       // 日付がタイムラインに読み込まれているか確認
       if (activeDates.has(dateStr)) {
         // 読み込み済み → スクロール＆URLパラメータ削除
-        if (syncSourceRef.current === 'timeline') return
-        syncSourceRef.current = 'carousel'
+        if (syncSource === 'timeline') return
+        setSyncSource('carousel')
         setCurrentDate(date)
         scrollToDateRef.current?.(date)
         clearUrlParam()
         requestAnimationFrame(() => {
-          syncSourceRef.current = null
+          setSyncSource(null)
         })
       } else {
         // 未読み込み → URLパラメータで遷移（ページがその日付から読み込み開始）
         router.push(`/timeline?date=${dateStr}`)
       }
     },
-    [activeDates, router, clearUrlParam]
+    [activeDates, syncSource, router, clearUrlParam, setSyncSource, setCurrentDate]
   )
 
   // TimelineListのスクロールで日付が変わった時 → カルーセルも同期
   const handleScrollDateChange = useCallback(
     (date: Date) => {
-      if (syncSourceRef.current === 'carousel') return // カルーセルからの同期中は無視
-      syncSourceRef.current = 'timeline'
+      if (syncSource === 'carousel') return // カルーセルからの同期中は無視
+      setSyncSource('timeline')
       startTransition(() => {
         setCurrentDate(date)
       })
       carouselDateChangeRef.current?.(date)
       clearUrlParam()
       requestAnimationFrame(() => {
-        syncSourceRef.current = null
+        setSyncSource(null)
       })
     },
-    [clearUrlParam]
+    [syncSource, clearUrlParam, setSyncSource, setCurrentDate]
   )
 
   return (
-    <QueryProvider>
-      <div className="flex h-dvh flex-col">
-        <DateHeader
-          currentDate={currentDate}
-          activeDates={activeDates}
-          onDateChange={handleDateChange}
-          onToggleCalendar={() => setIsCalendarOpen(!isCalendarOpen)}
-          externalDateChangeRef={carouselDateChangeRef}
-        />
+    <div className="flex h-dvh flex-col">
+      <DateHeader
+        currentDate={currentDate}
+        activeDates={activeDates}
+        onDateChange={handleDateChange}
+        externalDateChangeRef={carouselDateChangeRef}
+      />
 
-        <main className="flex-1 overflow-hidden">
-          <TimelineList
-            userId={userId}
-            initialDate={initialDate ? parsedInitialDate : undefined}
-            onDateChange={handleScrollDateChange}
-            onActiveDatesChange={setActiveDates}
-            scrollToDateRef={scrollToDateRef}
-          />
-        </main>
-
-        <MonthCalendar
+      <main className="flex-1 overflow-hidden">
+        <TimelineList
           userId={userId}
-          isOpen={isCalendarOpen}
-          selectedDate={currentDate}
-          onSelectDate={handleDateChange}
-          onClose={() => setIsCalendarOpen(false)}
+          initialDate={initialDate ? parsedInitialDate : undefined}
+          onDateChange={handleScrollDateChange}
+          scrollToDateRef={scrollToDateRef}
         />
+      </main>
 
-        <FooterNav />
-      </div>
+      <MonthCalendar
+        userId={userId}
+        selectedDate={currentDate}
+        onSelectDate={handleDateChange}
+      />
+
+      <FooterNav />
+    </div>
+  )
+}
+
+// メインコンポーネント（Providerでラップ）
+export function TimelineClient({ userId, initialDate }: TimelineClientProps) {
+  return (
+    <QueryProvider>
+      <TimelineStoreProvider>
+        <TimelineContent userId={userId} initialDate={initialDate} />
+      </TimelineStoreProvider>
     </QueryProvider>
   )
 }

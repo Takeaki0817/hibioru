@@ -1,11 +1,10 @@
 'use client'
 
-import { createContext, useContext, useEffect, useState } from 'react'
+import { useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
-import type { AuthContextValue, User } from '@/lib/types/auth'
-
-const AuthContext = createContext<AuthContextValue | undefined>(undefined)
+import type { User } from '@/lib/types/auth'
+import { useAuthStore } from '@/features/auth/stores/auth-store'
 
 // Supabaseユーザーをアプリケーション用User型に変換
 function mapSupabaseUser(supabaseUser: SupabaseUser): User {
@@ -18,15 +17,14 @@ function mapSupabaseUser(supabaseUser: SupabaseUser): User {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const initialize = useAuthStore((s) => s.initialize)
+  const setUser = useAuthStore((s) => s.setUser)
   const supabase = createClient()
 
   useEffect(() => {
     // 初期セッション取得
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ? mapSupabaseUser(session.user) : null)
-      setIsLoading(false)
+      initialize(session?.user ? mapSupabaseUser(session.user) : null)
     })
 
     // 認証状態変更の監視
@@ -34,28 +32,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ? mapSupabaseUser(session.user) : null)
-      setIsLoading(false)
     })
 
     return () => subscription.unsubscribe()
-  }, [supabase.auth])
+  }, [supabase.auth, initialize, setUser])
 
-  const signOut = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-  }
-
-  return (
-    <AuthContext.Provider value={{ user, isLoading, signOut }}>
-      {children}
-    </AuthContext.Provider>
-  )
+  return <>{children}</>
 }
 
+// useAuth フック（後方互換性のため維持）
 export function useAuth() {
-  const context = useContext(AuthContext)
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider')
-  }
-  return context
+  const user = useAuthStore((s) => s.user)
+  const isLoading = useAuthStore((s) => s.isLoading)
+  const supabase = createClient()
+
+  const signOut = useCallback(async () => {
+    await supabase.auth.signOut()
+    useAuthStore.getState().reset()
+  }, [supabase.auth])
+
+  return { user, isLoading, signOut }
 }

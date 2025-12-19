@@ -1,10 +1,11 @@
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useCallback } from 'react'
 import { Check } from 'lucide-react'
 import { EntryHeader } from '@/components/layouts/entry-header'
 import { FooterNav } from '@/components/layouts/footer-nav'
-import { EntryForm, type EntryFormHandle, type EntryFormState } from '@/features/entry/components/entry-form'
+import { EntryForm, type EntryFormHandle } from '@/features/entry/components/entry-form'
+import { useEntryFormStore, selectCanSubmit } from '@/features/entry/stores/entry-form-store'
 import type { Entry } from '@/lib/types/database'
 
 interface EditEntryClientProps {
@@ -14,15 +15,10 @@ interface EditEntryClientProps {
 
 export function EditEntryClient({ entry, userId }: EditEntryClientProps) {
   const formRef = useRef<EntryFormHandle>(null)
-  const [formState, setFormState] = useState<EntryFormState>({
-    isSubmitting: false,
-    canSubmit: false,
-    isSuccess: false,
-  })
 
-  const handleStateChange = useCallback((state: EntryFormState) => {
-    setFormState(state)
-  }, [])
+  // Zustandストアから状態を取得
+  const isSubmitting = useEntryFormStore((s) => s.isSubmitting)
+  const canSubmit = useEntryFormStore(selectCanSubmit)
 
   const handleSubmit = useCallback(() => {
     formRef.current?.submit()
@@ -38,15 +34,14 @@ export function EditEntryClient({ entry, userId }: EditEntryClientProps) {
         initialEntry={entry}
         userId={userId}
         hideSubmitButton
-        onStateChange={handleStateChange}
       />
 
       <FooterNav
         centerButton={{
           icon: Check,
           onClick: handleSubmit,
-          disabled: !formState.canSubmit,
-          isLoading: formState.isSubmitting,
+          disabled: !canSubmit,
+          isLoading: isSubmitting,
         }}
       />
     </div>
