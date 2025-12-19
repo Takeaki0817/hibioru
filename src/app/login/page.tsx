@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { classifyAuthError, parseErrorParam } from '@/features/auth/errors'
 import type { AuthError } from '@/lib/types/auth'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Button } from '@/components/ui/button'
 
 function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
@@ -43,40 +45,46 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+    <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900">ヒビオル</h1>
-          <p className="mt-2 text-gray-600">日々を織る</p>
-          <p className="mt-4 text-sm text-gray-500">
+          <h1 className="text-4xl font-bold text-foreground">ヒビオル</h1>
+          <p className="mt-2 text-muted-foreground">日々を織る</p>
+          <p className="mt-4 text-sm text-muted-foreground/80">
             ADHD当事者のための瞬間記録アプリ
           </p>
         </div>
 
         <div className="mt-8">
           {error && error.message && (
-            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-800">{error.message}</p>
-              {error.retryable && (
-                <button
-                  onClick={handleRetry}
-                  className="mt-2 text-sm text-red-600 underline hover:text-red-800"
-                >
-                  もう一度試す
-                </button>
-              )}
-            </div>
+            <Alert variant="destructive" className="mb-4">
+              <AlertDescription>
+                {error.message}
+                {error.retryable && (
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={handleRetry}
+                    className="mt-2 p-0 h-auto text-destructive hover:text-destructive/80"
+                  >
+                    もう一度試す
+                  </Button>
+                )}
+              </AlertDescription>
+            </Alert>
           )}
 
-          <button
+          <Button
+            variant="outline"
+            size="lg"
             onClick={handleGoogleLogin}
             disabled={isLoading}
-            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg shadow-sm bg-white text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-12 gap-3"
             aria-label="Googleでログイン"
           >
             {isLoading ? (
               <>
-                <div className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+                <div className="w-5 h-5 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
                 <span>ログイン中...</span>
               </>
             ) : (
@@ -102,10 +110,10 @@ function LoginContent() {
                 Googleでログイン
               </>
             )}
-          </button>
+          </Button>
         </div>
 
-        <p className="mt-8 text-center text-xs text-gray-500">
+        <p className="mt-8 text-center text-xs text-muted-foreground/80">
           継続することが最大の目的。
           <br />
           立派な日記を書くことではない。
@@ -118,8 +126,8 @@ function LoginContent() {
 export default function LoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="w-8 h-8 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-8 h-8 border-2 border-muted-foreground/30 border-t-muted-foreground rounded-full animate-spin" />
       </div>
     }>
       <LoginContent />

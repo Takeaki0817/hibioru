@@ -12,6 +12,16 @@ import { uploadImage } from '@/features/entry/api/image-service'
 import { saveDraft, loadDraft, clearDraft } from '@/features/entry/api/draft-storage'
 import { MotionButton } from '@/components/ui/motion-button'
 import { Button } from '@/components/ui/button'
+import { Textarea } from '@/components/ui/textarea'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { cn } from '@/lib/utils'
 import { useEntryFormStore, selectCanSubmit, selectCanAddImage } from '../stores/entry-form-store'
 
@@ -273,7 +283,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
       {/* テキストエリア */}
       <div className={formContainerVariants({ state: getFormState(isFocused, isSuccess) })}>
-        <textarea
+        <Textarea
           ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -282,9 +292,9 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           onKeyDown={handleKeyDown}
           placeholder="絵文字1つでもOK 🌟"
           className={cn(
-            'w-full min-h-full resize-none border-none outline-none text-base p-4 rounded-xl',
+            'w-full min-h-full resize-none border-none shadow-none text-base p-4 rounded-xl',
             'bg-transparent placeholder:text-muted-foreground/60',
-            'leading-relaxed overflow-y-auto'
+            'leading-relaxed overflow-y-auto focus-visible:ring-0'
           )}
           disabled={isSubmitting || isSuccess}
         />
@@ -344,14 +354,16 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
                 alt={`プレビュー ${index + 1}`}
                 className="w-20 h-20 rounded-lg object-cover"
               />
-              <button
+              <Button
                 type="button"
+                variant="destructive"
+                size="icon-sm"
                 onClick={() => removeImage(index)}
                 disabled={isSubmitting || isSuccess}
-                className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-white rounded-full flex items-center justify-center shadow-md hover:bg-destructive/90 disabled:opacity-50"
+                className="absolute -top-2 -right-2 !size-6 rounded-full shadow-md"
               >
                 <X size={14} />
-              </button>
+              </Button>
             </div>
           ))}
 
@@ -367,24 +379,27 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
                 />
                 {isRemoved ? (
                   // 削除予定のオーバーレイ
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
                     onClick={() => toggleExistingImageRemoval(url)}
                     disabled={isSubmitting || isSuccess}
-                    className="absolute inset-0 rounded-lg bg-black/60 flex items-center justify-center disabled:cursor-not-allowed"
+                    className="absolute inset-0 rounded-lg bg-black/60 flex items-center justify-center disabled:cursor-not-allowed h-auto p-0"
                   >
                     <ImageOff size={24} className="text-accent-400" />
-                  </button>
+                  </Button>
                 ) : (
                   // 削除ボタン
-                  <button
+                  <Button
                     type="button"
+                    variant="destructive"
+                    size="icon-sm"
                     onClick={() => toggleExistingImageRemoval(url)}
                     disabled={isSubmitting || isSuccess}
-                    className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-white rounded-full flex items-center justify-center shadow-md hover:bg-destructive/90 disabled:opacity-50"
+                    className="absolute -top-2 -right-2 !size-6 rounded-full shadow-md"
                   >
                     <X size={14} />
-                  </button>
+                  </Button>
                 )}
               </div>
             )
@@ -401,18 +416,15 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
         {/* 削除ボタン（編集モードのみ） */}
         {mode === 'edit' && (
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => setShowDeleteConfirm(true)}
             disabled={isSubmitting || isDeleting || isSuccess}
-            className={cn(
-              'flex items-center justify-center w-20 h-20 rounded-lg transition-colors',
-              'bg-accent/60 hover:bg-accent/70',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
+            className="w-20 h-20 rounded-lg bg-accent/60 hover:bg-accent/70"
           >
             <Trash2 size={24} className="text-red-500" />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -423,9 +435,10 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="mt-4 p-3 bg-destructive/10 text-destructive rounded-lg text-sm"
           >
-            {error}
+            <Alert variant="destructive" className="mt-4">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
           </motion.div>
         )}
       </AnimatePresence>
@@ -459,61 +472,48 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
       )}
 
       {/* 削除確認ダイアログ */}
-      <AnimatePresence>
-        {showDeleteConfirm && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-            onClick={() => !isDeleting && setShowDeleteConfirm(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-background rounded-xl p-6 max-w-sm w-full shadow-lg"
-              onClick={(e) => e.stopPropagation()}
+      <Dialog
+        open={showDeleteConfirm}
+        onOpenChange={(open) => !isDeleting && setShowDeleteConfirm(open)}
+      >
+        <DialogContent showCloseButton={false} className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>記録を削除しますか？</DialogTitle>
+            <DialogDescription>この操作は取り消せません。</DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-3 sm:justify-stretch">
+            <Button
+              type="button"
+              variant="outline"
+              className="flex-1"
+              onClick={() => setShowDeleteConfirm(false)}
+              disabled={isDeleting}
             >
-              <h3 className="text-lg font-semibold mb-2">記録を削除しますか？</h3>
-              <p className="text-sm text-muted-foreground mb-6">
-                この操作は取り消せません。
-              </p>
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowDeleteConfirm(false)}
-                  disabled={isDeleting}
-                >
-                  キャンセル
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  className="flex-1"
-                  onClick={handleDelete}
-                  disabled={isDeleting}
-                >
-                  {isDeleting ? (
-                    <span className="flex items-center gap-2">
-                      <motion.span
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                        className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
-                      />
-                      削除中...
-                    </span>
-                  ) : (
-                    '削除する'
-                  )}
-                </Button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+              キャンセル
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="flex-1"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <span className="flex items-center gap-2">
+                  <motion.span
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
+                  />
+                  削除中...
+                </span>
+              ) : (
+                '削除する'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </motion.form>
   )
 })
