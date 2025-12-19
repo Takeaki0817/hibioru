@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface NotificationSettingsProps {
   initialSettings: NotificationSettingsType
@@ -203,16 +204,18 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
-            {error}
-          </div>
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         {/* 通知許可状態 */}
         {permission === 'denied' && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-yellow-700 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-400 text-sm">
-            通知が拒否されています。ブラウザの設定から通知を許可してください。
-          </div>
+          <Alert variant="warning" className="mb-4">
+            <AlertDescription>
+              通知が拒否されています。ブラウザの設定から通知を許可してください。
+            </AlertDescription>
+          </Alert>
         )}
 
         {/* 通知のオン/オフ */}

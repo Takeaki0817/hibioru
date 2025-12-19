@@ -9,6 +9,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Calendar } from '@/components/ui/calendar'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Popover,
   PopoverContent,
@@ -225,15 +226,15 @@ export function ExportSection() {
       </CardHeader>
       <CardContent>
         {error && (
-          <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded text-destructive text-sm">
-            {error}
-          </div>
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
         )}
 
         {message && (
-          <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded text-green-600 dark:bg-green-950 dark:border-green-800 dark:text-green-400 text-sm">
-            {message}
-          </div>
+          <Alert variant="success" className="mb-4">
+            <AlertDescription>{message}</AlertDescription>
+          </Alert>
         )}
 
         {/* エクスポート形式選択 */}
