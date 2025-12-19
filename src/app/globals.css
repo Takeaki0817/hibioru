@@ -292,3 +292,76 @@ body {
   line-height: 1.7;
   letter-spacing: 0.01em;
 }
+
+/* ========================================
+ * 月カレンダー専用スタイル (react-day-picker v9)
+ * @apply を使用してTailwindユーティリティを活用
+ * ======================================== */
+
+/* === レイアウト === */
+.calendar-month {
+  @apply min-h-[280px];
+}
+
+/* === 日付ボタン基本スタイル === */
+.calendar-day {
+  @apply relative rounded-none bg-transparent box-border;
+  font-variant-numeric: tabular-nums;
+  border: none !important;
+}
+
+/* === 連続記録の線 === */
+.streak-line::after {
+  @apply content-[''] absolute bottom-0.5 h-[3px] bg-primary-300 rounded-sm pointer-events-none;
+}
+
+.streak-start::after {
+  @apply left-1/2 right-0.5;
+}
+
+.streak-middle::after {
+  @apply left-0.5 right-0.5;
+}
+
+.streak-end::after {
+  @apply left-0.5 right-1/2;
+}
+
+.streak-single::after {
+  @apply left-[35%] right-[35%];
+}
+
+/* === ほつれアイコン === */
+.hotsure-icon {
+  @apply absolute -bottom-1 -right-1.5 leading-none pointer-events-none z-10;
+}
+
+/* === 日付の状態別スタイル === */
+.calendar-disabled {
+  @apply text-muted-foreground opacity-40 cursor-not-allowed;
+}
+
+.calendar-entry {
+  @apply font-bold text-primary-600;
+}
+
+/* 今日（選択されていない時はアクセントカラー） */
+.calendar-today:not(.calendar-selected) {
+  @apply !text-accent-400;
+}
+
+/* 選択中 */
+.calendar-selected {
+  @apply !text-primary !font-bold;
+}
+
+/* === 今日のドットインジケーター === */
+.today-dot {
+  @apply absolute top-0.5 left-1/2 -translate-x-1/2 size-[5px] rounded-full bg-accent-400 pointer-events-none;
+}
+
+/* === react-day-picker デフォルトスタイルの上書き === */
+/* 選択状態のデフォルトスタイルを無効化 */
+.rdp-selected .rdp-day_button {
+  @apply !border-none !bg-transparent !transform-none;
+}

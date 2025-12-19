@@ -15,6 +15,7 @@ const getTodayStr = () => format(new Date(), 'yyyy-MM-dd')
 
 export interface TimelineListProps {
   userId: string
+  initialDate?: Date
   onDateChange?: (date: Date) => void
   onActiveDatesChange?: (dates: Set<string>) => void
   scrollToDateRef?: React.MutableRefObject<((date: Date) => void) | null>
@@ -22,6 +23,7 @@ export interface TimelineListProps {
 
 export function TimelineList({
   userId,
+  initialDate,
   onDateChange,
   onActiveDatesChange,
   scrollToDateRef,
@@ -39,7 +41,10 @@ export function TimelineList({
   const initialScrollDone = useRef(false)
   const isLoadingMore = useRef(false)
 
-  const { entries, isLoading, isError, error, refetch, hasNextPage, fetchNextPage } = useTimeline({ userId })
+  const { entries, isLoading, isError, error, refetch, hasNextPage, fetchNextPage } = useTimeline({
+    userId,
+    initialDate,
+  })
 
   // 日付ごとにエントリをグループ化
   const groupedEntries = useMemo(() => {
@@ -60,14 +65,26 @@ export function TimelineList({
   }, [groupedEntries])
 
   // 表示する日付（最新のN日分のみ）
-  // 古い順にソートされているので、末尾からN件を取得
+  // initialDateが指定されている場合は、その日付から最新までを含める
   const displayedDates = useMemo(() => {
+    // initialDateが指定されている場合、その日付から最新までを表示
+    if (initialDate) {
+      const initialDateStr = format(initialDate, 'yyyy-MM-dd')
+      const initialIndex = allDates.indexOf(initialDateStr)
+      if (initialIndex !== -1) {
+        // initialDateから最新までの日付数を計算
+        const datesAfterInitial = allDates.length - initialIndex
+        const countNeeded = Math.max(datesAfterInitial, displayedDateCount)
+        return allDates.slice(-countNeeded)
+      }
+    }
+
+    // デフォルト：末尾からdisplayedDateCount件
     if (allDates.length <= displayedDateCount) {
       return allDates
     }
-    // 末尾からdisplayedDateCount件を取得
     return allDates.slice(-displayedDateCount)
-  }, [allDates, displayedDateCount])
+  }, [allDates, displayedDateCount, initialDate])
 
   // さらに古い日付があるか
   const hasMoreOlderDates = displayedDates.length < allDates.length || hasNextPage
@@ -107,23 +124,28 @@ export function TimelineList({
     }
   }, [allDates, activeDatesSet, onActiveDatesChange, entries.length])
 
-  // 初期表示時に最新日付（一番下）にスクロール
+  // 初期表示時にスクロール
+  // - initialDateが指定されている場合: その日付にスクロール
+  // - 指定されていない場合: 最新日付（一番下）にスクロール
   useEffect(() => {
     if (!initialScrollDone.current && displayedDates.length > 0 && containerRef.current) {
-      // 最新の日付（配列の最後）を取得
-      const newestDate = displayedDates[displayedDates.length - 1]
+      // initialDateが指定されている場合はその日付、なければ最新日付
+      const targetDate = initialDate
+        ? format(initialDate, 'yyyy-MM-dd')
+        : displayedDates[displayedDates.length - 1]
+
       // DOMが更新されるのを待ってからスクロール
       requestAnimationFrame(() => {
-        const element = dateRefs.current.get(newestDate)
+        const element = dateRefs.current.get(targetDate)
         if (element) {
           element.scrollIntoView({ behavior: 'instant', block: 'start' })
-          visibleDateRef.current = newestDate
-          setVisibleDate(newestDate)
+          visibleDateRef.current = targetDate
+          setVisibleDate(targetDate)
           initialScrollDone.current = true
         }
       })
     }
-  }, [displayedDates])
+  }, [displayedDates, initialDate])
 
   // Intersection Observerで可視日付を検出
   // 検出ライン: コンテナ上端から100pxの位置（1pxの高さ）
