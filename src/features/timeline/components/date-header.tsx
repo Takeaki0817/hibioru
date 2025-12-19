@@ -300,14 +300,14 @@ export function DateHeader({
   )
 
   return (
-    <header className="sticky top-0 z-10 flex h-[80px] items-center justify-between border-b border-border bg-background px-4 shadow-sm">
+    <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b border-border bg-background px-4 shadow-sm">
       {/* 左: ロゴ */}
       <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
         ヒビオル
       </span>
 
       {/* 中央: カルーセル日付 */}
-      <div className="relative flex h-10 w-[180px] items-center">
+      <div className="relative flex h-10 w-45 items-center">
         {/* 中央の固定マーカー（Sage Green） */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="h-8 w-9 rounded-lg bg-primary-400 dark:bg-primary-500" />
