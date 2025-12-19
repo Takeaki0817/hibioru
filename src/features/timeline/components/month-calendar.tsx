@@ -5,6 +5,7 @@ import { DayPicker, type DayButtonProps } from 'react-day-picker'
 import { ja } from 'date-fns/locale'
 import { format } from 'date-fns'
 import { Spool, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useCalendarData } from '../hooks/use-calendar-data'
 import 'react-day-picker/dist/style.css'
 
@@ -115,43 +116,49 @@ export function MonthCalendar({
 
       {/* カレンダー */}
       <div className="fixed left-1/2 top-1/2 z-40 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-6 shadow-xl">
-        {isLoading ? (
-          <div className="flex h-80 w-72 items-center justify-center">
-            <div className="text-muted-foreground">読み込み中...</div>
+        <div className="relative">
+          {/* スケルトンオーバーレイ */}
+          {isLoading && (
+            <div className="absolute inset-0 z-10 bg-card">
+              <Skeleton className="h-full w-full rounded bg-muted" />
+            </div>
+          )}
+
+          {/* DayPicker（常にレンダリングしてサイズを確保） */}
+          <div className={isLoading ? 'invisible' : ''}>
+            <DayPicker
+              mode="single"
+              selected={selectedDate}
+              month={displayMonth}
+              onMonthChange={setDisplayMonth}
+              onSelect={(date) => {
+                if (date) {
+                  onSelectDate(date)
+                  onClose()
+                }
+              }}
+              locale={ja}
+              disabled={noEntryDays}
+              fixedWeeks={true}
+              modifiers={{
+                entry: entryDays,
+                hotsure: hotsureDays,
+                streakStart: streakStartDays,
+                streakMiddle: streakMiddleDays,
+                streakEnd: streakEndDays,
+                streakSingle: streakSingleDays,
+                today: today ? [today] : [],
+              }}
+              components={{
+                DayButton: CustomDayButton,
+                Chevron: CustomChevron,
+              }}
+              classNames={{
+                month: 'calendar-month',
+              }}
+            />
           </div>
-        ) : (
-          <DayPicker
-            mode="single"
-            selected={selectedDate}
-            month={displayMonth}
-            onMonthChange={setDisplayMonth}
-            onSelect={(date) => {
-              if (date) {
-                onSelectDate(date)
-                onClose()
-              }
-            }}
-            locale={ja}
-            disabled={noEntryDays}
-            fixedWeeks={true}
-            modifiers={{
-              entry: entryDays,
-              hotsure: hotsureDays,
-              streakStart: streakStartDays,
-              streakMiddle: streakMiddleDays,
-              streakEnd: streakEndDays,
-              streakSingle: streakSingleDays,
-              today: today ? [today] : [],
-            }}
-            components={{
-              DayButton: CustomDayButton,
-              Chevron: CustomChevron,
-            }}
-            classNames={{
-              month: 'calendar-month',
-            }}
-          />
-        )}
+        </div>
 
         {/* 凡例 */}
         <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-border pt-4 text-sm text-muted-foreground">
