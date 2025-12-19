@@ -253,6 +253,17 @@
   /* フォント */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* カスタムスペーシング */
+  --spacing-45: 11.25rem;  /* 180px - カレンダー幅 */
+  --spacing-70: 17.5rem;   /* 280px - カレンダー最小高さ */
+
+  /* フォーカスリング幅 */
+  --ring-width-focus: 3px;
+
+  /* カスタムサイズ */
+  --size-streak-line: 3px;
+  --size-today-dot: 5px;
 }
 
 body {
@@ -300,7 +311,7 @@ body {
 
 /* === レイアウト === */
 .calendar-month {
-  @apply min-h-[280px];
+  @apply min-h-70;
 }
 
 /* === 日付ボタン基本スタイル === */
@@ -312,7 +323,7 @@ body {
 
 /* === 連続記録の線 === */
 .streak-line::after {
-  @apply content-[''] absolute bottom-0.5 h-[3px] bg-primary-300 rounded-sm pointer-events-none;
+  @apply content-[''] absolute bottom-0.5 h-(--size-streak-line) bg-primary-300 rounded-sm pointer-events-none;
 }
 
 .streak-start::after {
@@ -357,7 +368,7 @@ body {
 
 /* === 今日のドットインジケーター === */
 .today-dot {
-  @apply absolute top-0.5 left-1/2 -translate-x-1/2 size-[5px] rounded-full bg-accent-400 pointer-events-none;
+  @apply absolute top-0.5 left-1/2 -translate-x-1/2 size-(--size-today-dot) rounded-full bg-accent-400 pointer-events-none;
 }
 
 /* === react-day-picker デフォルトスタイルの上書き === */
