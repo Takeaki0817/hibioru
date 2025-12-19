@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useRef, useCallback, useTransition, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { format } from 'date-fns'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { DateHeader } from '@/features/timeline/components/date-header'
 import { MonthCalendar } from '@/features/timeline/components/month-calendar'
@@ -15,6 +17,8 @@ export interface TimelineClientProps {
 }
 
 export function TimelineClient({ userId, initialDate }: TimelineClientProps) {
+  const router = useRouter()
+
   // 初期日付を解析
   const parsedInitialDate = initialDate ? new Date(initialDate) : new Date()
   const [currentDate, setCurrentDate] = useState(parsedInitialDate)
@@ -39,15 +43,27 @@ export function TimelineClient({ userId, initialDate }: TimelineClientProps) {
   }, [initialDate])
 
   // ヘッダーの日付変更（カルーセルスライド）→ TimelineListをスクロール
-  const handleDateChange = useCallback((date: Date) => {
-    if (syncSourceRef.current === 'timeline') return // TimelineListからの同期中は無視
-    syncSourceRef.current = 'carousel'
-    setCurrentDate(date)
-    scrollToDateRef.current?.(date)
-    requestAnimationFrame(() => {
-      syncSourceRef.current = null
-    })
-  }, [])
+  const handleDateChange = useCallback(
+    (date: Date) => {
+      const dateStr = format(date, 'yyyy-MM-dd')
+
+      // 日付がタイムラインに読み込まれているか確認
+      if (activeDates.has(dateStr)) {
+        // 読み込み済み → スクロール
+        if (syncSourceRef.current === 'timeline') return
+        syncSourceRef.current = 'carousel'
+        setCurrentDate(date)
+        scrollToDateRef.current?.(date)
+        requestAnimationFrame(() => {
+          syncSourceRef.current = null
+        })
+      } else {
+        // 未読み込み → URLパラメータで遷移（ページがその日付から読み込み開始）
+        router.push(`/timeline?date=${dateStr}`)
+      }
+    },
+    [activeDates, router]
+  )
 
   // TimelineListのスクロールで日付が変わった時 → カルーセルも同期
   const handleScrollDateChange = useCallback((date: Date) => {
@@ -76,6 +92,7 @@ export function TimelineClient({ userId, initialDate }: TimelineClientProps) {
         <main className="flex-1 overflow-hidden">
           <TimelineList
             userId={userId}
+            initialDate={initialDate ? parsedInitialDate : undefined}
             onDateChange={handleScrollDateChange}
             onActiveDatesChange={setActiveDates}
             scrollToDateRef={scrollToDateRef}
