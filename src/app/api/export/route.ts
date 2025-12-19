@@ -121,8 +121,10 @@ function entriesToMarkdown(entries: Entry[]): string {
       markdown += `### ${time}\n\n`
       markdown += `${entry.content}\n\n`
 
-      if (entry.image_url) {
-        markdown += `![画像](${entry.image_url})\n\n`
+      if (entry.image_urls && entry.image_urls.length > 0) {
+        for (const [index, url] of entry.image_urls.entries()) {
+          markdown += `![画像${index + 1}](${url})\n\n`
+        }
       }
 
       markdown += '---\n\n'

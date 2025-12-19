@@ -1,23 +1,20 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import { ImagePlus } from 'lucide-react'
 import type { CompressedImage } from '@/features/entry/types'
 import { compressImage } from '@/features/entry/api/image-service'
-import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
+import { cn } from '@/lib/utils'
 
 interface ImageAttachmentProps {
-  image: CompressedImage | null
   onImageSelect: (image: CompressedImage) => void
-  onImageRemove: () => void
   disabled?: boolean
 }
 
 export function ImageAttachment({
-  image,
   onImageSelect,
-  onImageRemove,
-  disabled = false
+  disabled = false,
 }: ImageAttachmentProps) {
   const [isCompressing, setIsCompressing] = useState(false)
   const [progress, setProgress] = useState(0)
@@ -49,66 +46,44 @@ export function ImageAttachment({
     }
   }
 
-  const handleRemove = () => {
-    if (image?.previewUrl) {
-      URL.revokeObjectURL(image.previewUrl)
-    }
-    onImageRemove()
-  }
+  const isDisabled = disabled || isCompressing
 
   return (
     <div className="space-y-2">
-      {!image && (
-        <div>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleFileSelect}
-            disabled={disabled || isCompressing}
-            className="hidden"
-            id="image-upload"
-          />
-          <label
-            htmlFor="image-upload"
-            className="inline-flex items-center px-4 py-2 bg-secondary text-secondary-foreground hover:bg-secondary/80 rounded-lg cursor-pointer transition-colors"
-          >
-            {isCompressing ? '圧縮中...' : '画像を添付'}
-          </label>
-          {isCompressing && (
-            <div className="mt-2">
-              <Progress value={progress} className="w-full" />
-              <p className="text-sm text-muted-foreground mt-1">{Math.round(progress)}%</p>
-            </div>
+      {/* 画像添付ボタン */}
+      <div>
+        <input
+          ref={inputRef}
+          type="file"
+          accept="image/*"
+          onChange={handleFileSelect}
+          disabled={isDisabled}
+          className="hidden"
+          id="image-upload"
+        />
+        <label
+          htmlFor="image-upload"
+          className={cn(
+            'flex items-center justify-center w-20 h-20 rounded-lg transition-colors',
+            'bg-primary/10 hover:bg-primary/20',
+            isDisabled && 'opacity-50 cursor-not-allowed',
+            !isDisabled && 'cursor-pointer'
           )}
-        </div>
-      )}
+        >
+          {isCompressing ? (
+            <div className="flex flex-col items-center gap-1">
+              <div className="w-12">
+                <Progress value={progress} className="h-1" />
+              </div>
+              <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
+            </div>
+          ) : (
+            <ImagePlus size={24} className="text-primary" />
+          )}
+        </label>
+      </div>
 
-      {image && (
-        <div className="relative">
-          <img
-            src={image.previewUrl}
-            alt="プレビュー"
-            className="max-w-full rounded-lg"
-          />
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleRemove}
-            className="absolute top-2 right-2"
-          >
-            削除
-          </Button>
-          <p className="text-sm text-muted-foreground mt-2">
-            元サイズ: {(image.originalSize / 1024).toFixed(1)}KB →{' '}
-            圧縮後: {(image.compressedSize / 1024).toFixed(1)}KB
-          </p>
-        </div>
-      )}
-
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
+      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   )
 }

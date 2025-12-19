@@ -3,7 +3,7 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Trash2 } from 'lucide-react'
+import { Trash2, ImageOff, X } from 'lucide-react'
 import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
 import { createEntry, updateEntry, deleteEntry } from '@/features/entry/api/service'
@@ -12,7 +12,7 @@ import { saveDraft, loadDraft, clearDraft } from '@/features/entry/api/draft-sto
 import { MotionButton } from '@/components/ui/motion-button'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useEntryFormStore, selectCanSubmit } from '../stores/entry-form-store'
+import { useEntryFormStore, selectCanSubmit, selectCanAddImage } from '../stores/entry-form-store'
 
 // 外部から呼び出せるメソッド
 export interface EntryFormHandle {
@@ -63,7 +63,9 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 ) {
   // Zustandストアから状態とアクションを取得
   const content = useEntryFormStore((s) => s.content)
-  const image = useEntryFormStore((s) => s.image)
+  const images = useEntryFormStore((s) => s.images)
+  const existingImageUrls = useEntryFormStore((s) => s.existingImageUrls)
+  const removedImageUrls = useEntryFormStore((s) => s.removedImageUrls)
   const isSubmitting = useEntryFormStore((s) => s.isSubmitting)
   const isDeleting = useEntryFormStore((s) => s.isDeleting)
   const showDeleteConfirm = useEntryFormStore((s) => s.showDeleteConfirm)
@@ -71,9 +73,12 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   const isFocused = useEntryFormStore((s) => s.isFocused)
   const error = useEntryFormStore((s) => s.error)
   const canSubmit = useEntryFormStore(selectCanSubmit)
+  const canAddImage = useEntryFormStore(selectCanAddImage)
 
   const setContent = useEntryFormStore((s) => s.setContent)
-  const setImage = useEntryFormStore((s) => s.setImage)
+  const addImage = useEntryFormStore((s) => s.addImage)
+  const removeImage = useEntryFormStore((s) => s.removeImage)
+  const toggleExistingImageRemoval = useEntryFormStore((s) => s.toggleExistingImageRemoval)
   const setShowDeleteConfirm = useEntryFormStore((s) => s.setShowDeleteConfirm)
   const setFocused = useEntryFormStore((s) => s.setFocused)
   const submitStart = useEntryFormStore((s) => s.submitStart)
@@ -104,15 +109,15 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
       const draft = loadDraft()
       initialize(draft?.content || '')
     } else {
-      // 編集モード：既存コンテンツで初期化
-      initialize(initialEntry?.content || '')
+      // 編集モード：既存コンテンツと画像URLで初期化
+      initialize(initialEntry?.content || '', initialEntry?.image_urls || null)
     }
 
     // アンマウント時にリセット
     return () => {
       reset()
     }
-  }, [mode, initialEntry?.content, initialize, reset])
+  }, [mode, initialEntry?.content, initialEntry?.image_urls, initialize, reset])
 
   // 下書き自動保存（300msデバウンス、新規作成時のみ）
   useEffect(() => {
@@ -121,43 +126,59 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
     const timer = setTimeout(() => {
       saveDraft({
         content,
-        imagePreview: image?.previewUrl || null,
+        imagePreview: images[0]?.previewUrl || null,
         savedAt: new Date().toISOString(),
       })
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [content, image, mode])
+  }, [content, images, mode])
 
-  // textareaのauto-resize
+  // マウント時にtextareaにフォーカス
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
+    textareaRef.current?.focus()
+  }, [])
+
+  // キーボードショートカット（Command/Ctrl + Enter で送信）
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault()
+      if (canSubmit) {
+        formRef.current?.requestSubmit()
+      }
     }
-  }, [content])
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     submitStart()
 
     try {
-      // 画像アップロード
-      let imageUrl: string | null = initialEntry?.image_url || null
-      if (image) {
-        const uploadResult = await uploadImage(image.file, userId)
+      // 画像URL配列を構築
+      const imageUrls: string[] = []
+
+      // 新規画像をアップロード
+      for (const img of images) {
+        const uploadResult = await uploadImage(img.file, userId)
         if (!uploadResult.ok) {
           submitError(uploadResult.error.message)
           return
         }
-        imageUrl = uploadResult.value
+        imageUrls.push(uploadResult.value)
+      }
+
+      // 既存画像を維持（削除予定でないもの）
+      for (const url of existingImageUrls) {
+        if (!removedImageUrls.includes(url)) {
+          imageUrls.push(url)
+        }
       }
 
       // エントリ作成/更新
       const result =
         mode === 'create'
-          ? await createEntry({ content, imageUrl })
-          : await updateEntry(initialEntry!.id, { content, imageUrl })
+          ? await createEntry({ content, imageUrls: imageUrls.length > 0 ? imageUrls : null })
+          : await updateEntry(initialEntry!.id, { content, imageUrls: imageUrls.length > 0 ? imageUrls : null })
 
       if (!result.ok) {
         submitError(result.error.message)
@@ -177,7 +198,9 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
         if (onSuccess) {
           onSuccess()
         } else {
-          router.push('/')
+          // Server Action後のセッション同期のためrefreshを呼び出し
+          router.refresh()
+          router.push('/timeline')
         }
       }, 800)
     } catch (err) {
@@ -239,11 +262,12 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           onChange={(e) => setContent(e.target.value)}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
+          onKeyDown={handleKeyDown}
           placeholder="絵文字1つでもOK 🌟"
           className={cn(
-            'w-full resize-none border-none outline-none text-base p-4 min-h-32 rounded-xl',
+            'w-full min-h-full resize-none border-none outline-none text-base p-4 rounded-xl',
             'bg-transparent placeholder:text-muted-foreground/60',
-            'leading-relaxed'
+            'leading-relaxed overflow-y-auto'
           )}
           disabled={isSubmitting || isSuccess}
         />
@@ -292,13 +316,70 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
         </AnimatePresence>
       </div>
 
+      {/* 画像プレビュー行（画像がある場合のみ表示） */}
+      {(images.length > 0 || existingImageUrls.length > 0) && (
+        <div className="mt-4 flex gap-2 flex-wrap">
+          {/* 新規追加した画像 */}
+          {images.map((img, index) => (
+            <div key={`new-${index}`} className="relative w-20 h-20">
+              <img
+                src={img.previewUrl}
+                alt={`プレビュー ${index + 1}`}
+                className="w-20 h-20 rounded-lg object-cover"
+              />
+              <button
+                type="button"
+                onClick={() => removeImage(index)}
+                disabled={isSubmitting || isSuccess}
+                className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-white rounded-full flex items-center justify-center shadow-md hover:bg-destructive/90 disabled:opacity-50"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ))}
+
+          {/* 既存画像の表示（編集モード） */}
+          {existingImageUrls.map((url, index) => {
+            const isRemoved = removedImageUrls.includes(url)
+            return (
+              <div key={`existing-${index}`} className="relative w-20 h-20">
+                <img
+                  src={url}
+                  alt={`既存画像 ${index + 1}`}
+                  className="w-20 h-20 rounded-lg object-cover"
+                />
+                {isRemoved ? (
+                  // 削除予定のオーバーレイ
+                  <button
+                    type="button"
+                    onClick={() => toggleExistingImageRemoval(url)}
+                    disabled={isSubmitting || isSuccess}
+                    className="absolute inset-0 rounded-lg bg-black/60 flex items-center justify-center disabled:cursor-not-allowed"
+                  >
+                    <ImageOff size={24} className="text-accent-400" />
+                  </button>
+                ) : (
+                  // 削除ボタン
+                  <button
+                    type="button"
+                    onClick={() => toggleExistingImageRemoval(url)}
+                    disabled={isSubmitting || isSuccess}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-destructive text-white rounded-full flex items-center justify-center shadow-md hover:bg-destructive/90 disabled:opacity-50"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       {/* 画像添付 & 削除ボタン */}
       <div className="mt-4 flex items-center justify-between">
         <ImageAttachment
-          image={image}
-          onImageSelect={setImage}
-          onImageRemove={() => setImage(null)}
-          disabled={isSubmitting || isSuccess}
+          onImageSelect={addImage}
+          disabled={isSubmitting || isSuccess || !canAddImage}
         />
 
         {/* 削除ボタン（編集モードのみ） */}
@@ -308,14 +389,12 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
             onClick={() => setShowDeleteConfirm(true)}
             disabled={isSubmitting || isDeleting || isSuccess}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm',
-              'text-muted-foreground hover:text-destructive',
-              'hover:bg-destructive/10 transition-colors',
+              'flex items-center justify-center w-20 h-20 rounded-lg transition-colors',
+              'bg-accent/60 hover:bg-accent/70',
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
           >
-            <Trash2 className="w-4 h-4" />
-            <span>削除</span>
+            <Trash2 size={24} className="text-red-500" />
           </button>
         )}
       </div>
