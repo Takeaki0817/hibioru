@@ -4,23 +4,18 @@ import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cva } from 'class-variance-authority'
-import { Trash2, ImageOff, X } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
+import { SuccessOverlay } from './success-overlay'
+import { ImagePreviewGrid } from './image-preview-grid'
 import { createEntry, updateEntry, deleteEntry } from '@/features/entry/api/service'
 import { uploadImage } from '@/features/entry/api/image-service'
 import { saveDraft, loadDraft, clearDraft } from '@/features/entry/api/draft-storage'
 import { MotionButton } from '@/components/ui/motion-button'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from '@/components/ui/dialog'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { cn } from '@/lib/utils'
 import { useEntryFormStore, selectCanSubmit, selectCanAddImage } from '../stores/entry-form-store'
 
@@ -59,26 +54,6 @@ interface EntryFormProps {
   userId: string
   onSuccess?: () => void
   hideSubmitButton?: boolean
-}
-
-// 成功アニメーション
-const successVariants = {
-  initial: { scale: 0, opacity: 0 },
-  animate: {
-    scale: 1,
-    opacity: 1,
-    transition: { type: 'spring' as const, stiffness: 400, damping: 15 },
-  },
-  exit: { scale: 0, opacity: 0 },
-}
-
-// チェックマークのパスアニメーション
-const checkmarkVariants = {
-  initial: { pathLength: 0 },
-  animate: {
-    pathLength: 1,
-    transition: { duration: 0.4, ease: 'easeOut' as const },
-  },
 }
 
 // フォームのアニメーション
@@ -302,117 +277,19 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
         {/* 成功オーバーレイ */}
         <AnimatePresence>
-          {isSuccess && (
-            <motion.div
-              role="status"
-              aria-live="polite"
-              className="absolute inset-0 flex items-center justify-center bg-background/90 rounded-xl"
-              variants={successVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-            >
-              <span className="sr-only">記録が完了しました</span>
-              <div className="flex flex-col items-center gap-3">
-                <motion.div className="w-16 h-16 rounded-full bg-primary-400 flex items-center justify-center">
-                  <motion.svg
-                    width="32"
-                    height="32"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="white"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <motion.path
-                      d="M5 13l4 4L19 7"
-                      variants={checkmarkVariants}
-                      initial="initial"
-                      animate="animate"
-                    />
-                  </motion.svg>
-                </motion.div>
-                <motion.p
-                  className="text-primary-500 font-medium"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  記録しました！
-                </motion.p>
-              </div>
-            </motion.div>
-          )}
+          {isSuccess && <SuccessOverlay />}
         </AnimatePresence>
       </div>
 
-      {/* 画像プレビュー行（画像がある場合のみ表示） */}
-      {(images.length > 0 || existingImageUrls.length > 0) && (
-        <div className="mt-4 flex gap-2 flex-wrap">
-          {/* 新規追加した画像 */}
-          {images.map((img, index) => (
-            <div key={`new-${index}`} className="relative w-20 h-20">
-              <img
-                src={img.previewUrl}
-                alt={`プレビュー ${index + 1}`}
-                className="w-20 h-20 rounded-lg object-cover"
-              />
-              <Button
-                type="button"
-                variant="destructive"
-                size="icon-sm"
-                onClick={() => removeImage(index)}
-                disabled={isSubmitting || isSuccess}
-                aria-label={`画像${index + 1}を削除`}
-                className="absolute -top-2 -right-2 !size-6 rounded-full shadow-md"
-              >
-                <X size={14} />
-              </Button>
-            </div>
-          ))}
-
-          {/* 既存画像の表示（編集モード） */}
-          {existingImageUrls.map((url, index) => {
-            const isRemoved = removedImageUrls.includes(url)
-            return (
-              <div key={`existing-${index}`} className="relative w-20 h-20">
-                <img
-                  src={url}
-                  alt={`既存画像 ${index + 1}`}
-                  className="w-20 h-20 rounded-lg object-cover"
-                />
-                {isRemoved ? (
-                  // 削除予定のオーバーレイ
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => toggleExistingImageRemoval(url)}
-                    disabled={isSubmitting || isSuccess}
-                    aria-label={`画像${index + 1}の削除を取り消す`}
-                    className="absolute inset-0 rounded-lg bg-black/60 flex items-center justify-center disabled:cursor-not-allowed h-auto p-0"
-                  >
-                    <ImageOff size={24} className="text-accent-400" />
-                  </Button>
-                ) : (
-                  // 削除ボタン
-                  <Button
-                    type="button"
-                    variant="destructive"
-                    size="icon-sm"
-                    onClick={() => toggleExistingImageRemoval(url)}
-                    disabled={isSubmitting || isSuccess}
-                    aria-label={`画像${index + 1}を削除`}
-                    className="absolute -top-2 -right-2 !size-6 rounded-full shadow-md"
-                  >
-                    <X size={14} />
-                  </Button>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {/* 画像プレビュー行 */}
+      <ImagePreviewGrid
+        newImages={images}
+        existingImageUrls={existingImageUrls}
+        removedImageUrls={removedImageUrls}
+        onRemoveNewImage={removeImage}
+        onToggleExistingImageRemoval={toggleExistingImageRemoval}
+        disabled={isSubmitting || isSuccess}
+      />
 
       {/* 画像添付 & 削除ボタン */}
       <div className="mt-4 flex items-center justify-between">
@@ -480,48 +357,17 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
       )}
 
       {/* 削除確認ダイアログ */}
-      <Dialog
+      <ConfirmDialog
         open={showDeleteConfirm}
         onOpenChange={(open) => !isDeleting && setShowDeleteConfirm(open)}
-      >
-        <DialogContent showCloseButton={false} className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>記録を削除しますか？</DialogTitle>
-            <DialogDescription>この操作は取り消せません。</DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex gap-3 sm:justify-stretch">
-            <Button
-              type="button"
-              variant="outline"
-              className="flex-1"
-              onClick={() => setShowDeleteConfirm(false)}
-              disabled={isDeleting}
-            >
-              キャンセル
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              className="flex-1"
-              onClick={handleDelete}
-              disabled={isDeleting}
-            >
-              {isDeleting ? (
-                <span className="flex items-center gap-2">
-                  <motion.span
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-                    className="inline-block w-4 h-4 border-2 border-white/30 border-t-white rounded-full"
-                  />
-                  削除中...
-                </span>
-              ) : (
-                '削除する'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        title="記録を削除しますか？"
+        description="この操作は取り消せません。"
+        confirmLabel="削除する"
+        cancelLabel="キャンセル"
+        variant="destructive"
+        isLoading={isDeleting}
+        onConfirm={handleDelete}
+      />
     </motion.form>
   )
 })

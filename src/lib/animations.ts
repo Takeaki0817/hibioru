@@ -141,3 +141,34 @@ export const spinnerVariants: Variants = {
     },
   },
 }
+
+// === 週間ドットのアニメーション（ストリーク表示用） ===
+export const dotAnimationVariants: Variants = {
+  initial: { scale: 0 },
+  animate: {
+    scale: 1,
+    transition: { type: 'spring', stiffness: 400, damping: 15 },
+  },
+}
+
+// === 今日のドットパルス（ストリーク表示用） ===
+export const todayDotPulseVariants: Variants = {
+  animate: {
+    scale: [1, 1.2, 1],
+    opacity: [1, 0.7, 1],
+    transition: {
+      duration: 2,
+      repeat: Infinity,
+      ease: 'easeInOut',
+    },
+  },
+}
+
+// === 新記録ハイライト（ストリーク表示用） ===
+export const recordHighlightVariants: Variants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: [0, 0.3, 0],
+    transition: { duration: 1.5, repeat: Infinity },
+  },
+}

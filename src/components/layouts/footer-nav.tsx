@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { CalendarDays, MessageCirclePlus, User, Check, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { buttonVariants, strongButtonVariants } from '@/lib/animations'
 
 // 中央ボタンのカスタマイズ用props
 interface CenterButtonProps {
@@ -16,17 +17,6 @@ interface CenterButtonProps {
 
 interface FooterNavProps {
   centerButton?: CenterButtonProps
-}
-
-// ボタンのアニメーション
-const buttonVariants = {
-  tap: { scale: 0.95 },
-  hover: { scale: 1.05 },
-}
-
-const centerButtonVariants = {
-  tap: { scale: 0.92 },
-  hover: { scale: 1.08, y: -2 },
 }
 
 export function FooterNav({ centerButton }: FooterNavProps) {
@@ -65,7 +55,7 @@ export function FooterNav({ centerButton }: FooterNavProps) {
               return (
                 <motion.div
                   key="center-button"
-                  variants={!centerButton.disabled ? centerButtonVariants : undefined}
+                  variants={!centerButton.disabled ? strongButtonVariants : undefined}
                   whileTap={!centerButton.disabled ? 'tap' : undefined}
                   whileHover={!centerButton.disabled ? 'hover' : undefined}
                   className="relative -mt-6"
@@ -102,7 +92,7 @@ export function FooterNav({ centerButton }: FooterNavProps) {
             return (
               <motion.div
                 key={item.href}
-                variants={centerButtonVariants}
+                variants={strongButtonVariants}
                 whileTap="tap"
                 whileHover="hover"
                 className="relative -mt-6"
