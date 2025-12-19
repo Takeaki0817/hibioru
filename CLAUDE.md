@@ -21,6 +21,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **スタイリング**: Tailwind CSS v4
 - **UIコンポーネント**: shadcn/ui, Radix UI, Lucide Icons
 - **アニメーション**: framer-motion
+- **状態管理**: Zustand（フィーチャー内の stores/ ディレクトリ）
+- **データフェッチ**: TanStack Query (React Query)
 - **バックエンド/DB**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
 - **認証**: Google OAuth (Supabase Auth)
 - **ホスティング**: Vercel
@@ -41,6 +43,7 @@ pnpm lint
 # テスト
 pnpm test                    # 全テスト実行
 pnpm test:watch              # ウォッチモード
+pnpm test:coverage           # カバレッジ付き
 pnpm test -- path/to/test    # 単一テスト実行
 
 # Supabase（Docker）
@@ -109,6 +112,9 @@ src/features/{feature}/
 ├── api/                     # ビジネスロジック、Server Actions
 ├── components/              # 機能固有コンポーネント
 ├── hooks/                   # 機能固有フック
+├── stores/                  # Zustand ストア（Props Drilling解消用）
+│   ├── {feature}-store.ts
+│   └── __tests__/           # ストアのテスト
 ├── __tests__/               # テストファイル
 └── types.ts                 # 型定義
 ```
@@ -118,10 +124,12 @@ src/features/{feature}/
 - **ファイル命名**: kebab-case（`entry-form.tsx`, `use-timeline.ts`）
 - **バレルファイル禁止**: `index.ts`は使用しない。直接インポートを推奨
 - **Server/Client**: デフォルトはServer Component。インタラクティブな部分のみ`'use client'`
+- **状態管理**: Props Drillingを避け、Zustandストアを使用
 
 ```typescript
 // 良い例
 import { createEntry } from '@/features/entry/api/service'
+import { useTimelineStore } from '@/features/timeline/stores/timeline-store'
 
 // 避ける例
 import { createEntry } from '@/features/entry' // index.ts経由
