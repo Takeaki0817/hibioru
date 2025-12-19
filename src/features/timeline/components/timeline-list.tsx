@@ -6,6 +6,7 @@ import { useTimeline } from '../hooks/use-timeline'
 import { EntryCard } from './entry-card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useTimelineStore } from '../stores/timeline-store'
 
 // 1ページあたりの日付数
 const DATES_PER_PAGE = 5
@@ -17,7 +18,6 @@ export interface TimelineListProps {
   userId: string
   initialDate?: Date
   onDateChange?: (date: Date) => void
-  onActiveDatesChange?: (dates: Set<string>) => void
   scrollToDateRef?: React.MutableRefObject<((date: Date) => void) | null>
 }
 
@@ -25,9 +25,10 @@ export function TimelineList({
   userId,
   initialDate,
   onDateChange,
-  onActiveDatesChange,
   scrollToDateRef,
 }: TimelineListProps) {
+  // Zustandストアからアクティブ日付更新関数を取得
+  const setActiveDates = useTimelineStore((s) => s.setActiveDates)
   const containerRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const bottomSentinelRef = useRef<HTMLDivElement>(null)
@@ -125,16 +126,16 @@ export function TimelineList({
   // 記録がある日付のSet（メモ化）
   const activeDatesSet = useMemo(() => new Set(allDates), [allDates])
 
-  // 記録がある日付を親に通知
+  // 記録がある日付をストアに通知
   useEffect(() => {
-    if (onActiveDatesChange && entries.length > 0) {
+    if (entries.length > 0) {
       const dateList = allDates.join(',')
       if (dateList !== prevDatesRef.current) {
         prevDatesRef.current = dateList
-        onActiveDatesChange(activeDatesSet)
+        setActiveDates(activeDatesSet)
       }
     }
-  }, [allDates, activeDatesSet, onActiveDatesChange, entries.length])
+  }, [allDates, activeDatesSet, setActiveDates, entries.length])
 
   // 初期表示時にスクロール
   // - initialDateが指定されている場合: その日付にスクロール

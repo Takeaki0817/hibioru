@@ -7,23 +7,23 @@ import { format } from 'date-fns'
 import { Spool, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useCalendarData } from '../hooks/use-calendar-data'
+import { useTimelineStore } from '../stores/timeline-store'
 import 'react-day-picker/dist/style.css'
 
 export interface MonthCalendarProps {
   userId: string
-  isOpen: boolean
   selectedDate: Date
   onSelectDate: (date: Date) => void
-  onClose: () => void
 }
 
 export function MonthCalendar({
   userId,
-  isOpen,
   selectedDate,
   onSelectDate,
-  onClose,
 }: MonthCalendarProps) {
+  // Zustandストアからカレンダー開閉状態を取得
+  const isOpen = useTimelineStore((s) => s.isCalendarOpen)
+  const closeCalendar = useTimelineStore((s) => s.closeCalendar)
   // 表示中の月を管理（DayPickerの月切り替えに対応）
   const [displayMonth, setDisplayMonth] = useState(selectedDate)
 
@@ -112,7 +112,7 @@ export function MonthCalendar({
   return (
     <>
       {/* 背景オーバーレイ */}
-      <div className="fixed inset-0 z-30 bg-black/20" onClick={onClose} />
+      <div className="fixed inset-0 z-30 bg-black/20" onClick={closeCalendar} />
 
       {/* カレンダー */}
       <div className="fixed left-1/2 top-1/2 z-40 -translate-x-1/2 -translate-y-1/2 rounded-xl border border-border bg-card p-6 shadow-xl">
@@ -134,7 +134,7 @@ export function MonthCalendar({
               onSelect={(date) => {
                 if (date) {
                   onSelectDate(date)
-                  onClose()
+                  closeCalendar()
                 }
               }}
               locale={ja}
