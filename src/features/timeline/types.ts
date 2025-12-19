@@ -7,7 +7,7 @@ export interface TimelineEntry {
   id: string
   userId: string
   content: string
-  imageUrl: string | null
+  imageUrls: string[] | null
   createdAt: Date
   date: string // YYYY-MM-DD形式
 }
@@ -43,7 +43,7 @@ export function convertToTimelineEntry(entry: Entry): TimelineEntry {
     id: entry.id,
     userId: entry.user_id,
     content: entry.content,
-    imageUrl: entry.image_url,
+    imageUrls: entry.image_urls,
     createdAt,
     date,
   }
