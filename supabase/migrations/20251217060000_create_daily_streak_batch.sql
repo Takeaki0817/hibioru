@@ -20,8 +20,9 @@ DECLARE
   v_errors JSONB := '[]'::jsonb;
 BEGIN
   -- 日本時間で昨日と今日の日付を取得
-  v_yesterday := (CURRENT_DATE - INTERVAL '1 day') AT TIME ZONE 'Asia/Tokyo';
-  v_today := CURRENT_DATE AT TIME ZONE 'Asia/Tokyo';
+  -- NOW()をJSTに変換してから日付部分を取り出す
+  v_today := (NOW() AT TIME ZONE 'Asia/Tokyo')::date;
+  v_yesterday := v_today - 1;
 
   -- 前日に記録がない可能性のあるユーザーを対象
   -- (last_entry_date < 昨日 のユーザー、またはNULLのユーザー)

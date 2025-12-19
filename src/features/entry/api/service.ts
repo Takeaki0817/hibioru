@@ -5,6 +5,7 @@ import type { EntryInsert, EntryUpdate } from '@/lib/types/database'
 import type { Entry, CreateEntryInput, UpdateEntryInput, EntryError, Result } from '../types'
 import { isEditable } from '../utils'
 import { handleEntryCreated } from '@/features/notification/api/entry-integration'
+import { updateStreakOnEntry } from '@/features/streak/api/service'
 
 /**
  * 新規エントリを作成
@@ -55,6 +56,12 @@ export async function createEntry(
     }
 
     const entry = data as Entry
+
+    // ストリーク更新（エントリー作成成功後に非同期で実行）
+    // この処理の失敗はエントリー作成結果に影響しない
+    updateStreakOnEntry(userData.user.id).catch((err) => {
+      console.error('ストリーク更新に失敗しました:', err)
+    })
 
     // 通知連携処理（エントリー作成成功後に非同期で実行）
     // この処理の失敗はエントリー作成結果に影響しない

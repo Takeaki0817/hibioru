@@ -191,6 +191,59 @@ export async function hasEntryOnDate(
 }
 
 /**
+ * 今週（月〜日）の記録有無を取得
+ * @returns [月, 火, 水, 木, 金, 土, 日] の boolean 配列
+ */
+export async function getWeeklyRecords(
+  userId: string
+): Promise<Result<boolean[], StreakError>> {
+  try {
+    const today = getJSTToday()
+    const todayDate = new Date(`${today}T00:00:00+09:00`)
+
+    // 今日の曜日（0=月曜, 6=日曜）
+    const dayOfWeek = (todayDate.getUTCDay() + 6) % 7
+
+    // 今週の月曜日を計算
+    const mondayDate = new Date(todayDate)
+    mondayDate.setUTCDate(mondayDate.getUTCDate() - dayOfWeek)
+
+    // 月〜日の7日分の日付配列を生成
+    const weekDates: string[] = []
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(mondayDate)
+      date.setUTCDate(date.getUTCDate() + i)
+      weekDates.push(date.toISOString().split('T')[0])
+    }
+
+    // 各日付の記録有無を並行取得
+    const results = await Promise.all(
+      weekDates.map(date => hasEntryOnDate(userId, date))
+    )
+
+    // エラーチェック
+    for (const result of results) {
+      if (!result.ok) {
+        return result as Result<boolean[], StreakError>
+      }
+    }
+
+    return {
+      ok: true,
+      value: results.map(r => (r as { ok: true; value: boolean }).value)
+    }
+  } catch (error) {
+    return {
+      ok: false,
+      error: {
+        code: 'DB_ERROR',
+        message: error instanceof Error ? error.message : '不明なエラー'
+      }
+    }
+  }
+}
+
+/**
  * ストリークを途切れさせる（current_streakを0にリセット）
  */
 export async function breakStreak(

@@ -8,7 +8,7 @@ import { AppearanceSection } from '@/features/mypage/components/appearance-secti
 import { ExportSection } from '@/features/mypage/components/export-section'
 import { LogoutButton } from '@/features/mypage/components/logout-button'
 import { FooterNav } from '@/components/layouts/footer-nav'
-import { getStreakInfo } from '@/features/streak/api/service'
+import { getStreakInfo, getWeeklyRecords } from '@/features/streak/api/service'
 import { getNotificationSettings } from '@/features/notification/api/service'
 
 export default async function MypagePage() {
@@ -21,13 +21,17 @@ export default async function MypagePage() {
   }
 
   // 実際のストリーク・ほつれデータをDBから取得
-  const streakResult = await getStreakInfo(user.id)
+  const [streakResult, weeklyResult] = await Promise.all([
+    getStreakInfo(user.id),
+    getWeeklyRecords(user.id),
+  ])
   const stats = {
     currentStreak: streakResult.ok ? streakResult.value.currentStreak : 0,
     longestStreak: streakResult.ok ? streakResult.value.longestStreak : 0,
     hotsureRemaining: streakResult.ok ? streakResult.value.hotsureRemaining : 2,
     hotsureMax: 2,
   }
+  const weeklyRecords = weeklyResult.ok ? weeklyResult.value : undefined
 
   // 通知設定を取得
   const notificationResult = await getNotificationSettings(user.id)
@@ -55,6 +59,7 @@ export default async function MypagePage() {
             <StreakDisplay
               currentStreak={stats.currentStreak}
               longestStreak={stats.longestStreak}
+              weeklyRecords={weeklyRecords}
             />
             <HotsureDisplay
               remaining={stats.hotsureRemaining}
