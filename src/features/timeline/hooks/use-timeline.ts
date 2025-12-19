@@ -22,9 +22,13 @@ export interface UseTimelineReturn {
   refetch: () => Promise<void>
 }
 
-export function useTimeline(
-  options: UseTimelineOptions
-): UseTimelineReturn {
+// ページパラメータの型（双方向ページネーション用）
+interface PageParam {
+  cursor: string | undefined
+  direction: 'before' | 'after'
+}
+
+export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
   const { userId, initialDate, pageSize = 20 } = options
 
   // initialDateが指定されている場合、その日付の翌日0:00をcursorとして使用
@@ -46,19 +50,30 @@ export function useTimeline(
     isError,
     error,
     hasNextPage,
+    hasPreviousPage,
     fetchNextPage,
+    fetchPreviousPage,
     refetch,
   } = useInfiniteQuery({
     queryKey: ['timeline', userId, initialCursor],
     queryFn: ({ pageParam }) =>
       fetchEntries({
         userId,
-        cursor: pageParam,
+        cursor: pageParam.cursor,
         limit: pageSize,
-        direction: 'before',
+        direction: pageParam.direction,
       }),
-    getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: initialCursor,
+    // 過去方向（古いデータ）
+    getNextPageParam: (lastPage) =>
+      lastPage.nextCursor
+        ? { cursor: lastPage.nextCursor, direction: 'before' as const }
+        : undefined,
+    // 未来方向（新しいデータ）
+    getPreviousPageParam: (firstPage) =>
+      firstPage.prevCursor
+        ? { cursor: firstPage.prevCursor, direction: 'after' as const }
+        : undefined,
+    initialPageParam: { cursor: initialCursor, direction: 'before' } as PageParam,
   })
 
   // 全ページのentriesをフラット化
@@ -70,12 +85,12 @@ export function useTimeline(
     isError,
     error: error as Error | null,
     hasNextPage: hasNextPage ?? false,
-    hasPreviousPage: false, // 今日から過去へのスクロールのみ
+    hasPreviousPage: hasPreviousPage ?? false,
     fetchNextPage: async () => {
       await fetchNextPage()
     },
     fetchPreviousPage: async () => {
-      // 今回は実装しない（今日から過去へのスクロールのみ）
+      await fetchPreviousPage()
     },
     refetch: async () => {
       await refetch()
