@@ -30,18 +30,30 @@ export function TimelineList({
 }: TimelineListProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
+  const bottomSentinelRef = useRef<HTMLDivElement>(null)
   const todayStr = useMemo(() => getTodayStr(), [])
   const [_visibleDate, setVisibleDate] = useState<string>(todayStr)
   const dateRefs = useRef<Map<string, HTMLDivElement>>(new Map())
   const observerRef = useRef<IntersectionObserver | null>(null)
   const topObserverRef = useRef<IntersectionObserver | null>(null)
+  const bottomObserverRef = useRef<IntersectionObserver | null>(null)
   const prevDatesRef = useRef<string>('')
   const visibleDateRef = useRef<string>(todayStr)
   const [displayedDateCount, setDisplayedDateCount] = useState(DATES_PER_PAGE)
   const initialScrollDone = useRef(false)
   const isLoadingMore = useRef(false)
 
-  const { entries, isLoading, isError, error, refetch, hasNextPage, fetchNextPage } = useTimeline({
+  const {
+    entries,
+    isLoading,
+    isError,
+    error,
+    refetch,
+    hasNextPage,
+    hasPreviousPage,
+    fetchNextPage,
+    fetchPreviousPage,
+  } = useTimeline({
     userId,
     initialDate,
   })
@@ -237,6 +249,35 @@ export function TimelineList({
     }
   }, [displayedDates, allDates, hasMoreOlderDates, hasNextPage, fetchNextPage])
 
+  // 下端検出: 最新データを追加読み込み
+  useEffect(() => {
+    const container = containerRef.current
+    const sentinel = bottomSentinelRef.current
+    if (!container || !sentinel || !hasPreviousPage) return
+
+    bottomObserverRef.current = new IntersectionObserver(
+      async (observerEntries) => {
+        const entry = observerEntries[0]
+        if (entry.isIntersecting && !isLoadingMore.current) {
+          isLoadingMore.current = true
+          await fetchPreviousPage()
+          isLoadingMore.current = false
+        }
+      },
+      {
+        root: container,
+        rootMargin: '0px 0px 100px 0px',
+        threshold: 0,
+      }
+    )
+
+    bottomObserverRef.current.observe(sentinel)
+
+    return () => {
+      bottomObserverRef.current?.disconnect()
+    }
+  }, [hasPreviousPage, fetchPreviousPage])
+
   // 日付divのref設定
   const setDateRef = useCallback(
     (dateKey: string) => (element: HTMLDivElement | null) => {
@@ -320,6 +361,16 @@ export function TimelineList({
           </div>
         )
       })}
+
+      {/* 下端検出用センチネル（最新データの読み込み） */}
+      {hasPreviousPage && (
+        <>
+          <div className="flex justify-center py-4 text-sm text-muted-foreground">
+            下にスクロールで最新の記録を読み込み
+          </div>
+          <div ref={bottomSentinelRef} className="h-1" />
+        </>
+      )}
     </div>
   )
 }
