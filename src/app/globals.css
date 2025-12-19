@@ -295,109 +295,73 @@ body {
 
 /* ========================================
  * 月カレンダー専用スタイル (react-day-picker v9)
- * classNamesプロパティで制御、!importantは最小限
+ * @apply を使用してTailwindユーティリティを活用
  * ======================================== */
 
 /* === レイアウト === */
 .calendar-month {
-  min-height: 280px;
+  @apply min-h-[280px];
 }
 
 /* === 日付ボタン基本スタイル === */
 .calendar-day {
-  position: relative;
-  border: none !important;
-  border-radius: 0;
-  background: transparent;
+  @apply relative rounded-none bg-transparent box-border;
   font-variant-numeric: tabular-nums;
-  box-sizing: border-box;
+  border: none !important;
 }
 
 /* === 連続記録の線 === */
 .streak-line::after {
-  content: '';
-  position: absolute;
-  bottom: 2px;
-  height: 3px;
-  background-color: var(--primary-300);
-  border-radius: 1.5px;
-  pointer-events: none;
+  @apply content-[''] absolute bottom-0.5 h-[3px] bg-primary-300 rounded-sm pointer-events-none;
 }
 
 .streak-start::after {
-  left: 50%;
-  right: 2px;
+  @apply left-1/2 right-0.5;
 }
 
 .streak-middle::after {
-  left: 2px;
-  right: 2px;
+  @apply left-0.5 right-0.5;
 }
 
 .streak-end::after {
-  left: 2px;
-  right: 50%;
+  @apply left-0.5 right-1/2;
 }
 
 .streak-single::after {
-  left: 35%;
-  right: 35%;
+  @apply left-[35%] right-[35%];
 }
 
 /* === ほつれアイコン === */
 .hotsure-icon {
-  position: absolute;
-  bottom: -4px;
-  right: -6px;
-  line-height: 1;
-  pointer-events: none;
-  z-index: 10;
+  @apply absolute -bottom-1 -right-1.5 leading-none pointer-events-none z-10;
 }
 
 /* === 日付の状態別スタイル === */
 .calendar-disabled {
-  color: var(--muted-foreground);
-  opacity: 0.4;
-  cursor: not-allowed;
+  @apply text-muted-foreground opacity-40 cursor-not-allowed;
 }
 
 .calendar-entry {
-  font-weight: 700;
-  color: var(--primary-600);
+  @apply font-bold text-primary-600;
 }
 
 /* 今日（選択されていない時はアクセントカラー） */
 .calendar-today:not(.calendar-selected) {
-  color: var(--accent-400) !important;
+  @apply !text-accent-400;
 }
 
 /* 選択中 */
 .calendar-selected {
-  color: var(--primary) !important;
-  font-weight: 700 !important;
+  @apply !text-primary !font-bold;
 }
 
 /* === 今日のドットインジケーター === */
 .today-dot {
-  position: absolute;
-  top: 2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background-color: var(--accent-400);
-  pointer-events: none;
+  @apply absolute top-0.5 left-1/2 -translate-x-1/2 size-[5px] rounded-full bg-accent-400 pointer-events-none;
 }
 
 /* === react-day-picker デフォルトスタイルの上書き === */
 /* 選択状態のデフォルトスタイルを無効化 */
-.rdp-selected {
-  font-size: inherit !important;
-}
-
 .rdp-selected .rdp-day_button {
-  border: none !important;
-  background: transparent !important;
-  transform: none !important;
+  @apply !border-none !bg-transparent !transform-none;
 }
