@@ -3,6 +3,7 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
+import { cva } from 'class-variance-authority'
 import { Trash2, ImageOff, X } from 'lucide-react'
 import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
@@ -13,6 +14,30 @@ import { MotionButton } from '@/components/ui/motion-button'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useEntryFormStore, selectCanSubmit, selectCanAddImage } from '../stores/entry-form-store'
+
+// CVAバリアント定義 - フォームコンテナ
+const formContainerVariants = cva(
+  'relative flex-1 rounded-xl border-2 transition-all duration-200',
+  {
+    variants: {
+      state: {
+        default: 'border-border',
+        focused: 'border-primary-300 shadow-[0_0_0_4px] shadow-primary-100 dark:shadow-primary-900/30',
+        success: 'border-primary-400',
+      },
+    },
+    defaultVariants: {
+      state: 'default',
+    },
+  }
+)
+
+// フォーム状態を決定するヘルパー関数
+function getFormState(isFocused: boolean, isSuccess: boolean): 'default' | 'focused' | 'success' {
+  if (isSuccess) return 'success'
+  if (isFocused) return 'focused'
+  return 'default'
+}
 
 // 外部から呼び出せるメソッド
 export interface EntryFormHandle {
@@ -247,15 +272,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
       </div>
 
       {/* テキストエリア */}
-      <div
-        className={cn(
-          'relative flex-1 rounded-xl border-2 transition-all duration-200',
-          isFocused
-            ? 'border-primary-300 shadow-[0_0_0_4px] shadow-primary-100 dark:shadow-primary-900/30'
-            : 'border-border',
-          isSuccess && 'border-primary-400'
-        )}
-      >
+      <div className={formContainerVariants({ state: getFormState(isFocused, isSuccess) })}>
         <textarea
           ref={textareaRef}
           value={content}

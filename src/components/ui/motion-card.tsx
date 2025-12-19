@@ -2,20 +2,40 @@
 
 import * as React from 'react'
 import { motion, type HTMLMotionProps } from 'framer-motion'
+import { cva, type VariantProps } from 'class-variance-authority'
 
 import { cn } from '@/lib/utils'
+import { springs } from '@/lib/animations'
 
 /**
  * MotionCard - Framer Motionを使用したアニメーション付きカード
  * ADHDユーザー向けの心地よいフィードバックを提供
  */
 
-// スプリングアニメーション設定
-const springTransition = {
-  type: 'spring' as const,
-  stiffness: 400,
-  damping: 30,
-}
+// CVAバリアント定義
+const motionCardVariants = cva(
+  'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',
+  {
+    variants: {
+      interactive: {
+        true: 'cursor-pointer',
+        false: '',
+      },
+      accentColor: {
+        none: '',
+        primary: 'border-l-4 border-l-primary-400',
+        accent: 'border-l-4 border-l-accent-300',
+        reward: 'border-l-4 border-l-reward-400',
+        warning: 'border-l-4 border-l-warning-400',
+        danger: 'border-l-4 border-l-danger-400',
+      },
+    },
+    defaultVariants: {
+      interactive: false,
+      accentColor: 'none',
+    },
+  }
+)
 
 // ホバーアニメーション設定（軽いリフトアップ）
 const hoverAnimation = {
@@ -29,18 +49,17 @@ const tapAnimation = {
   y: 0,
 }
 
-type MotionCardProps = Omit<HTMLMotionProps<'div'>, 'ref' | 'children'> & {
-  // インタラクティブカード（ホバー/タップエフェクト有効）
-  interactive?: boolean
-  // アニメーション無効化オプション（reduced-motion対応）
-  disableAnimation?: boolean
-  // 左ボーダーアクセント（エントリカード用）
-  accentBorder?: boolean
-  // アクセントカラー
-  accentColor?: 'primary' | 'accent' | 'reward' | 'warning' | 'danger'
-  // children
-  children?: React.ReactNode
-}
+type MotionCardProps = Omit<HTMLMotionProps<'div'>, 'ref' | 'children'> &
+  Omit<VariantProps<typeof motionCardVariants>, 'accentColor'> & {
+    // アニメーション無効化オプション（reduced-motion対応）
+    disableAnimation?: boolean
+    // 左ボーダーアクセント（エントリカード用）
+    accentBorder?: boolean
+    // アクセントカラー
+    accentColor?: 'primary' | 'accent' | 'reward' | 'warning' | 'danger'
+    // children
+    children?: React.ReactNode
+  }
 
 const MotionCard = React.forwardRef<HTMLDivElement, MotionCardProps>(
   (
@@ -55,21 +74,14 @@ const MotionCard = React.forwardRef<HTMLDivElement, MotionCardProps>(
     },
     ref
   ) => {
-    // アクセントボーダーのカラークラス
-    const accentBorderClass = accentBorder
-      ? {
-          primary: 'border-l-4 border-l-primary-400',
-          accent: 'border-l-4 border-l-accent-300',
-          reward: 'border-l-4 border-l-reward-400',
-          warning: 'border-l-4 border-l-warning-400',
-          danger: 'border-l-4 border-l-danger-400',
-        }[accentColor]
-      : ''
+    // accentBorderがfalseの場合はnone、trueの場合は指定されたaccentColorを使用
+    const resolvedAccentColor = accentBorder ? accentColor : 'none'
 
     const baseClassName = cn(
-      'bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm',
-      accentBorderClass,
-      interactive && 'cursor-pointer',
+      motionCardVariants({
+        interactive,
+        accentColor: resolvedAccentColor,
+      }),
       className
     )
 
@@ -89,7 +101,7 @@ const MotionCard = React.forwardRef<HTMLDivElement, MotionCardProps>(
         className={baseClassName}
         whileHover={hoverAnimation}
         whileTap={tapAnimation}
-        transition={springTransition}
+        transition={springs.subtle}
         {...props}
       >
         {children}
