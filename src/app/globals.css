@@ -292,3 +292,112 @@ body {
   line-height: 1.7;
   letter-spacing: 0.01em;
 }
+
+/* ========================================
+ * 月カレンダー専用スタイル (react-day-picker v9)
+ * classNamesプロパティで制御、!importantは最小限
+ * ======================================== */
+
+/* === レイアウト === */
+.calendar-month {
+  min-height: 280px;
+}
+
+/* === 日付ボタン基本スタイル === */
+.calendar-day {
+  position: relative;
+  border: none !important;
+  border-radius: 0;
+  background: transparent;
+  font-variant-numeric: tabular-nums;
+  box-sizing: border-box;
+}
+
+/* === 連続記録の線 === */
+.streak-line::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  height: 3px;
+  background-color: var(--primary-300);
+  border-radius: 1.5px;
+  pointer-events: none;
+}
+
+.streak-start::after {
+  left: 50%;
+  right: 2px;
+}
+
+.streak-middle::after {
+  left: 2px;
+  right: 2px;
+}
+
+.streak-end::after {
+  left: 2px;
+  right: 50%;
+}
+
+.streak-single::after {
+  left: 35%;
+  right: 35%;
+}
+
+/* === ほつれアイコン === */
+.hotsure-icon {
+  position: absolute;
+  bottom: -4px;
+  right: -6px;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* === 日付の状態別スタイル === */
+.calendar-disabled {
+  color: var(--muted-foreground);
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.calendar-entry {
+  font-weight: 700;
+  color: var(--primary-600);
+}
+
+/* 今日（選択されていない時はアクセントカラー） */
+.calendar-today:not(.calendar-selected) {
+  color: var(--accent-400) !important;
+}
+
+/* 選択中 */
+.calendar-selected {
+  color: var(--primary) !important;
+  font-weight: 700 !important;
+}
+
+/* === 今日のドットインジケーター === */
+.today-dot {
+  position: absolute;
+  top: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--accent-400);
+  pointer-events: none;
+}
+
+/* === react-day-picker デフォルトスタイルの上書き === */
+/* 選択状態のデフォルトスタイルを無効化 */
+.rdp-selected {
+  font-size: inherit !important;
+}
+
+.rdp-selected .rdp-day_button {
+  border: none !important;
+  background: transparent !important;
+  transform: none !important;
+}
