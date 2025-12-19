@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import type { TimelineEntry } from '../types'
@@ -9,6 +9,18 @@ import { cn } from '@/lib/utils'
 
 export interface EntryCardProps {
   entry: TimelineEntry
+}
+
+// EntryCardのprops比較関数
+function areEntryPropsEqual(prevProps: EntryCardProps, nextProps: EntryCardProps): boolean {
+  const prev = prevProps.entry
+  const next = nextProps.entry
+  return (
+    prev.id === next.id &&
+    prev.content === next.content &&
+    prev.imageUrl === next.imageUrl &&
+    prev.createdAt.getTime() === next.createdAt.getTime()
+  )
 }
 
 // カードのアニメーション設定
@@ -40,7 +52,7 @@ function isEmojiOnly(content: string): boolean {
   return trimmed.length <= 20 && emojiRegex.test(trimmed)
 }
 
-export function EntryCard({ entry }: EntryCardProps) {
+export const EntryCard = memo(function EntryCard({ entry }: EntryCardProps) {
   const router = useRouter()
   const [showMenu, setShowMenu] = useState(false)
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
@@ -148,4 +160,4 @@ export function EntryCard({ entry }: EntryCardProps) {
       )}
     </>
   )
-}
+}, areEntryPropsEqual)
