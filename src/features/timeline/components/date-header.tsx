@@ -306,7 +306,7 @@ export function DateHeader({
       </span>
 
       {/* 中央: カルーセル日付 */}
-      <div className="relative w-[180px]">
+      <div className="relative flex h-10 w-[180px] items-center">
         {/* 中央の固定マーカー（Sage Green） */}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div className="h-8 w-9 rounded-lg bg-primary-400 dark:bg-primary-500" />
