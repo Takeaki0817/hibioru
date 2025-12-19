@@ -30,7 +30,7 @@ export interface Database {
           id: string
           user_id: string
           content: string
-          image_url: string | null
+          image_urls: string[] | null
           is_public: boolean
           is_deleted: boolean
           created_at: string
@@ -40,7 +40,7 @@ export interface Database {
           id?: string
           user_id: string
           content: string
-          image_url?: string | null
+          image_urls?: string[] | null
           is_public?: boolean
           is_deleted?: boolean
           created_at?: string
@@ -48,7 +48,7 @@ export interface Database {
         }
         Update: {
           content?: string
-          image_url?: string | null
+          image_urls?: string[] | null
           is_public?: boolean
           is_deleted?: boolean
           updated_at?: string

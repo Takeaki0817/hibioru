@@ -6,12 +6,12 @@ export type { Entry }
 
 export interface CreateEntryInput {
   content: string
-  imageUrl: string | null
+  imageUrls: string[] | null
 }
 
 export interface UpdateEntryInput {
   content: string
-  imageUrl: string | null
+  imageUrls: string[] | null
 }
 
 export interface CompressedImage {
