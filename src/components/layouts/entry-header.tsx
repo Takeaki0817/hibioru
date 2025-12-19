@@ -4,15 +4,11 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { buttonVariants } from '@/lib/animations'
 
 interface EntryHeaderProps {
   title?: string
   onClose?: () => void
-}
-
-const buttonVariants = {
-  tap: { scale: 0.9 },
-  hover: { scale: 1.05 },
 }
 
 export function EntryHeader({ title, onClose }: EntryHeaderProps) {

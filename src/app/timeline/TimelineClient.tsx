@@ -116,7 +116,7 @@ function TimelineContent({
   )
 
   return (
-    <div className="flex h-dvh flex-col">
+    <div className="flex h-dvh flex-col overflow-hidden">
       <DateHeader
         currentDate={currentDate}
         activeDates={activeDates}

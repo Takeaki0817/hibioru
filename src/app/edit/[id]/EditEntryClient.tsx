@@ -4,6 +4,7 @@ import { useRef, useCallback } from 'react'
 import { Check } from 'lucide-react'
 import { EntryHeader } from '@/components/layouts/entry-header'
 import { FooterNav } from '@/components/layouts/footer-nav'
+import { PageLayout } from '@/components/layouts/page-layout'
 import { EntryForm, type EntryFormHandle } from '@/features/entry/components/entry-form'
 import { useEntryFormStore, selectCanSubmit } from '@/features/entry/stores/entry-form-store'
 import type { Entry } from '@/lib/types/database'
@@ -25,9 +26,20 @@ export function EditEntryClient({ entry, userId }: EditEntryClientProps) {
   }, [])
 
   return (
-    <div className="flex h-dvh flex-col">
-      <EntryHeader title="編集" />
-
+    <PageLayout
+      header={<EntryHeader title="編集" />}
+      footer={
+        <FooterNav
+          centerButton={{
+            icon: Check,
+            onClick: handleSubmit,
+            disabled: !canSubmit,
+            isLoading: isSubmitting,
+          }}
+        />
+      }
+      wrapWithMain={false}
+    >
       <EntryForm
         ref={formRef}
         mode="edit"
@@ -35,15 +47,6 @@ export function EditEntryClient({ entry, userId }: EditEntryClientProps) {
         userId={userId}
         hideSubmitButton
       />
-
-      <FooterNav
-        centerButton={{
-          icon: Check,
-          onClick: handleSubmit,
-          disabled: !canSubmit,
-          isLoading: isSubmitting,
-        }}
-      />
-    </div>
+    </PageLayout>
   )
 }

@@ -5,6 +5,7 @@ import { format } from 'date-fns'
 import { X, ClockAlert } from 'lucide-react'
 import { EntryHeader } from '@/components/layouts/entry-header'
 import { FooterNav } from '@/components/layouts/footer-nav'
+import { PageLayout } from '@/components/layouts/page-layout'
 
 interface NotEditableClientProps {
   entryDate: string // ISO形式の日付
@@ -20,25 +21,25 @@ export function NotEditableClient({ entryDate }: NotEditableClientProps) {
   }, [dateParam])
 
   return (
-    <div className="flex h-dvh flex-col">
-      <EntryHeader title="編集" onClose={handleClose} />
-
-      <main className="flex-1 flex items-center justify-center p-4">
-        <div className="text-center">
-          <ClockAlert className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-xl font-bold mb-2">編集できません</h2>
-          <p className="text-muted-foreground">
-            編集可能期間（24時間）を過ぎています
-          </p>
-        </div>
-      </main>
-
-      <FooterNav
-        centerButton={{
-          icon: X,
-          onClick: handleClose,
-        }}
-      />
-    </div>
+    <PageLayout
+      header={<EntryHeader title="編集" onClose={handleClose} />}
+      footer={
+        <FooterNav
+          centerButton={{
+            icon: X,
+            onClick: handleClose,
+          }}
+        />
+      }
+      mainClassName="flex items-center justify-center p-4"
+    >
+      <div className="text-center">
+        <ClockAlert className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+        <h2 className="text-xl font-bold mb-2">編集できません</h2>
+        <p className="text-muted-foreground">
+          編集可能期間（24時間）を過ぎています
+        </p>
+      </div>
+    </PageLayout>
   )
 }
