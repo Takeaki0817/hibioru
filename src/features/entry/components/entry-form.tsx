@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Trash2 } from 'lucide-react'
-import type { Entry, CompressedImage } from '@/features/entry/types'
+import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
 import { createEntry, updateEntry, deleteEntry } from '@/features/entry/api/service'
 import { uploadImage } from '@/features/entry/api/image-service'
@@ -12,17 +12,11 @@ import { saveDraft, loadDraft, clearDraft } from '@/features/entry/api/draft-sto
 import { MotionButton } from '@/components/ui/motion-button'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useEntryFormStore, selectCanSubmit } from '../stores/entry-form-store'
 
 // 外部から呼び出せるメソッド
 export interface EntryFormHandle {
   submit: () => void
-}
-
-// 状態変更コールバック
-export interface EntryFormState {
-  isSubmitting: boolean
-  canSubmit: boolean
-  isSuccess: boolean
 }
 
 interface EntryFormProps {
@@ -31,7 +25,6 @@ interface EntryFormProps {
   userId: string
   onSuccess?: () => void
   hideSubmitButton?: boolean
-  onStateChange?: (state: EntryFormState) => void
 }
 
 // 成功アニメーション
@@ -65,23 +58,35 @@ const formVariants = {
 }
 
 export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function EntryForm(
-  { mode, initialEntry, userId, onSuccess, hideSubmitButton, onStateChange },
+  { mode, initialEntry, userId, onSuccess, hideSubmitButton },
   ref
 ) {
-  const [content, setContent] = useState(initialEntry?.content || '')
-  const [image, setImage] = useState<CompressedImage | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [isFocused, setIsFocused] = useState(false)
+  // Zustandストアから状態とアクションを取得
+  const content = useEntryFormStore((s) => s.content)
+  const image = useEntryFormStore((s) => s.image)
+  const isSubmitting = useEntryFormStore((s) => s.isSubmitting)
+  const isDeleting = useEntryFormStore((s) => s.isDeleting)
+  const showDeleteConfirm = useEntryFormStore((s) => s.showDeleteConfirm)
+  const isSuccess = useEntryFormStore((s) => s.isSuccess)
+  const isFocused = useEntryFormStore((s) => s.isFocused)
+  const error = useEntryFormStore((s) => s.error)
+  const canSubmit = useEntryFormStore(selectCanSubmit)
+
+  const setContent = useEntryFormStore((s) => s.setContent)
+  const setImage = useEntryFormStore((s) => s.setImage)
+  const setShowDeleteConfirm = useEntryFormStore((s) => s.setShowDeleteConfirm)
+  const setFocused = useEntryFormStore((s) => s.setFocused)
+  const submitStart = useEntryFormStore((s) => s.submitStart)
+  const submitSuccess = useEntryFormStore((s) => s.submitSuccess)
+  const submitError = useEntryFormStore((s) => s.submitError)
+  const deleteStart = useEntryFormStore((s) => s.deleteStart)
+  const deleteError = useEntryFormStore((s) => s.deleteError)
+  const initialize = useEntryFormStore((s) => s.initialize)
+  const reset = useEntryFormStore((s) => s.reset)
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
-
-  // 送信可能かどうか
-  const canSubmit = !isSubmitting && !isDeleting && !isSuccess && content.trim().length > 0
 
   // 外部から送信を呼び出せるようにする
   useImperativeHandle(ref, () => ({
@@ -92,22 +97,24 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
     },
   }))
 
-  // 状態変更を親に通知
-  useEffect(() => {
-    onStateChange?.({ isSubmitting, canSubmit, isSuccess })
-  }, [isSubmitting, canSubmit, isSuccess, onStateChange])
-
-  // 下書き復元（新規作成時のみ）
+  // ストア初期化（マウント時）
   useEffect(() => {
     if (mode === 'create') {
+      // 下書き復元
       const draft = loadDraft()
-      if (draft) {
-        setContent(draft.content)
-      }
+      initialize(draft?.content || '')
+    } else {
+      // 編集モード：既存コンテンツで初期化
+      initialize(initialEntry?.content || '')
     }
-  }, [mode])
 
-  // 下書き自動保存（300msデバウンス）
+    // アンマウント時にリセット
+    return () => {
+      reset()
+    }
+  }, [mode, initialEntry?.content, initialize, reset])
+
+  // 下書き自動保存（300msデバウンス、新規作成時のみ）
   useEffect(() => {
     if (mode !== 'create') return
 
@@ -132,8 +139,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setError(null)
-    setIsSubmitting(true)
+    submitStart()
 
     try {
       // 画像アップロード
@@ -141,8 +147,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
       if (image) {
         const uploadResult = await uploadImage(image.file, userId)
         if (!uploadResult.ok) {
-          setError(uploadResult.error.message)
-          setIsSubmitting(false)
+          submitError(uploadResult.error.message)
           return
         }
         imageUrl = uploadResult.value
@@ -155,8 +160,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           : await updateEntry(initialEntry!.id, { content, imageUrl })
 
       if (!result.ok) {
-        setError(result.error.message)
-        setIsSubmitting(false)
+        submitError(result.error.message)
         return
       }
 
@@ -166,8 +170,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
       }
 
       // 成功アニメーション表示
-      setIsSuccess(true)
-      setIsSubmitting(false)
+      submitSuccess()
 
       // 少し待ってから遷移
       setTimeout(() => {
@@ -178,8 +181,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
         }
       }, 800)
     } catch (err) {
-      setError(err instanceof Error ? err.message : '投稿に失敗しました')
-      setIsSubmitting(false)
+      submitError(err instanceof Error ? err.message : '投稿に失敗しました')
     }
   }
 
@@ -187,25 +189,20 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   const handleDelete = async () => {
     if (!initialEntry) return
 
-    setError(null)
-    setIsDeleting(true)
+    deleteStart()
 
     try {
       const result = await deleteEntry(initialEntry.id)
 
       if (!result.ok) {
-        setError(result.error.message)
-        setIsDeleting(false)
-        setShowDeleteConfirm(false)
+        deleteError(result.error.message)
         return
       }
 
       // タイムラインに戻る
       router.push('/timeline')
     } catch (err) {
-      setError(err instanceof Error ? err.message : '削除に失敗しました')
-      setIsDeleting(false)
-      setShowDeleteConfirm(false)
+      deleteError(err instanceof Error ? err.message : '削除に失敗しました')
     }
   }
 
@@ -240,8 +237,8 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
           placeholder="絵文字1つでもOK 🌟"
           className={cn(
             'w-full resize-none border-none outline-none text-base p-4 min-h-32 rounded-xl',
