@@ -69,8 +69,25 @@ export const EntryCard = memo(function EntryCard({ entry }: EntryCardProps) {
     router.push(`/edit/${entry.id}`)
   }, [router, entry.id])
 
+  // キーボード操作（Enter/Spaceで編集画面へ）
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      router.push(`/edit/${entry.id}`)
+    }
+  }, [router, entry.id])
+
+  // アクセシビリティラベル用の時刻文字列
+  const timeLabel = entry.createdAt.toLocaleTimeString('ja-JP', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
   return (
     <motion.div
+      role="button"
+      tabIndex={0}
+      aria-label={`${timeLabel}の記録を編集`}
       variants={cardVariants}
       initial="initial"
       animate="animate"
@@ -79,11 +96,14 @@ export const EntryCard = memo(function EntryCard({ entry }: EntryCardProps) {
       className={cn(
         'relative cursor-pointer rounded-xl',
         'transition-colors',
+        // フォーカスリング
+        'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         // セパレータ線（擬似要素）
         'after:absolute after:bottom-0 after:left-4 after:right-4',
         'after:h-px after:bg-border'
       )}
       onClick={handleTap}
+      onKeyDown={handleKeyDown}
     >
       <div className="px-4 py-6">
         {/* 時刻表示 */}

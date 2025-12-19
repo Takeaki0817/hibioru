@@ -32,7 +32,8 @@ export function DateHeader({
   onDateChange,
   externalDateChangeRef,
 }: DateHeaderProps) {
-  // Zustandストアからカレンダー開閉関数を取得
+  // Zustandストアからカレンダー開閉状態と関数を取得
+  const isCalendarOpen = useTimelineStore((s) => s.isCalendarOpen)
   const toggleCalendar = useTimelineStore((s) => s.toggleCalendar)
   const [api, setApi] = useState<CarouselApi>()
   const [windowCenter, setWindowCenter] = useState(currentDate)
@@ -302,9 +303,9 @@ export function DateHeader({
   return (
     <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b border-border bg-background px-4 shadow-sm">
       {/* 左: ロゴ */}
-      <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
+      <h1 className="text-lg font-bold text-primary-600 dark:text-primary-400">
         ヒビオル
-      </span>
+      </h1>
 
       {/* 中央: カルーセル日付 */}
       <div className="relative flex h-10 w-45 items-center">
@@ -371,9 +372,10 @@ export function DateHeader({
           'dark:bg-primary-100 dark:hover:bg-primary-200',
           'transition-all active:scale-95'
         )}
-        aria-label="カレンダーを開く"
+        aria-label={isCalendarOpen ? 'カレンダーを閉じる' : 'カレンダーを開く'}
+        aria-expanded={isCalendarOpen}
       >
-        <Calendar className="w-4 h-4" />
+        <Calendar className="w-4 h-4" aria-hidden="true" />
         {monthStr}
       </button>
     </header>

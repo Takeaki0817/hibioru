@@ -26,7 +26,7 @@ export function NotEditableClient({ entryDate }: NotEditableClientProps) {
       <main className="flex-1 flex items-center justify-center p-4">
         <div className="text-center">
           <ClockAlert className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-          <h1 className="text-xl font-bold mb-2">編集できません</h1>
+          <h2 className="text-xl font-bold mb-2">編集できません</h2>
           <p className="text-muted-foreground">
             編集可能期間（24時間）を過ぎています
           </p>

@@ -290,6 +290,8 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           onBlur={() => setFocused(false)}
           onKeyDown={handleKeyDown}
           placeholder="絵文字1つでもOK 🌟"
+          aria-label="記録内容"
+          aria-busy={isSubmitting}
           className={cn(
             'w-full min-h-full resize-none border-none outline-none text-base p-4 rounded-xl',
             'bg-transparent placeholder:text-muted-foreground/60',
@@ -302,12 +304,15 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
         <AnimatePresence>
           {isSuccess && (
             <motion.div
+              role="status"
+              aria-live="polite"
               className="absolute inset-0 flex items-center justify-center bg-background/90 rounded-xl"
               variants={successVariants}
               initial="initial"
               animate="animate"
               exit="exit"
             >
+              <span className="sr-only">記録が完了しました</span>
               <div className="flex flex-col items-center gap-3">
                 <motion.div className="w-16 h-16 rounded-full bg-primary-400 flex items-center justify-center">
                   <motion.svg
@@ -359,6 +364,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
                 size="icon-sm"
                 onClick={() => removeImage(index)}
                 disabled={isSubmitting || isSuccess}
+                aria-label={`画像${index + 1}を削除`}
                 className="absolute -top-2 -right-2 !size-6 rounded-full shadow-md"
               >
                 <X size={14} />
@@ -383,6 +389,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
                     variant="ghost"
                     onClick={() => toggleExistingImageRemoval(url)}
                     disabled={isSubmitting || isSuccess}
+                    aria-label={`画像${index + 1}の削除を取り消す`}
                     className="absolute inset-0 rounded-lg bg-black/60 flex items-center justify-center disabled:cursor-not-allowed h-auto p-0"
                   >
                     <ImageOff size={24} className="text-accent-400" />
@@ -395,6 +402,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
                     size="icon-sm"
                     onClick={() => toggleExistingImageRemoval(url)}
                     disabled={isSubmitting || isSuccess}
+                    aria-label={`画像${index + 1}を削除`}
                     className="absolute -top-2 -right-2 !size-6 rounded-full shadow-md"
                   >
                     <X size={14} />
@@ -420,6 +428,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
             variant="ghost"
             onClick={() => setShowDeleteConfirm(true)}
             disabled={isSubmitting || isDeleting || isSuccess}
+            aria-label="この記録を削除"
             className="w-20 h-20 rounded-lg bg-accent/60 hover:bg-accent/70"
           >
             <Trash2 size={24} className="text-red-500" />

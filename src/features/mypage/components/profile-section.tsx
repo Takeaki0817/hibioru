@@ -23,7 +23,7 @@ export function ProfileSection({ user }: ProfileSectionProps) {
             {avatarUrl ? (
               <Image
                 src={avatarUrl}
-                alt="プロフィール画像"
+                alt={`${displayName}のプロフィール画像`}
                 fill
                 className="object-cover"
               />

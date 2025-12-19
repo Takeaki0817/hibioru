@@ -100,7 +100,7 @@ export function StreakDisplay({
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 300 }}
             >
-              <span className="text-5xl block mb-3">🌱</span>
+              <span className="text-5xl block mb-3" aria-hidden="true">🌱</span>
               <p className="text-muted-foreground mb-1">まだ記録がありません</p>
               <p className="text-sm text-primary-500 font-medium">今日から始めましょう！</p>
             </motion.div>
@@ -125,6 +125,7 @@ export function StreakDisplay({
                   className="text-5xl mb-2"
                   variants={flameVariants}
                   animate="animate"
+                  aria-hidden="true"
                 >
                   🔥
                 </motion.span>
@@ -154,7 +155,7 @@ export function StreakDisplay({
                     animate={{ y: 0, opacity: 1 }}
                     className="mt-3 flex items-center gap-1 px-3 py-1 bg-reward-400 text-white rounded-full text-sm font-medium"
                   >
-                    <span>🎉</span>
+                    <span aria-hidden="true">🎉</span>
                     <span>最高記録更新中！</span>
                   </motion.div>
                 )}
@@ -170,12 +171,24 @@ export function StreakDisplay({
                   const isToday = index === todayIndex
                   const isFuture = index > todayIndex
 
+                  // アクセシビリティ用のラベルを生成
+                  const statusLabel = isFuture
+                    ? '未来'
+                    : hasRecord
+                      ? '記録あり'
+                      : '記録なし'
+
                   return (
-                    <div key={label} className="flex flex-col items-center gap-1">
+                    <div
+                      key={label}
+                      className="flex flex-col items-center gap-1"
+                      aria-label={`${label}曜日：${isToday ? '今日、' : ''}${statusLabel}`}
+                    >
                       <motion.div
                         variants={isToday ? localTodayPulseVariants : dotVariants}
                         initial="initial"
                         animate="animate"
+                        aria-hidden="true"
                         className={cn(
                           'w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium',
                           isFuture
@@ -189,6 +202,7 @@ export function StreakDisplay({
                         {hasRecord && !isFuture ? '✓' : ''}
                       </motion.div>
                       <span
+                        aria-hidden="true"
                         className={cn(
                           'text-xs',
                           isToday ? 'text-primary-500 font-medium' : 'text-muted-foreground'
@@ -206,7 +220,7 @@ export function StreakDisplay({
             <div className="p-4 rounded-xl bg-reward-300/20 dark:bg-reward-400/10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl">🏆</span>
+                  <span className="text-3xl" aria-hidden="true">🏆</span>
                   <div>
                     <p className="text-xs text-muted-foreground">過去最長記録</p>
                     <p className="text-xl font-bold text-reward-500 dark:text-reward-400 tabular-nums">

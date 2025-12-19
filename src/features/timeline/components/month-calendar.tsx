@@ -50,7 +50,7 @@ const CustomDayButton = memo(function CustomDayButton(props: CustomDayButtonProp
       {modifiers.today && <span className="today-dot" />}
       <span>{day.date.getDate()}</span>
       {hasHotsure && (
-        <span className="hotsure-icon">
+        <span className="hotsure-icon" aria-hidden="true">
           <Spool size={20} strokeWidth={2} className="text-primary" />
         </span>
       )}
@@ -213,7 +213,7 @@ export function MonthCalendar({
             <span>記録あり</span>
           </div>
           <div className="flex items-center gap-2">
-            <Spool size={16} className="text-primary" />
+            <Spool size={16} className="text-primary" aria-hidden="true" />
             <span>ほつれ使用</span>
           </div>
         </div>

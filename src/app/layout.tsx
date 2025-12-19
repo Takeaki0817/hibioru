@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { SkipLink } from "@/components/ui/skip-link";
 
 const mPlus1p = M_PLUS_1p({
   variable: "--font-m-plus-1p",
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body
         className={`${mPlus1p.variable} antialiased`}
       >
+        <SkipLink />
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
           <ServiceWorkerRegistration />
