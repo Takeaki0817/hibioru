@@ -49,7 +49,8 @@ export default async function MypagePage() {
     <div className="flex h-dvh flex-col">
       <main className="flex-1 overflow-auto">
         <div className="container mx-auto p-4 max-w-2xl pb-6">
-          <h1 className="text-2xl font-bold mb-6">マイページ</h1>
+          <h1 className="sr-only">ヒビオル</h1>
+          <h2 className="text-2xl font-bold mb-6">マイページ</h2>
 
           {/* プロフィールセクション */}
           <ProfileSection user={user} />

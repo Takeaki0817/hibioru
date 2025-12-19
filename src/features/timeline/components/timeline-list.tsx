@@ -293,13 +293,19 @@ export function TimelineList({
 
   if (isLoading && entries.length === 0) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4">
+      <div
+        role="status"
+        aria-busy="true"
+        aria-label="タイムラインを読み込み中"
+        className="flex h-full flex-col items-center justify-center gap-4"
+      >
         <div className="space-y-3 w-full max-w-md px-4">
           <Skeleton className="h-24 w-full rounded-lg bg-primary-100" />
           <Skeleton className="h-24 w-full rounded-lg bg-primary-100" />
           <Skeleton className="h-24 w-full rounded-lg bg-primary-100" />
         </div>
         <p className="text-muted-foreground">読み込み中...</p>
+        <span className="sr-only">タイムラインを読み込んでいます</span>
       </div>
     )
   }
@@ -343,23 +349,24 @@ export function TimelineList({
         const dateEntries = groupedEntries.get(dateKey) || []
 
         return (
-          <div
+          <section
             key={dateKey}
             ref={setDateRef(dateKey)}
             data-date={dateKey}
+            aria-label={`${dateKey.replace(/-/g, '/')}の記録`}
             className="min-h-full border-b border-border"
           >
             <div className="space-y-2 px-4 py-2">
-              <div className="pt-3 text-center text-sm text-gray-400 dark:text-gray-500">
+              <h2 className="pt-3 text-center text-sm text-gray-400 dark:text-gray-500">
                 {dateKey.replace(/-/g, '/')}
-              </div>
+              </h2>
               {[...dateEntries]
                 .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
                 .map((entry) => (
                   <EntryCard key={entry.id} entry={entry} />
                 ))}
             </div>
-          </div>
+          </section>
         )
       })}
 

@@ -133,6 +133,7 @@ export function HotsureDisplay({
                   className="flex flex-col items-center"
                 >
                   <Spool
+                    aria-hidden="true"
                     className={cn(
                       'w-10 h-10 transition-colors rotate-[15deg]',
                       isFilled ? hotsureTextVariants({ status }) : 'text-muted-foreground/30'
@@ -154,7 +155,7 @@ export function HotsureDisplay({
         {/* 説明パネル */}
         <div className="mt-3 p-3 bg-muted/50 rounded-lg">
           <div className="flex gap-2 text-xs text-muted-foreground leading-relaxed">
-            <Info className="w-4 h-4 shrink-0 mt-0.5" />
+            <Info aria-hidden="true" className="w-4 h-4 shrink-0 mt-0.5" />
             <p>
               ほつれは毎週月曜日に2回まで自動補充されます。
               記録がない日は自動的に1回消費され、継続記録を守ります。

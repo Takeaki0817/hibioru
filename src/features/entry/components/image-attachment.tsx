@@ -78,7 +78,10 @@ export function ImageAttachment({
               <span className="text-xs text-muted-foreground">{Math.round(progress)}%</span>
             </div>
           ) : (
-            <ImagePlus size={24} className="text-primary" />
+            <>
+              <ImagePlus size={24} className="text-primary" />
+              <span className="sr-only">画像を追加</span>
+            </>
           )}
         </label>
       </div>

@@ -243,6 +243,7 @@ export function ExportSection() {
           <RadioGroup
             value={exportFormat}
             onValueChange={(value) => setExportFormat(value as ExportFormat)}
+            aria-label="エクスポート形式を選択"
             className="flex gap-4"
           >
             <div className="flex items-center gap-2">

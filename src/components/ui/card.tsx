@@ -2,9 +2,9 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+function Card({ className, ...props }: React.ComponentProps<"section">) {
   return (
-    <div
+    <section
       data-slot="card"
       className={cn(
         "bg-card text-card-foreground rounded-xl border border-gray-200 dark:border-gray-700 py-6 shadow-sm",
@@ -28,9 +28,9 @@ function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
   return (
-    <div
+    <h3
       data-slot="card-title"
       className={cn("leading-none font-semibold", className)}
       {...props}

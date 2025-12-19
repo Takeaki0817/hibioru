@@ -29,9 +29,9 @@ export function EntryHeader({ title, onClose }: EntryHeaderProps) {
   return (
     <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b border-border bg-background px-4 shadow-sm">
       {/* 左: ロゴ */}
-      <span className="text-lg font-bold text-primary-600 dark:text-primary-400">
+      <h1 className="text-lg font-bold text-primary-600 dark:text-primary-400">
         ヒビオル
-      </span>
+      </h1>
 
       {/* 中央: タイトル（オプション） */}
       {title && (
