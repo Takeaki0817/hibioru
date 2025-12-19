@@ -12,7 +12,6 @@ import { uploadImage } from '@/features/entry/api/image-service'
 import { saveDraft, loadDraft, clearDraft } from '@/features/entry/api/draft-storage'
 import { MotionButton } from '@/components/ui/motion-button'
 import { Button } from '@/components/ui/button'
-import { Textarea } from '@/components/ui/textarea'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Dialog,
@@ -283,7 +282,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
       {/* テキストエリア */}
       <div className={formContainerVariants({ state: getFormState(isFocused, isSuccess) })}>
-        <Textarea
+        <textarea
           ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -292,9 +291,9 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           onKeyDown={handleKeyDown}
           placeholder="絵文字1つでもOK 🌟"
           className={cn(
-            'w-full min-h-full resize-none border-none shadow-none text-base p-4 rounded-xl',
+            'w-full min-h-full resize-none border-none outline-none text-base p-4 rounded-xl',
             'bg-transparent placeholder:text-muted-foreground/60',
-            'leading-relaxed overflow-y-auto focus-visible:ring-0'
+            'leading-relaxed overflow-y-auto'
           )}
           disabled={isSubmitting || isSuccess}
         />
