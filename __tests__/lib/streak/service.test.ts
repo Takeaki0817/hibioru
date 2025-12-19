@@ -156,7 +156,11 @@ describe('StreakService', () => {
     it('同日2回目の記録ではストリークが増加しない', async () => {
       // Arrange
       const userId = 'test-user-id'
-      const today = '2025-12-17'
+      // getJSTToday()と同じロジックで今日の日付を計算
+      const now = new Date()
+      const jstOffset = 9 * 60
+      const jstDate = new Date(now.getTime() + jstOffset * 60 * 1000)
+      const today = jstDate.toISOString().split('T')[0]
 
       // 既存データ（同日に記録済み）
       mockSupabaseClient.from.mockReturnValueOnce({
