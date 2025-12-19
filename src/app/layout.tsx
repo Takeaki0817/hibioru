@@ -17,6 +17,28 @@ const mPlus1p = M_PLUS_1p({
 export const metadata: Metadata = {
   title: "ヒビオル - 日々を織る",
   description: "ADHD当事者のための瞬間記録アプリ",
+  // PWA用メタデータ
+  applicationName: "ヒビオル",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "ヒビオル",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  icons: {
+    icon: [
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
+  },
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 export default function RootLayout({

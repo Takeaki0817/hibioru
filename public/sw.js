@@ -14,10 +14,27 @@
  */
 
 // Service Workerのバージョン（キャッシュ管理用）
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- 将来のキャッシュ機能拡張用
 const CACHE_VERSION = 'v1';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- 将来のキャッシュ機能拡張用
 const CACHE_NAME = `hibioru-${CACHE_VERSION}`;
+
+// キャッシュ対象の静的アセット
+const STATIC_ASSETS = [
+  '/',
+  '/offline',
+  '/manifest.webmanifest',
+  '/icon-192x192.png',
+  '/icon-512x512.png',
+  '/apple-touch-icon.png',
+  '/favicon.ico',
+];
+
+// キャッシュ対象外のパターン
+const CACHE_EXCLUDE_PATTERNS = [
+  /^\/api\//,           // APIリクエスト
+  /supabase/,           // Supabaseリクエスト
+  /\/_next\/webpack/,   // Webpack HMR
+  /\/sw\.js$/,          // Service Worker自体
+];
 
 /**
  * デフォルト通知オプション
@@ -209,24 +226,116 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 /**
+ * URLがキャッシュ対象外かどうかを判定
+ * @param {string} url - チェックするURL
+ * @returns {boolean} キャッシュ対象外ならtrue
+ */
+function shouldExcludeFromCache(url) {
+  return CACHE_EXCLUDE_PATTERNS.some((pattern) => pattern.test(url));
+}
+
+/**
  * Service Workerインストール時の処理
+ * 静的アセットをプリキャッシュ
  */
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] インストール中', event);
-  // 即座にアクティベート
-  self.skipWaiting();
+  console.log('[Service Worker] インストール中');
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log('[Service Worker] 静的アセットをプリキャッシュ中');
+      return cache.addAll(STATIC_ASSETS).catch((error) => {
+        console.warn('[Service Worker] 一部のアセットのプリキャッシュに失敗:', error);
+        // プリキャッシュの失敗は致命的ではないため、インストールは続行
+      });
+    }).then(() => {
+      // 即座にアクティベート
+      self.skipWaiting();
+    })
+  );
 });
 
 /**
  * Service Workerアクティベーション時の処理
+ * 古いキャッシュを削除
  */
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] アクティベート中', event);
-  // 古いService Workerを即座に置き換え
+  console.log('[Service Worker] アクティベート中');
   event.waitUntil(
-    clients.claim().then(() => {
+    Promise.all([
+      // 古いキャッシュを削除
+      caches.keys().then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter((cacheName) => cacheName !== CACHE_NAME)
+            .map((cacheName) => {
+              console.log('[Service Worker] 古いキャッシュを削除:', cacheName);
+              return caches.delete(cacheName);
+            })
+        );
+      }),
+      // 古いService Workerを即座に置き換え
+      clients.claim(),
+    ]).then(() => {
       console.log('[Service Worker] アクティベート完了');
     })
+  );
+});
+
+/**
+ * フェッチイベントの処理
+ * キャッシュ戦略: Network First with Cache Fallback
+ * - ネットワークから取得を試み、成功したらキャッシュに保存
+ * - ネットワーク失敗時はキャッシュから返却
+ * - 両方失敗時はオフラインページを表示
+ */
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // 同一オリジン以外、またはキャッシュ対象外はスキップ
+  if (url.origin !== self.location.origin || shouldExcludeFromCache(url.pathname)) {
+    return;
+  }
+
+  // GETリクエストのみキャッシュ
+  if (request.method !== 'GET') {
+    return;
+  }
+
+  event.respondWith(
+    fetch(request)
+      .then((response) => {
+        // 正常なレスポンスのみキャッシュ
+        if (response.status === 200) {
+          const responseClone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(request, responseClone);
+          });
+        }
+        return response;
+      })
+      .catch(async () => {
+        // ネットワークエラー時はキャッシュから返却
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // HTMLリクエストでキャッシュもない場合はオフラインページ
+        if (request.headers.get('accept')?.includes('text/html')) {
+          const offlinePage = await caches.match('/offline');
+          if (offlinePage) {
+            return offlinePage;
+          }
+        }
+
+        // それ以外は503エラー
+        return new Response('オフラインです', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain; charset=utf-8' },
+        });
+      })
   );
 });
 
