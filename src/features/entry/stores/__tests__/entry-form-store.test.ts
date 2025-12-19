@@ -16,7 +16,9 @@ describe('entry-form-store', () => {
       const state = useEntryFormStore.getState()
 
       expect(state.content).toBe('')
-      expect(state.image).toBeNull()
+      expect(state.images).toEqual([])
+      expect(state.existingImageUrls).toEqual([])
+      expect(state.removedImageUrls).toEqual([])
       expect(state.isSubmitting).toBe(false)
       expect(state.isDeleting).toBe(false)
       expect(state.showDeleteConfirm).toBe(false)
@@ -32,27 +34,27 @@ describe('entry-form-store', () => {
       expect(useEntryFormStore.getState().content).toBe('テスト投稿')
     })
 
-    it('setImageで画像を設定できること', () => {
+    it('addImageで画像を追加できること', () => {
       const mockImage = {
         file: new Blob(['test']) as unknown as File,
         previewUrl: 'blob:test-url',
         originalSize: 1000,
         compressedSize: 500,
       }
-      useEntryFormStore.getState().setImage(mockImage)
-      expect(useEntryFormStore.getState().image).toEqual(mockImage)
+      useEntryFormStore.getState().addImage(mockImage)
+      expect(useEntryFormStore.getState().images).toEqual([mockImage])
     })
 
-    it('setImage(null)で画像をクリアできること', () => {
+    it('removeImageで画像を削除できること', () => {
       const mockImage = {
         file: new Blob(['test']) as unknown as File,
         previewUrl: 'blob:test-url',
         originalSize: 1000,
         compressedSize: 500,
       }
-      useEntryFormStore.getState().setImage(mockImage)
-      useEntryFormStore.getState().setImage(null)
-      expect(useEntryFormStore.getState().image).toBeNull()
+      useEntryFormStore.getState().addImage(mockImage)
+      useEntryFormStore.getState().removeImage(0)
+      expect(useEntryFormStore.getState().images).toEqual([])
     })
   })
 

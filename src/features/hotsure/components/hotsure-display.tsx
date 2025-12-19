@@ -2,13 +2,46 @@
 
 import { motion } from 'framer-motion'
 import { Info, Spool } from 'lucide-react'
+import { cva } from 'class-variance-authority'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import {
+  warningShakeVariants,
+  cautionPulseVariants,
+} from '@/lib/animations'
 
 interface HotsureDisplayProps {
   remaining: number
   max: number
 }
+
+// CVAバリアント定義 - コンテナ
+const hotsureContainerVariants = cva('p-5 rounded-xl', {
+  variants: {
+    status: {
+      empty: 'bg-danger-300/20 border-2 border-danger-300 dark:bg-danger-400/10 dark:border-danger-400',
+      warning: 'bg-warning-300/20 border-2 border-warning-300 dark:bg-warning-400/10 dark:border-warning-400',
+      safe: 'bg-primary-100/50 dark:bg-primary-200/20',
+    },
+  },
+  defaultVariants: {
+    status: 'safe',
+  },
+})
+
+// CVAバリアント定義 - テキスト
+const hotsureTextVariants = cva('', {
+  variants: {
+    status: {
+      empty: 'text-danger-400 dark:text-danger-300',
+      warning: 'text-warning-400 dark:text-warning-300',
+      safe: 'text-primary-500 dark:text-primary-400',
+    },
+  },
+  defaultVariants: {
+    status: 'safe',
+  },
+})
 
 // 次の月曜日までの日数を計算
 function getDaysUntilNextMonday(): number {
@@ -18,30 +51,6 @@ function getDaysUntilNextMonday(): number {
   // 月曜日の場合は7日後（次の月曜日）
   const daysUntil = dayOfWeek === 1 ? 7 : (8 - dayOfWeek) % 7
   return daysUntil === 0 ? 7 : daysUntil
-}
-
-// 残り0の場合の警告アニメーション
-const warningShakeVariants = {
-  animate: {
-    x: [0, -2, 2, -2, 0],
-    transition: {
-      duration: 0.5,
-      repeat: Infinity,
-      repeatDelay: 3,
-    },
-  },
-}
-
-// 残り1の場合の軽い振動
-const cautionPulseVariants = {
-  animate: {
-    scale: [1, 1.02, 1],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: 'easeInOut' as const,
-    },
-  },
 }
 
 // プログレスドットのアニメーション
@@ -59,48 +68,30 @@ const dotVariants = {
   }),
 }
 
+// ステータスを決定するヘルパー関数
+function getStatus(remaining: number): 'empty' | 'warning' | 'safe' {
+  if (remaining === 0) return 'empty'
+  if (remaining === 1) return 'warning'
+  return 'safe'
+}
+
 export function HotsureDisplay({
   remaining,
   max,
 }: HotsureDisplayProps) {
   const daysUntilRefill = getDaysUntilNextMonday()
-  // ステータスに応じたスタイル
-  const getStatusStyle = () => {
-    if (remaining === 0) {
-      return {
-        container: 'bg-danger-300/20 border-2 border-danger-300 dark:bg-danger-400/10 dark:border-danger-400',
-        text: 'text-danger-400 dark:text-danger-300',
-        dotFilled: 'bg-danger-400 dark:bg-danger-300',
-        dotEmpty: 'bg-danger-300/30 dark:bg-danger-400/20',
-        icon: <span className="text-2xl">⚠️</span>,
-        message: 'ほつれ切れ！記録を忘れずに',
-      }
-    }
-    if (remaining === 1) {
-      return {
-        container: 'bg-warning-300/20 border-2 border-warning-300 dark:bg-warning-400/10 dark:border-warning-400',
-        text: 'text-warning-400 dark:text-warning-300',
-        dotFilled: 'bg-warning-400 dark:bg-warning-300',
-        dotEmpty: 'bg-warning-300/30 dark:bg-warning-400/20',
-        icon: <span className="text-2xl">⚡</span>,
-        message: '残りわずか！計画的に',
-      }
-    }
-    return {
-      container: 'bg-primary-100/50 dark:bg-primary-200/20',
-      text: 'text-primary-500 dark:text-primary-400',
-      dotFilled: 'bg-primary-400 dark:bg-primary-300',
-      dotEmpty: 'bg-primary-200 dark:bg-primary-300/30',
-      icon: null,
-      message: '安心のセーフティネット',
-    }
-  }
+  const status = getStatus(remaining)
 
-  const style = getStatusStyle()
+  // ステータスに応じた追加情報
+  const statusInfo = {
+    empty: { icon: <span className="text-2xl">⚠️</span>, message: 'ほつれ切れ！記録を忘れずに' },
+    warning: { icon: <span className="text-2xl">⚡</span>, message: '残りわずか！計画的に' },
+    safe: { icon: null, message: '安心のセーフティネット' },
+  }[status]
 
   // アニメーションバリアントの選択
-  const containerVariants =
-    remaining === 0 ? warningShakeVariants : remaining === 1 ? cautionPulseVariants : undefined
+  const containerAnimVariants =
+    status === 'empty' ? warningShakeVariants : status === 'warning' ? cautionPulseVariants : undefined
 
   return (
     <Card>
@@ -110,17 +101,19 @@ export function HotsureDisplay({
       <CardContent>
         {/* メイン表示エリア */}
         <motion.div
-          className={cn('p-5 rounded-xl', style.container)}
-          variants={containerVariants}
-          animate={containerVariants ? 'animate' : undefined}
+          className={hotsureContainerVariants({ status })}
+          variants={containerAnimVariants}
+          animate={containerAnimVariants ? 'animate' : undefined}
         >
           {/* ステータスアイコンとメッセージ */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              {style.icon}
-              <span className={cn('text-sm font-medium', style.text)}>{style.message}</span>
+              {statusInfo.icon}
+              <span className={cn('text-sm font-medium', hotsureTextVariants({ status }))}>
+                {statusInfo.message}
+              </span>
             </div>
-            <span className={cn('text-lg font-bold tabular-nums', style.text)}>
+            <span className={cn('text-lg font-bold tabular-nums', hotsureTextVariants({ status }))}>
               {remaining}/{max}
             </span>
           </div>
@@ -142,7 +135,7 @@ export function HotsureDisplay({
                   <Spool
                     className={cn(
                       'w-10 h-10 transition-colors rotate-[15deg]',
-                      isFilled ? style.text : 'text-muted-foreground/30'
+                      isFilled ? hotsureTextVariants({ status }) : 'text-muted-foreground/30'
                     )}
                   />
                 </motion.div>

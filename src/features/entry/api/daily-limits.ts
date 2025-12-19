@@ -49,13 +49,11 @@ export async function getDailyEntryCount(userId: string): Promise<number> {
       .lt('created_at', end.toISOString())
 
     if (error) {
-      console.error('投稿件数取得エラー:', error)
       return 0
     }
 
     return count ?? 0
-  } catch (error) {
-    console.error('投稿件数取得エラー:', error)
+  } catch {
     return 0
   }
 }
@@ -78,13 +76,11 @@ export async function getDailyImageCount(userId: string): Promise<number> {
       .lt('created_at', end.toISOString())
 
     if (error) {
-      console.error('画像件数取得エラー:', error)
       return 0
     }
 
     return count ?? 0
-  } catch (error) {
-    console.error('画像件数取得エラー:', error)
+  } catch {
     return 0
   }
 }
