@@ -38,7 +38,7 @@ export async function createEntry(
     const insertData: EntryInsert = {
       user_id: userData.user.id,
       content: input.content,
-      image_url: input.imageUrl ?? null,
+      image_urls: input.imageUrls ?? null,
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
@@ -107,7 +107,7 @@ export async function updateEntry(
 
     const updateData: EntryUpdate = {
       content: input.content,
-      image_url: input.imageUrl ?? null,
+      image_urls: input.imageUrls ?? null,
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)

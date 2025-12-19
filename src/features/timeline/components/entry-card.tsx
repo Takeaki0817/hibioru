@@ -15,10 +15,17 @@ export interface EntryCardProps {
 function areEntryPropsEqual(prevProps: EntryCardProps, nextProps: EntryCardProps): boolean {
   const prev = prevProps.entry
   const next = nextProps.entry
+  // 画像URLの配列比較
+  const prevImages = prev.imageUrls ?? []
+  const nextImages = next.imageUrls ?? []
+  const imagesEqual =
+    prevImages.length === nextImages.length &&
+    prevImages.every((url, i) => url === nextImages[i])
+
   return (
     prev.id === next.id &&
     prev.content === next.content &&
-    prev.imageUrl === next.imageUrl &&
+    imagesEqual &&
     prev.createdAt.getTime() === next.createdAt.getTime()
   )
 }
@@ -138,14 +145,27 @@ export const EntryCard = memo(function EntryCard({ entry }: EntryCardProps) {
           )}
 
           {/* 画像表示 */}
-          {entry.imageUrl && (
-            <div className="mt-3 overflow-hidden rounded-lg">
-              <img
-                src={entry.imageUrl}
-                alt="投稿画像"
-                className="max-h-64 w-full object-cover transition-transform hover:scale-105"
-                loading="lazy"
-              />
+          {entry.imageUrls && entry.imageUrls.length > 0 && (
+            <div className={cn(
+              'mt-3 gap-2',
+              entry.imageUrls.length === 1 ? 'block' : 'flex'
+            )}>
+              {entry.imageUrls.map((url, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    'overflow-hidden rounded-lg',
+                    entry.imageUrls!.length === 1 ? 'w-full' : 'flex-1'
+                  )}
+                >
+                  <img
+                    src={url}
+                    alt={`投稿画像 ${index + 1}`}
+                    className="max-h-64 w-full object-cover transition-transform hover:scale-105"
+                    loading="lazy"
+                  />
+                </div>
+              ))}
             </div>
           )}
         </div>
