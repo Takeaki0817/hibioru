@@ -3,15 +3,11 @@
  * POST /api/streak/update
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { updateStreakOnEntry } from '@/features/streak/api/service'
 
-interface UpdateStreakRequest {
-  entryDate?: string
-}
-
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // 認証確認
     const supabase = await createClient()
@@ -25,20 +21,6 @@ export async function POST(request: NextRequest) {
         { error: 'Unauthorized' },
         { status: 401 }
       )
-    }
-
-    // リクエストボディをパース
-    const body: UpdateStreakRequest = await request.json()
-
-    // 日付形式のバリデーション（省略可能）
-    if (body.entryDate) {
-      const datePattern = /^\d{4}-\d{2}-\d{2}$/
-      if (!datePattern.test(body.entryDate)) {
-        return NextResponse.json(
-          { error: 'Invalid date format. Expected YYYY-MM-DD' },
-          { status: 400 }
-        )
-      }
     }
 
     // ストリーク更新
@@ -57,8 +39,7 @@ export async function POST(request: NextRequest) {
       longestStreak: result.value.longestStreak,
       isNewRecord: result.value.currentStreak === result.value.longestStreak && result.value.currentStreak > 0,
     }, { status: 200 })
-  } catch (error) {
-    console.error('Failed to update streak:', error)
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

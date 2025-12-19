@@ -222,7 +222,7 @@ export async function getSubscriptions(
  */
 export async function removeInvalidSubscription(
   subscriptionId: string,
-  reason?: string
+  _reason?: string
 ): Promise<Result<void, SubscriptionError>> {
   try {
     const supabase = await createClient();
@@ -240,10 +240,7 @@ export async function removeInvalidSubscription(
       };
     }
 
-    // 削除ログを記録（将来的にnotification_logsに記録）
-    if (reason) {
-      console.log(`[PushSubscription] Removed invalid subscription: ${subscriptionId}, reason: ${reason}`);
-    }
+    // _reason パラメータは将来のログ機能用に保持
 
     return { ok: true, value: undefined };
   } catch (error) {

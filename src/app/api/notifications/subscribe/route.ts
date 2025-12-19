@@ -113,8 +113,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       },
       { status: 200 }
     );
-  } catch (error) {
-    console.error('[POST /api/notifications/subscribe] Error:', error);
+  } catch {
     return NextResponse.json(
       { error: '予期しないエラーが発生しました。再試行してください' },
       { status: 500 }
@@ -165,8 +164,7 @@ export async function DELETE(request: NextRequest): Promise<NextResponse> {
       { success: true },
       { status: 200 }
     );
-  } catch (error) {
-    console.error('[DELETE /api/notifications/subscribe] Error:', error);
+  } catch {
     return NextResponse.json(
       { error: '予期しないエラーが発生しました' },
       { status: 500 }
