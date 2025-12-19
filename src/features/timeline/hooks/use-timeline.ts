@@ -25,7 +25,20 @@ export interface UseTimelineReturn {
 export function useTimeline(
   options: UseTimelineOptions
 ): UseTimelineReturn {
-  const { userId, pageSize = 20 } = options
+  const { userId, initialDate, pageSize = 20 } = options
+
+  // initialDateが指定されている場合、その日付の翌日0:00をcursorとして使用
+  // これにより、その日付を含むデータから取得を開始する
+  const initialCursor = initialDate
+    ? new Date(
+        initialDate.getFullYear(),
+        initialDate.getMonth(),
+        initialDate.getDate() + 1,
+        0,
+        0,
+        0
+      ).toISOString()
+    : undefined
 
   const {
     data,
@@ -36,7 +49,7 @@ export function useTimeline(
     fetchNextPage,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ['timeline', userId],
+    queryKey: ['timeline', userId, initialCursor],
     queryFn: ({ pageParam }) =>
       fetchEntries({
         userId,
@@ -45,7 +58,7 @@ export function useTimeline(
         direction: 'before',
       }),
     getNextPageParam: (lastPage) => lastPage.nextCursor,
-    initialPageParam: undefined as string | undefined,
+    initialPageParam: initialCursor,
   })
 
   // 全ページのentriesをフラット化

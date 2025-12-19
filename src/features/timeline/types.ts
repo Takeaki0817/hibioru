@@ -23,9 +23,13 @@ export interface TimelinePage {
 export interface CalendarDayData {
   date: string // YYYY-MM-DD
   hasEntry: boolean
-  isStreakDay: boolean
   hasHotsure: boolean
   isToday: boolean
+  // 連続記録の位置情報
+  isStreakStart: boolean // 連続の開始日
+  isStreakMiddle: boolean // 連続の中間日
+  isStreakEnd: boolean // 連続の終了日
+  isStreakSingle: boolean // 単独の記録日（前後に連続なし）
 }
 
 // データベースのEntryをTimelineEntryに変換
