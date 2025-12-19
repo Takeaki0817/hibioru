@@ -34,8 +34,7 @@ export async function GET() {
     }
 
     return NextResponse.json(result.value, { status: 200 })
-  } catch (error) {
-    console.error('Failed to get streak info:', error)
+  } catch {
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

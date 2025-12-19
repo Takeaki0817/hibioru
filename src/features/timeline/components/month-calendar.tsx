@@ -6,6 +6,7 @@ import { ja } from 'date-fns/locale'
 import { format } from 'date-fns'
 import { Spool, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
+import { cn } from '@/lib/utils'
 import { useCalendarData } from '../hooks/use-calendar-data'
 import { useTimelineStore } from '../stores/timeline-store'
 import 'react-day-picker/dist/style.css'
@@ -36,7 +37,15 @@ const CustomDayButton = memo(function CustomDayButton(props: CustomDayButtonProp
   return (
     <button
       {...buttonProps}
-      className={`calendar-day ${streakClass} ${entryClass} ${disabledClass} ${todayClass} ${selectedClass} ${buttonProps.className || ''}`}
+      className={cn(
+        'calendar-day',
+        streakClass,
+        entryClass,
+        disabledClass,
+        todayClass,
+        selectedClass,
+        buttonProps.className
+      )}
     >
       {modifiers.today && <span className="today-dot" />}
       <span>{day.date.getDate()}</span>

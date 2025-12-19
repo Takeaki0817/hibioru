@@ -1,8 +1,10 @@
 'use client'
 
 import { motion, AnimatePresence } from 'framer-motion'
+import { cva } from 'class-variance-authority'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { flameVariants } from '@/lib/animations'
 
 interface StreakDisplayProps {
   currentStreak: number
@@ -14,18 +16,18 @@ interface StreakDisplayProps {
 // 曜日ラベル
 const WEEKDAY_LABELS = ['月', '火', '水', '木', '金', '土', '日']
 
-// 炎のゆらぎアニメーション
-const flameVariants = {
-  animate: {
-    scale: [1, 1.1, 1],
-    rotate: [-3, 3, -3],
-    transition: {
-      duration: 1.5,
-      repeat: Infinity,
-      ease: 'easeInOut' as const,
+// CVAバリアント定義 - メインストリーク表示
+const streakContainerVariants = cva('relative p-5 rounded-xl overflow-hidden', {
+  variants: {
+    isNewRecord: {
+      true: 'bg-gradient-to-br from-accent-50 to-reward-300/20 border-2 border-accent-300 dark:from-accent-100 dark:to-reward-400/20 dark:border-accent-400',
+      false: 'bg-gradient-to-br from-accent-50 to-primary-50 dark:from-accent-100 dark:to-primary-100',
     },
   },
-}
+  defaultVariants: {
+    isNewRecord: false,
+  },
+})
 
 // 数字のアニメーション
 const numberVariants = {
@@ -55,8 +57,8 @@ const dotVariants = {
   },
 }
 
-// 今日のドットのパルスアニメーション
-const todayPulseVariants = {
+// 今日のドットのパルスアニメーション（ローカル定義を維持）
+const localTodayPulseVariants = {
   animate: {
     scale: [1, 1.2, 1],
     opacity: [1, 0.7, 1],
@@ -106,14 +108,7 @@ export function StreakDisplay({
         ) : (
           <div className="space-y-5">
             {/* メインのストリーク表示 */}
-            <div
-              className={cn(
-                'relative p-5 rounded-xl overflow-hidden',
-                isNewRecord
-                  ? 'bg-gradient-to-br from-accent-50 to-reward-300/20 border-2 border-accent-300 dark:from-accent-100 dark:to-reward-400/20 dark:border-accent-400'
-                  : 'bg-gradient-to-br from-accent-50 to-primary-50 dark:from-accent-100 dark:to-primary-100'
-              )}
-            >
+            <div className={streakContainerVariants({ isNewRecord })}>
               {/* 新記録時のハイライト背景 */}
               {isNewRecord && (
                 <motion.div
@@ -178,7 +173,7 @@ export function StreakDisplay({
                   return (
                     <div key={label} className="flex flex-col items-center gap-1">
                       <motion.div
-                        variants={isToday ? todayPulseVariants : dotVariants}
+                        variants={isToday ? localTodayPulseVariants : dotVariants}
                         initial="initial"
                         animate="animate"
                         className={cn(

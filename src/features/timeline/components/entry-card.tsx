@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useCallback, useMemo, memo } from 'react'
+import { useCallback, useMemo, memo } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import type { TimelineEntry } from '../types'
-import { ContextMenu } from './context-menu'
 import { cn } from '@/lib/utils'
 
 export interface EntryCardProps {
@@ -61,123 +60,78 @@ function isEmojiOnly(content: string): boolean {
 
 export const EntryCard = memo(function EntryCard({ entry }: EntryCardProps) {
   const router = useRouter()
-  const [showMenu, setShowMenu] = useState(false)
-  const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 })
-  const [pressTimer, setPressTimer] = useState<NodeJS.Timeout | null>(null)
 
   // 絵文字のみかどうか
   const emojiOnly = useMemo(() => isEmojiOnly(entry.content), [entry.content])
 
   // タップ処理
   const handleTap = useCallback(() => {
-    if (!showMenu) {
-      router.push(`/edit/${entry.id}`)
-    }
-  }, [router, entry.id, showMenu])
-
-  // 長押し開始
-  const handlePressStart = useCallback((e: React.TouchEvent | React.MouseEvent) => {
-    const timer = setTimeout(() => {
-      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX
-      const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY
-      setMenuPosition({ x: clientX, y: clientY })
-      setShowMenu(true)
-    }, 500) // 500ms長押し
-
-    setPressTimer(timer)
-  }, [])
-
-  // 長押しキャンセル
-  const handlePressEnd = useCallback(() => {
-    if (pressTimer) {
-      clearTimeout(pressTimer)
-      setPressTimer(null)
-    }
-  }, [pressTimer])
-
-  // メニューを閉じる
-  const handleCloseMenu = useCallback(() => {
-    setShowMenu(false)
-  }, [])
+    router.push(`/edit/${entry.id}`)
+  }, [router, entry.id])
 
   return (
-    <>
-      <motion.div
-        variants={cardVariants}
-        initial="initial"
-        animate="animate"
-        whileHover="hover"
-        whileTap="tap"
-        className={cn(
-          'relative cursor-pointer rounded-xl',
-          'transition-colors',
-          // セパレータ線（擬似要素）
-          'after:absolute after:bottom-0 after:left-4 after:right-4',
-          'after:h-px after:bg-border'
-        )}
-        onClick={handleTap}
-        onTouchStart={handlePressStart}
-        onTouchEnd={handlePressEnd}
-        onMouseDown={handlePressStart}
-        onMouseUp={handlePressEnd}
-        onMouseLeave={handlePressEnd}
-      >
-        <div className="px-4 py-6">
-          {/* 時刻表示 */}
-          <div className="text-xs text-muted-foreground font-medium">
-            {entry.createdAt.toLocaleTimeString('ja-JP', {
-              hour: '2-digit',
-              minute: '2-digit',
-            })}
-          </div>
-
-          {/* コンテンツ表示 */}
-          {emojiOnly ? (
-            // 絵文字のみの場合：中央配置・大きく表示
-            <div className="mt-3 flex items-center justify-center py-4">
-              <span className="text-5xl">{entry.content.trim()}</span>
-            </div>
-          ) : (
-            // 通常テキストの場合
-            <div className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed">
-              {entry.content}
-            </div>
-          )}
-
-          {/* 画像表示 */}
-          {entry.imageUrls && entry.imageUrls.length > 0 && (
-            <div className={cn(
-              'mt-3 gap-2',
-              entry.imageUrls.length === 1 ? 'block' : 'flex'
-            )}>
-              {entry.imageUrls.map((url, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    'overflow-hidden rounded-lg',
-                    entry.imageUrls!.length === 1 ? 'w-full' : 'flex-1'
-                  )}
-                >
-                  <img
-                    src={url}
-                    alt={`投稿画像 ${index + 1}`}
-                    className="max-h-64 w-full object-cover transition-transform hover:scale-105"
-                    loading="lazy"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </motion.div>
-
-      {showMenu && (
-        <ContextMenu
-          position={menuPosition}
-          entryId={entry.id}
-          onClose={handleCloseMenu}
-        />
+    <motion.div
+      variants={cardVariants}
+      initial="initial"
+      animate="animate"
+      whileHover="hover"
+      whileTap="tap"
+      className={cn(
+        'relative cursor-pointer rounded-xl',
+        'transition-colors',
+        // セパレータ線（擬似要素）
+        'after:absolute after:bottom-0 after:left-4 after:right-4',
+        'after:h-px after:bg-border'
       )}
-    </>
+      onClick={handleTap}
+    >
+      <div className="px-4 py-6">
+        {/* 時刻表示 */}
+        <div className="text-xs text-muted-foreground font-medium">
+          {entry.createdAt.toLocaleTimeString('ja-JP', {
+            hour: '2-digit',
+            minute: '2-digit',
+          })}
+        </div>
+
+        {/* コンテンツ表示 */}
+        {emojiOnly ? (
+          // 絵文字のみの場合：中央配置・大きく表示
+          <div className="mt-3 flex items-center justify-center py-4">
+            <span className="text-5xl">{entry.content.trim()}</span>
+          </div>
+        ) : (
+          // 通常テキストの場合
+          <div className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed">
+            {entry.content}
+          </div>
+        )}
+
+        {/* 画像表示 */}
+        {entry.imageUrls && entry.imageUrls.length > 0 && (
+          <div className={cn(
+            'mt-3 gap-2',
+            entry.imageUrls.length === 1 ? 'block' : 'flex'
+          )}>
+            {entry.imageUrls.map((url, index) => (
+              <div
+                key={index}
+                className={cn(
+                  'overflow-hidden rounded-lg',
+                  entry.imageUrls!.length === 1 ? 'w-full' : 'flex-1'
+                )}
+              >
+                <img
+                  src={url}
+                  alt={`投稿画像 ${index + 1}`}
+                  className="max-h-64 w-full object-cover transition-transform hover:scale-105"
+                  loading="lazy"
+                />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </motion.div>
   )
 }, areEntryPropsEqual)

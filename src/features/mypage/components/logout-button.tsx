@@ -36,8 +36,7 @@ export function LogoutButton() {
       // ログインページにリダイレクト
       router.push('/login')
       router.refresh()
-    } catch (err) {
-      console.error('ログアウトエラー:', err)
+    } catch {
       setError('ログアウトに失敗しました。もう一度お試しください。')
       setIsLoading(false)
     }

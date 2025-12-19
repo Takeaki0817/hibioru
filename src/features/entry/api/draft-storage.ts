@@ -10,8 +10,8 @@ export function saveDraft(draft: Draft): void {
 
   try {
     localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft))
-  } catch (error) {
-    console.error('下書き保存に失敗:', error)
+  } catch {
+    // ストレージ操作エラーは無視（セキュリティ制限等）
   }
 }
 
@@ -24,8 +24,8 @@ export function loadDraft(): Draft | null {
   try {
     const item = localStorage.getItem(DRAFT_STORAGE_KEY)
     return item ? JSON.parse(item) : null
-  } catch (error) {
-    console.error('下書き読み込みに失敗:', error)
+  } catch {
+    // ストレージ操作エラーは無視（セキュリティ制限等）
     return null
   }
 }
@@ -38,7 +38,7 @@ export function clearDraft(): void {
 
   try {
     localStorage.removeItem(DRAFT_STORAGE_KEY)
-  } catch (error) {
-    console.error('下書き削除に失敗:', error)
+  } catch {
+    // ストレージ操作エラーは無視（セキュリティ制限等）
   }
 }
