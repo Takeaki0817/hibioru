@@ -59,8 +59,8 @@ export async function createEntry(
 
     // ストリーク更新（エントリー作成成功後に非同期で実行）
     // この処理の失敗はエントリー作成結果に影響しない
-    updateStreakOnEntry(userData.user.id).catch((err) => {
-      console.error('ストリーク更新に失敗しました:', err)
+    updateStreakOnEntry(userData.user.id).catch(() => {
+      // ストリーク更新エラーはエントリー作成に影響しない
     })
 
     // 通知連携処理（エントリー作成成功後に非同期で実行）
@@ -69,9 +69,8 @@ export async function createEntry(
       userId: userData.user.id,
       entryId: entry.id,
       createdAt: new Date(entry.created_at),
-    }).catch((err) => {
-      // 通知連携処理のエラーはログに出力するがエントリー作成には影響しない
-      console.error('通知連携処理に失敗しました:', err)
+    }).catch(() => {
+      // 通知連携処理のエラーはエントリー作成に影響しない
     })
 
     return { ok: true, value: entry }

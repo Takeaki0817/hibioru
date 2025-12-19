@@ -29,7 +29,6 @@ export async function getHotsureInfo(
     .single()
 
   if (error || !data) {
-    console.error('Failed to get hotsure info:', error)
     return null
   }
 
@@ -87,7 +86,6 @@ export async function consumeHotsure(
   })
 
   if (error) {
-    console.error('Failed to consume hotsure:', error)
     return {
       success: false,
       error: error.message,
@@ -123,7 +121,6 @@ export async function resetHotsureWeekly(): Promise<ResetHotsureResult> {
   const { data, error } = await (supabase as any).rpc('reset_hotsure_weekly')
 
   if (error) {
-    console.error('Failed to reset hotsure weekly:', error)
     return {
       success: false,
       error: error.message,

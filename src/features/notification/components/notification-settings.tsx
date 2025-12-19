@@ -94,13 +94,11 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
-        console.error('Subscribe API error:', response.status, errorData)
         throw new Error(errorData.error || '購読登録に失敗しました')
       }
 
       return true
     } catch (err) {
-      console.error('Push subscription error:', err)
       throw err
     }
   }
@@ -125,7 +123,6 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
 
       return true
     } catch (err) {
-      console.error('Push unsubscription error:', err)
       throw err
     }
   }

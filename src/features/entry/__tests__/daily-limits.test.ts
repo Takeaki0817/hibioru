@@ -10,7 +10,7 @@ import {
   checkDailyImageLimit,
   DAILY_ENTRY_LIMIT,
   DAILY_IMAGE_LIMIT
-} from './daily-limits'
+} from '../api/daily-limits'
 
 // モック設定
 jest.mock('@/lib/supabase/server', () => ({
@@ -19,22 +19,23 @@ jest.mock('@/lib/supabase/server', () => ({
 
 describe('daily-limits', () => {
   const mockUserId = 'test-user-123'
-  let mockSupabaseClient: {
-    from: jest.Mock
-    auth: { getUser: jest.Mock }
+
+  // チェーンモックを作成するヘルパー関数
+  const createChainMock = (finalResult: { count: number | null; error: unknown }) => {
+    const chain = {
+      select: jest.fn().mockReturnThis(),
+      eq: jest.fn().mockReturnThis(),
+      gte: jest.fn().mockReturnThis(),
+      lt: jest.fn().mockResolvedValue(finalResult),
+      not: jest.fn().mockReturnThis(),
+    }
+    return {
+      from: jest.fn().mockReturnValue(chain),
+      auth: { getUser: jest.fn() }
+    }
   }
 
   beforeEach(() => {
-    mockSupabaseClient = {
-      from: jest.fn(),
-      auth: { getUser: jest.fn() }
-    }
-
-    const { createClient } = require('@/lib/supabase/server')
-    ;(createClient as jest.Mock).mockResolvedValue(mockSupabaseClient)
-  })
-
-  afterEach(() => {
     jest.clearAllMocks()
   })
 
@@ -50,34 +51,18 @@ describe('daily-limits', () => {
 
   describe('getDailyEntryCount', () => {
     it('当日の投稿件数を取得できること', async () => {
-      const mockSelect = jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          gte: jest.fn().mockReturnValue({
-            lt: jest.fn().mockReturnValue({
-              count: 5,
-              error: null
-            })
-          })
-        })
-      })
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect })
+      const mockClient = createChainMock({ count: 5, error: null })
+      const { createClient } = require('@/lib/supabase/server')
+      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
 
       const count = await getDailyEntryCount(mockUserId)
       expect(count).toBe(5)
     })
 
     it('エラー時は0を返すこと', async () => {
-      const mockSelect = jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          gte: jest.fn().mockReturnValue({
-            lt: jest.fn().mockReturnValue({
-              count: null,
-              error: { message: 'DB error' }
-            })
-          })
-        })
-      })
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect })
+      const mockClient = createChainMock({ count: null, error: { message: 'DB error' } })
+      const { createClient } = require('@/lib/supabase/server')
+      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
 
       const count = await getDailyEntryCount(mockUserId)
       expect(count).toBe(0)
@@ -86,19 +71,9 @@ describe('daily-limits', () => {
 
   describe('getDailyImageCount', () => {
     it('当日の画像投稿件数を取得できること', async () => {
-      const mockSelect = jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          not: jest.fn().mockReturnValue({
-            gte: jest.fn().mockReturnValue({
-              lt: jest.fn().mockReturnValue({
-                count: 3,
-                error: null
-              })
-            })
-          })
-        })
-      })
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect })
+      const mockClient = createChainMock({ count: 3, error: null })
+      const { createClient } = require('@/lib/supabase/server')
+      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
 
       const count = await getDailyImageCount(mockUserId)
       expect(count).toBe(3)
@@ -107,17 +82,9 @@ describe('daily-limits', () => {
 
   describe('checkDailyEntryLimit', () => {
     it('制限内の場合はallowed=trueを返すこと', async () => {
-      const mockSelect = jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          gte: jest.fn().mockReturnValue({
-            lt: jest.fn().mockResolvedValue({
-              count: 5,
-              error: null
-            })
-          })
-        })
-      })
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect })
+      const mockClient = createChainMock({ count: 5, error: null })
+      const { createClient } = require('@/lib/supabase/server')
+      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
 
       const result = await checkDailyEntryLimit(mockUserId)
 
@@ -131,17 +98,9 @@ describe('daily-limits', () => {
     })
 
     it('上限到達時はallowed=falseを返すこと', async () => {
-      const mockSelect = jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          gte: jest.fn().mockReturnValue({
-            lt: jest.fn().mockResolvedValue({
-              count: 20,
-              error: null
-            })
-          })
-        })
-      })
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect })
+      const mockClient = createChainMock({ count: 20, error: null })
+      const { createClient } = require('@/lib/supabase/server')
+      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
 
       const result = await checkDailyEntryLimit(mockUserId)
 
@@ -156,19 +115,9 @@ describe('daily-limits', () => {
 
   describe('checkDailyImageLimit', () => {
     it('制限内の場合はallowed=trueを返すこと', async () => {
-      const mockSelect = jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          not: jest.fn().mockReturnValue({
-            gte: jest.fn().mockReturnValue({
-              lt: jest.fn().mockResolvedValue({
-                count: 2,
-                error: null
-              })
-            })
-          })
-        })
-      })
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect })
+      const mockClient = createChainMock({ count: 2, error: null })
+      const { createClient } = require('@/lib/supabase/server')
+      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
 
       const result = await checkDailyImageLimit(mockUserId)
 
@@ -182,19 +131,9 @@ describe('daily-limits', () => {
     })
 
     it('上限到達時はallowed=falseを返すこと', async () => {
-      const mockSelect = jest.fn().mockReturnValue({
-        eq: jest.fn().mockReturnValue({
-          not: jest.fn().mockReturnValue({
-            gte: jest.fn().mockReturnValue({
-              lt: jest.fn().mockResolvedValue({
-                count: 5,
-                error: null
-              })
-            })
-          })
-        })
-      })
-      mockSupabaseClient.from.mockReturnValue({ select: mockSelect })
+      const mockClient = createChainMock({ count: 5, error: null })
+      const { createClient } = require('@/lib/supabase/server')
+      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
 
       const result = await checkDailyImageLimit(mockUserId)
 
