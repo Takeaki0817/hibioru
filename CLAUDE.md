@@ -19,6 +19,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **フレームワーク**: Next.js 16 (App Router, Turbopack)
 - **言語**: TypeScript（strictモード、any禁止）
 - **スタイリング**: Tailwind CSS v4
+- **UIコンポーネント**: shadcn/ui, Radix UI, Lucide Icons
+- **アニメーション**: framer-motion
 - **バックエンド/DB**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
 - **認証**: Google OAuth (Supabase Auth)
 - **ホスティング**: Vercel
@@ -125,6 +127,19 @@ import { createEntry } from '@/features/entry/api/service'
 import { createEntry } from '@/features/entry' // index.ts経由
 ```
 
+### UIコンポーネント規約
+
+- **shadcn/ui**: `src/components/ui/`に配置。`npx shadcn@latest add`で追加
+- **カスタムコンポーネント**: `motion-button.tsx`, `motion-card.tsx`等はframer-motion統合版
+- **アイコン**: Lucide Iconsを使用（`lucide-react`）
+
+### デザイン原則（ADHD向け）
+
+- **視覚的に軽く**: Sage Green基調、余白を十分に
+- **情報を絞る**: 一画面に表示する要素を最小限に
+- **フィードバックは控えめ**: 派手なアニメーションより微細な動き
+- **ポジティブな表現**: 失敗を責めず、行動を促す文言
+
 ## 用語定義
 
 | 用語 | 意味 |
@@ -136,6 +151,7 @@ import { createEntry } from '@/features/entry' // index.ts経由
 ## 主要ドキュメント
 
 - `docs/ARCHITECTURE.md` - 詳細なアーキテクチャガイド
+- `docs/DESIGN.md` - UI/UXデザインガイドライン
 - `docs/PROJECT.md` - プロジェクト背景、意思決定
 - `docs/REQUIREMENTS.md` - 要件定義書
 - `.kiro/steering/` - AI向けプロジェクトコンテキスト
