@@ -42,6 +42,13 @@ export function TimelineClient({ userId, initialDate }: TimelineClientProps) {
     }
   }, [initialDate])
 
+  // URLパラメータを削除（読み込み済みデータ内を移動中は不要）
+  const clearUrlParam = useCallback(() => {
+    if (initialDate) {
+      router.replace('/timeline', { scroll: false })
+    }
+  }, [initialDate, router])
+
   // ヘッダーの日付変更（カルーセルスライド）→ TimelineListをスクロール
   const handleDateChange = useCallback(
     (date: Date) => {
@@ -49,11 +56,12 @@ export function TimelineClient({ userId, initialDate }: TimelineClientProps) {
 
       // 日付がタイムラインに読み込まれているか確認
       if (activeDates.has(dateStr)) {
-        // 読み込み済み → スクロール
+        // 読み込み済み → スクロール＆URLパラメータ削除
         if (syncSourceRef.current === 'timeline') return
         syncSourceRef.current = 'carousel'
         setCurrentDate(date)
         scrollToDateRef.current?.(date)
+        clearUrlParam()
         requestAnimationFrame(() => {
           syncSourceRef.current = null
         })
@@ -62,21 +70,25 @@ export function TimelineClient({ userId, initialDate }: TimelineClientProps) {
         router.push(`/timeline?date=${dateStr}`)
       }
     },
-    [activeDates, router]
+    [activeDates, router, clearUrlParam]
   )
 
   // TimelineListのスクロールで日付が変わった時 → カルーセルも同期
-  const handleScrollDateChange = useCallback((date: Date) => {
-    if (syncSourceRef.current === 'carousel') return // カルーセルからの同期中は無視
-    syncSourceRef.current = 'timeline'
-    startTransition(() => {
-      setCurrentDate(date)
-    })
-    carouselDateChangeRef.current?.(date)
-    requestAnimationFrame(() => {
-      syncSourceRef.current = null
-    })
-  }, [])
+  const handleScrollDateChange = useCallback(
+    (date: Date) => {
+      if (syncSourceRef.current === 'carousel') return // カルーセルからの同期中は無視
+      syncSourceRef.current = 'timeline'
+      startTransition(() => {
+        setCurrentDate(date)
+      })
+      carouselDateChangeRef.current?.(date)
+      clearUrlParam()
+      requestAnimationFrame(() => {
+        syncSourceRef.current = null
+      })
+    },
+    [clearUrlParam]
+  )
 
   return (
     <QueryProvider>
