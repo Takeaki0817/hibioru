@@ -266,9 +266,19 @@
   --size-today-dot: 5px;
 }
 
+/* ブラウザ全体のスクロールバーを非表示 */
+html, body {
+  @apply overflow-hidden h-full;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+/* main要素のスクロールを有効化 */
+main {
+  @apply overflow-y-auto h-full;
 }
 
 /* ========================================
@@ -289,6 +299,15 @@ body {
 /* ========================================
  * ヒビオル専用ユーティリティ
  * ======================================== */
+
+/* スクロールバー非表示（機能は維持） */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
 
 /* ストリーク数字用のtabular-nums */
 .streak-number {
