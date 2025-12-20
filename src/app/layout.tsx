@@ -4,7 +4,9 @@ import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
+import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { SkipLink } from "@/components/ui/skip-link";
+import { APP_CONFIG, ICON_CONFIG } from "@/lib/constants/app-config";
 
 const mPlus1p = M_PLUS_1p({
   variable: "--font-m-plus-1p",
@@ -15,27 +17,27 @@ const mPlus1p = M_PLUS_1p({
 });
 
 export const metadata: Metadata = {
-  title: "ヒビオル - 日々を織る",
-  description: "ADHD当事者のための瞬間記録アプリ",
+  title: APP_CONFIG.name,
+  description: APP_CONFIG.description,
   // PWA manifest リンク
   manifest: '/manifest.webmanifest',
   // PWA用メタデータ
-  applicationName: "ヒビオル",
+  applicationName: APP_CONFIG.shortName,
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "ヒビオル",
+    title: APP_CONFIG.shortName,
   },
   formatDetection: {
     telephone: false,
   },
   icons: {
     icon: [
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: ICON_CONFIG.favicon32, sizes: "32x32", type: "image/png" },
+      { url: ICON_CONFIG.favicon16, sizes: "16x16", type: "image/png" },
     ],
     apple: [
-      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+      { url: ICON_CONFIG.appleTouchIcon, sizes: "180x180", type: "image/png" },
     ],
   },
   other: {
@@ -57,6 +59,7 @@ export default function RootLayout({
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>
           <ServiceWorkerRegistration />
+          <InstallBanner />
         </ThemeProvider>
       </body>
     </html>
