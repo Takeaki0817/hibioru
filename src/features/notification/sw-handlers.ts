@@ -8,7 +8,11 @@
  * Requirements: 5.5
  * - プッシュ通知受信時の処理（pushイベント）
  * - 通知クリック時のアプリ画面遷移（notificationclickイベント）
+ *
+ * @note public/sw.js の DEFAULT_NOTIFICATION_OPTIONS と同期が必要
  */
+
+import { NOTIFICATION_CONFIG, ICON_CONFIG } from '@/lib/constants/app-config';
 
 /**
  * 通知タイプ
@@ -108,18 +112,19 @@ export interface ClientInterface {
 
 /**
  * デフォルト通知オプション
+ * @note public/sw.js の DEFAULT_NOTIFICATION_OPTIONS と同期が必要
  */
 export const DEFAULT_NOTIFICATION_OPTIONS = {
   /** デフォルトタイトル */
-  title: 'ヒビオル',
+  title: NOTIFICATION_CONFIG.defaultTitle,
   /** デフォルト本文 */
-  body: '今日の記録を残しましょう',
+  body: NOTIFICATION_CONFIG.defaultBody,
   /** デフォルトアイコン */
-  icon: '/icon-192.png',
+  icon: ICON_CONFIG.icon192,
   /** デフォルトバッジ */
-  badge: '/badge-72.png',
+  badge: NOTIFICATION_CONFIG.defaultBadge,
   /** デフォルトURL */
-  url: '/',
+  url: NOTIFICATION_CONFIG.defaultUrl,
 } as const;
 
 /**

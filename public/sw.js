@@ -11,10 +11,16 @@
  * - クリック時にアプリ画面（記録入力画面）を開く
  * - 既存ウィンドウがあればフォーカス
  * - 新規ウィンドウを開く場合のURL指定
+ *
+ * @note このファイルは静的ファイルのため、以下の定数と手動で同期が必要:
+ * @see src/lib/constants/app-config.ts - アプリ設定定数
+ * @see src/features/notification/sw-handlers.ts - DEFAULT_NOTIFICATION_OPTIONS
  */
 
 // Service Workerのバージョン（キャッシュ管理用）
+// @sync src/lib/constants/app-config.ts SW_CONFIG.cacheVersion
 const CACHE_VERSION = 'v1';
+// @sync src/lib/constants/app-config.ts SW_CONFIG.cacheName
 const CACHE_NAME = `hibioru-${CACHE_VERSION}`;
 
 // キャッシュ対象の静的アセット
@@ -38,14 +44,18 @@ const CACHE_EXCLUDE_PATTERNS = [
 
 /**
  * デフォルト通知オプション
- * lib/notification/sw-handlers.ts の DEFAULT_NOTIFICATION_OPTIONS と同期
+ * @sync src/lib/constants/app-config.ts NOTIFICATION_CONFIG
+ * @sync src/features/notification/sw-handlers.ts DEFAULT_NOTIFICATION_OPTIONS
  */
 const DEFAULT_NOTIFICATION_OPTIONS = {
+  // @sync NOTIFICATION_CONFIG.defaultTitle
   title: 'ヒビオル',
+  // @sync NOTIFICATION_CONFIG.defaultBody
   body: '今日の記録を残しましょう',
   // アイコンは存在する場合のみ設定（存在しない場合はブラウザデフォルト）
   icon: null,
   badge: null,
+  // @sync NOTIFICATION_CONFIG.defaultUrl
   url: '/',
 };
 
@@ -349,5 +359,18 @@ self.addEventListener('sync', (event) => {
       // 将来的にオフライン時の記録を同期する処理を実装
       Promise.resolve()
     );
+  }
+});
+
+/**
+ * メッセージイベントの処理
+ * クライアントからのメッセージを受信し、対応するアクションを実行
+ */
+self.addEventListener('message', (event) => {
+  console.log('[Service Worker] メッセージを受信:', event.data);
+
+  if (event.data?.type === 'SKIP_WAITING') {
+    console.log('[Service Worker] skipWaiting() を実行');
+    self.skipWaiting();
   }
 });

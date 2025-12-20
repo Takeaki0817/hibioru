@@ -11,6 +11,8 @@
  * - ランダム選択ロジック
  */
 
+import { APP_CONFIG } from '@/lib/constants/app-config';
+
 /**
  * 通知メッセージの型
  */
@@ -21,6 +23,9 @@ export interface NotificationMessage {
   body: string;
 }
 
+/** 通知タイトル（共通） */
+const NOTIFICATION_TITLE = APP_CONFIG.shortName;
+
 /**
  * メインリマインド用の文言バリエーション
  *
@@ -29,8 +34,8 @@ export interface NotificationMessage {
  * - 「一言だけでも残しておこう」
  */
 export const MAIN_MESSAGES: NotificationMessage[] = [
-  { title: 'ヒビオル', body: '今日はどんな一日だった？' },
-  { title: 'ヒビオル', body: '一言だけでも残しておこう' },
+  { title: NOTIFICATION_TITLE, body: '今日はどんな一日だった？' },
+  { title: NOTIFICATION_TITLE, body: '一言だけでも残しておこう' },
 ];
 
 /**
@@ -41,8 +46,8 @@ export const MAIN_MESSAGES: NotificationMessage[] = [
  * - 「30秒で終わる」
  */
 export const FOLLOW_UP_1_MESSAGES: NotificationMessage[] = [
-  { title: 'ヒビオル', body: 'まだ間に合うよ' },
-  { title: 'ヒビオル', body: '30秒で終わる' },
+  { title: NOTIFICATION_TITLE, body: 'まだ間に合うよ' },
+  { title: NOTIFICATION_TITLE, body: '30秒で終わる' },
 ];
 
 /**
@@ -53,8 +58,8 @@ export const FOLLOW_UP_1_MESSAGES: NotificationMessage[] = [
  * - 「ほつれ使う？」
  */
 export const FOLLOW_UP_2_MESSAGES: NotificationMessage[] = [
-  { title: 'ヒビオル', body: '今日の最後のチャンス' },
-  { title: 'ヒビオル', body: 'ほつれ使う？' },
+  { title: NOTIFICATION_TITLE, body: '今日の最後のチャンス' },
+  { title: NOTIFICATION_TITLE, body: 'ほつれ使う？' },
 ];
 
 /**

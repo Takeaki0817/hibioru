@@ -28,6 +28,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **ホスティング**: Vercel
 - **PWA**: Web Push API、Service Worker
 
+### 重要な設計原則
+
+- **バレルファイル（index.ts）禁止**: ツリーシェーキングを妨げるため直接インポートを使用
+- **interface優先**: 型定義には`type`より`interface`を優先
+- **Server Components優先**: `'use client'`はインタラクティブな部分のみに使用
+
+### Supabaseクライアントの使い分け
+
+```typescript
+// Server Components, Route Handlers, Server Actions
+import { createClient } from '@/lib/supabase/server'
+const supabase = await createClient()
+
+// Client Components（'use client'）
+import { createClient } from '@/lib/supabase/client'
+const supabase = createClient()
+```
+
 ## 開発コマンド
 
 ```bash
@@ -46,15 +64,33 @@ pnpm test:watch              # ウォッチモード
 pnpm test:coverage           # カバレッジ付き
 pnpm test -- path/to/test    # 単一テスト実行
 
+# テスト優先対象（重要なビジネスロジック）
+# - ストリーク計算
+# - ほつれ消費ロジック
+# - 日付処理
+
 # Supabase（Docker）
 pnpm db:start                # 起動
 pnpm db:stop                 # 停止
 pnpm db:reset                # DBリセット（マイグレーション再適用）
-pnpm db:types                # 型定義生成
+pnpm db:types                # 型定義生成 → src/lib/types/database.generated.ts
 pnpm db:migration:new <name> # 新規マイグレーション
+pnpm db:push                 # リモートDBへプッシュ
+pnpm db:pull                 # リモートDBからプル
+pnpm db:diff                 # マイグレーション差分確認
+
+# E2Eテスト（Playwright）
+pnpm exec playwright test           # E2Eテスト実行
+pnpm exec playwright test --ui      # UIモードで実行
+pnpm exec playwright test auth      # 特定ファイルのみ実行
+
+# プッシュ通知
+pnpm vapid:generate          # VAPID鍵生成
 ```
 
 ## ローカル開発環境
+
+**前提条件**: Node.js 20+、pnpm、Docker Desktop
 
 **開発時は必ずローカルのSupabase（Docker）を使用すること。**
 
@@ -71,6 +107,31 @@ pnpm db:start  # Docker Desktop起動後
 pnpm dev
 ```
 
+## デプロイ・インフラ操作
+
+### 操作方針
+- **Supabase/Vercelのデプロイ設定依頼時**: CLIを使用して操作を試みる
+- **ローカル開発時**: Docker上のSupabaseを操作する（本番環境には触れない）
+
+### Supabase CLI
+```bash
+supabase login                    # 認証
+supabase link --project-ref <ref> # プロジェクトリンク
+supabase db push                  # マイグレーション適用
+supabase functions deploy <name>  # Edge Functions デプロイ
+supabase secrets set <KEY>=<val>  # シークレット設定
+```
+
+### Vercel CLI
+```bash
+vercel login                      # 認証
+vercel link                       # プロジェクトリンク
+vercel env pull                   # 環境変数取得
+vercel env add <name>             # 環境変数追加
+vercel --prod                     # 本番デプロイ
+vercel logs                       # ログ確認
+```
+
 ## アーキテクチャ
 
 [bulletproof-react](https://github.com/alan2207/bulletproof-react) の設計思想を採用した**Featuresベースアーキテクチャ**。
@@ -83,29 +144,31 @@ pnpm dev
 
 **クロスフィーチャーインポートは禁止**。機能間の依存が必要な場合はアプリケーション層で統合。
 
+```typescript
+// ❌ 禁止: feature → feature
+import { useStreak } from '@/features/streak/hooks/use-streak'
+
+// ✅ 許可: feature → 共有パーツ
+import { createClient } from '@/lib/supabase/server'
+import { Button } from '@/components/ui/button'
+```
+
 ### ディレクトリ構造
 
 ```
 src/                          # @/エイリアスのルート
 ├── app/                      # Next.js App Router（ルーティング専用）
-├── features/                 # 機能単位モジュール
-│   ├── entry/               # エントリ入力・編集
-│   ├── timeline/            # タイムライン表示
-│   ├── streak/              # ストリーク（継続記録）
-│   ├── hotsure/             # ほつれ（スキップ）
-│   ├── notification/        # プッシュ通知
-│   ├── auth/                # 認証
-│   └── mypage/              # マイページ
+├── features/                 # 機能単位モジュール（下記参照）
 ├── components/              # 共有UIコンポーネント
 │   ├── layouts/             # レイアウト系
 │   ├── providers/           # コンテキストプロバイダー
 │   └── ui/                  # 汎用UIプリミティブ
 └── lib/                     # 共通ライブラリ
     ├── supabase/            # Supabaseクライアント
-    └── types/               # 型定義（database.ts等）
+    └── types/               # 型定義（database.generated.ts等）
 ```
 
-### フィーチャーの構造
+### フィーチャー構造テンプレート
 
 ```
 src/features/{feature}/
@@ -113,40 +176,11 @@ src/features/{feature}/
 ├── components/              # 機能固有コンポーネント
 ├── hooks/                   # 機能固有フック
 ├── stores/                  # Zustand ストア（Props Drilling解消用）
-│   ├── {feature}-store.ts
-│   └── __tests__/           # ストアのテスト
 ├── __tests__/               # テストファイル
 └── types.ts                 # 型定義
 ```
 
-### コーディング規約
-
-- **ファイル命名**: kebab-case（`entry-form.tsx`, `use-timeline.ts`）
-- **バレルファイル禁止**: `index.ts`は使用しない。直接インポートを推奨
-- **Server/Client**: デフォルトはServer Component。インタラクティブな部分のみ`'use client'`
-- **状態管理**: Props Drillingを避け、Zustandストアを使用
-
-```typescript
-// 良い例
-import { createEntry } from '@/features/entry/api/service'
-import { useTimelineStore } from '@/features/timeline/stores/timeline-store'
-
-// 避ける例
-import { createEntry } from '@/features/entry' // index.ts経由
-```
-
-### UIコンポーネント規約
-
-- **shadcn/ui**: `src/components/ui/`に配置。`npx shadcn@latest add`で追加
-- **カスタムコンポーネント**: `motion-button.tsx`, `motion-card.tsx`等はframer-motion統合版
-- **アイコン**: Lucide Iconsを使用（`lucide-react`）
-
-### デザイン原則（ADHD向け）
-
-- **視覚的に軽く**: Sage Green基調、余白を十分に
-- **情報を絞る**: 一画面に表示する要素を最小限に
-- **フィードバックは控えめ**: 派手なアニメーションより微細な動き
-- **ポジティブな表現**: 失敗を責めず、行動を促す文言
+**機能一覧**: entry, timeline, streak, hotsure, notification, auth, mypage
 
 ## 用語定義
 
@@ -162,46 +196,48 @@ import { createEntry } from '@/features/entry' // index.ts経由
 - `docs/DESIGN.md` - UI/UXデザインガイドライン
 - `docs/PROJECT.md` - プロジェクト背景、意思決定
 - `docs/REQUIREMENTS.md` - 要件定義書
-- `.kiro/steering/` - AI向けプロジェクトコンテキスト
+- `.kiro/steering/` - AI向けプロダクト・ビジネスコンテキスト
+- `.claude/rules/` - コーディング規約（パス単位で自動適用）
 
 ---
 
-## AI-DLC and Spec-Driven Development
+## AI-DLC（仕様駆動開発）
 
-Kiro-style Spec Driven Development implementation on AI-DLC (AI Development Life Cycle)
+Kiro-style Spec Driven Development を採用。
 
-### Paths
-- Steering: `.kiro/steering/`
-- Specs: `.kiro/specs/`
+### パス
+- **Steering**: `.kiro/steering/` - プロジェクト全体のルール・コンテキスト
+- **Specs**: `.kiro/specs/` - 機能別の仕様・設計・タスク
 
-### Steering vs Specification
-- **Steering** (`.kiro/steering/`) - AI向けプロジェクト全体のルールとコンテキスト
-- **Specs** (`.kiro/specs/`) - 個別機能の開発プロセスを形式化
+### アクティブな仕様
 
-### Active Specifications
-- `auth` - 認証機能
-- `timeline` - タイムライン/カレンダー
-- `entry-input` - 入力/編集機能
-- `streak` - ストリーク（継続記録）
-- `mypage` - マイページ
-- `notification` - プッシュ通知
+| 機能 | 説明 |
+|------|------|
+| auth | 認証機能 |
+| timeline | タイムライン/カレンダー |
+| entry-input | 入力/編集機能 |
+| streak | ストリーク（継続記録） |
+| mypage | マイページ |
+| notification | プッシュ通知 |
 
 進捗確認: `/kiro:spec-status [feature-name]`
 
-### Workflow
-- Phase 0 (optional): `/kiro:steering`, `/kiro:steering-custom`
-- Phase 1 (Specification):
-  - `/kiro:spec-init "description"`
-  - `/kiro:spec-requirements {feature}`
-  - `/kiro:validate-gap {feature}` (optional)
-  - `/kiro:spec-design {feature} [-y]`
-  - `/kiro:validate-design {feature}` (optional)
-  - `/kiro:spec-tasks {feature} [-y]`
-- Phase 2 (Implementation): `/kiro:spec-impl {feature} [tasks]`
-  - `/kiro:validate-impl {feature}` (optional)
+### ワークフロー
 
-### Development Rules
-- 3-phase approval workflow: Requirements → Design → Tasks → Implementation
-- Human review required each phase; use `-y` only for intentional fast-track
-- Think in English, generate responses in Japanese
-- All Markdown content in project files MUST be written in Japanese
+```
+Phase 0（任意）: /kiro:steering, /kiro:steering-custom
+
+Phase 1（仕様策定）:
+  /kiro:spec-init "description"
+  /kiro:spec-requirements {feature}
+  /kiro:spec-design {feature} [-y]
+  /kiro:spec-tasks {feature} [-y]
+
+Phase 2（実装）:
+  /kiro:spec-impl {feature} [tasks]
+```
+
+### ルール
+- **3フェーズ承認**: Requirements → Design → Tasks → Implementation
+- **レビュー必須**: 各フェーズで人間のレビューが必要（`-y`で省略可能）
+- **日本語出力**: プロジェクトファイルのMarkdownは日本語で記述
