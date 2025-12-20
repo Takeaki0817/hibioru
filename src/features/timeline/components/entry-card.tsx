@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, memo } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import type { TimelineEntry } from '../types'
 import { cn } from '@/lib/utils'
@@ -137,15 +138,16 @@ export const EntryCard = memo(function EntryCard({ entry }: EntryCardProps) {
               <div
                 key={index}
                 className={cn(
-                  'overflow-hidden rounded-lg',
-                  entry.imageUrls!.length === 1 ? 'w-full' : 'flex-1'
+                  'relative overflow-hidden rounded-lg',
+                  entry.imageUrls!.length === 1 ? 'w-full h-64' : 'flex-1 h-48'
                 )}
               >
-                <img
+                <Image
                   src={url}
                   alt={`投稿画像 ${index + 1}`}
-                  className="max-h-64 w-full object-cover transition-transform hover:scale-105"
-                  loading="lazy"
+                  fill
+                  sizes={entry.imageUrls!.length === 1 ? '100vw' : '50vw'}
+                  className="object-cover transition-transform hover:scale-105"
                 />
               </div>
             ))}

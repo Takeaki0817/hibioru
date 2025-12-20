@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { ImageOff, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -69,9 +70,11 @@ export function ImagePreviewGrid({
         const isRemoved = removedImageUrls.includes(url)
         return (
           <div key={`existing-${index}`} className="relative w-20 h-20">
-            <img
+            <Image
               src={url}
               alt={`既存画像 ${index + 1}`}
+              width={80}
+              height={80}
               className="w-20 h-20 rounded-lg object-cover"
             />
             {isRemoved ? (

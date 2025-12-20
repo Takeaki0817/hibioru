@@ -7,6 +7,9 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getStreakInfo } from '@/features/streak/api/service'
 
+// 認証が必要なため常に動的にレンダリング
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     // 認証確認
