@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import { ImageOff, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -44,11 +45,11 @@ export function ImagePreviewGrid({
     <div className="mt-4 flex gap-2 flex-wrap">
       {/* 新規追加した画像 */}
       {newImages.map((img, index) => (
-        <div key={`new-${index}`} className="relative w-20 h-20">
+        <div key={`new-${index}`} className="relative size-20">
           <img
             src={img.previewUrl}
             alt={`プレビュー ${index + 1}`}
-            className="w-20 h-20 rounded-lg object-cover"
+            className="size-20 rounded-lg object-cover"
           />
           <Button
             type="button"
@@ -68,11 +69,13 @@ export function ImagePreviewGrid({
       {existingImageUrls.map((url, index) => {
         const isRemoved = removedImageUrls.includes(url)
         return (
-          <div key={`existing-${index}`} className="relative w-20 h-20">
-            <img
+          <div key={`existing-${index}`} className="relative size-20">
+            <Image
               src={url}
               alt={`既存画像 ${index + 1}`}
-              className="w-20 h-20 rounded-lg object-cover"
+              width={80}
+              height={80}
+              className="size-20 rounded-lg object-cover"
             />
             {isRemoved ? (
               // 削除予定のオーバーレイ

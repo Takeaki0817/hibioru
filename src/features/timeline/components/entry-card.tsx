@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, memo } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { motion } from 'framer-motion'
 import type { TimelineEntry } from '../types'
 import { cn } from '@/lib/utils'
@@ -128,29 +129,36 @@ export const EntryCard = memo(function EntryCard({ entry }: EntryCardProps) {
         )}
 
         {/* 画像表示 */}
-        {entry.imageUrls && entry.imageUrls.length > 0 && (
-          <div className={cn(
-            'mt-3 gap-2',
-            entry.imageUrls.length === 1 ? 'block' : 'flex'
-          )}>
-            {entry.imageUrls.map((url, index) => (
-              <div
-                key={index}
-                className={cn(
-                  'overflow-hidden rounded-lg',
-                  entry.imageUrls!.length === 1 ? 'w-full' : 'flex-1'
-                )}
-              >
-                <img
-                  src={url}
-                  alt={`投稿画像 ${index + 1}`}
-                  className="max-h-64 w-full object-cover transition-transform hover:scale-105"
-                  loading="lazy"
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        {entry.imageUrls && entry.imageUrls.length > 0 && (() => {
+          const imageUrls = entry.imageUrls
+          const isSingle = imageUrls.length === 1
+          return (
+            <div className={cn(
+              'mt-3 gap-2',
+              isSingle ? 'block' : 'flex'
+            )}>
+              {imageUrls.map((url, index) => (
+                <div
+                  key={index}
+                  className={cn(
+                    'relative overflow-hidden rounded-lg',
+                    isSingle ? 'w-full h-64' : 'flex-1 h-48'
+                  )}
+                >
+                  <Image
+                    src={url}
+                    alt={`投稿画像 ${index + 1}`}
+                    fill
+                    sizes={isSingle
+                      ? '(max-width: 672px) 100vw, 672px'
+                      : '(max-width: 672px) 50vw, 336px'}
+                    className="object-cover transition-transform hover:scale-105"
+                  />
+                </div>
+              ))}
+            </div>
+          )
+        })()}
       </div>
     </motion.div>
   )

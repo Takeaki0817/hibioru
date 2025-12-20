@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { ProfileSection } from '@/features/mypage/components/profile-section'
@@ -10,6 +11,11 @@ import { LogoutButton } from '@/features/mypage/components/logout-button'
 import { PageLayout } from '@/components/layouts/page-layout'
 import { getStreakInfo, getWeeklyRecords } from '@/features/streak/api/service'
 import { getNotificationSettings } from '@/features/notification/api/service'
+
+export const metadata: Metadata = {
+  title: 'マイページ - ヒビオル',
+  description: 'ストリーク、ほつれ、通知設定の管理',
+}
 
 export default async function MypagePage() {
   const supabase = await createClient()

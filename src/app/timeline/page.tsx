@@ -1,7 +1,13 @@
+import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { TimelineClient } from './TimelineClient'
 import type { Entry } from '@/lib/types/database'
+
+export const metadata: Metadata = {
+  title: 'タイムライン - ヒビオル',
+  description: 'あなたの日々の記録を確認',
+}
 
 // 今日の日付範囲を取得
 function getTodayRange() {

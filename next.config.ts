@@ -1,13 +1,30 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Google OAuth アバター画像を許可
+  // React Compiler（自動メモ化によるパフォーマンス向上）
+  reactCompiler: true,
+
+  // リモート画像の許可設定
   images: {
     remotePatterns: [
+      // Google OAuth アバター画像
       {
         protocol: 'https',
         hostname: 'lh3.googleusercontent.com',
         pathname: '/**',
+      },
+      // Supabase Storage（本番）
+      {
+        protocol: 'https',
+        hostname: 'ywfotxkfnsqzybndymsw.supabase.co',
+        pathname: '/storage/v1/object/**',
+      },
+      // Supabase Storage（ローカル開発）
+      {
+        protocol: 'http',
+        hostname: '127.0.0.1',
+        port: '54321',
+        pathname: '/storage/v1/object/**',
       },
     ],
   },
@@ -23,6 +40,8 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-popover',
       '@radix-ui/react-dropdown-menu',
     ],
+    // Turbopack ファイルシステムキャッシュ（開発時のコンパイル高速化）
+    turbopackFileSystemCacheForDev: true,
   },
 
   // 本番環境でのソースマップを無効化（バンドルサイズ削減）
