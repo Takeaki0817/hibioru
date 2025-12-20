@@ -207,7 +207,7 @@ describe('Service Worker - プッシュ通知受信ハンドラ', () => {
     });
 
     it('デフォルトアイコンパスが設定されている', () => {
-      expect(DEFAULT_NOTIFICATION_OPTIONS.icon).toBe('/icon-192.png');
+      expect(DEFAULT_NOTIFICATION_OPTIONS.icon).toBe('/icon-192x192.png');
     });
 
     it('デフォルトバッジパスが設定されている', () => {
@@ -339,6 +339,7 @@ describe('Service Worker - handlePush', () => {
 
     expect(result.title).toBe('ヒビオル');
     expect(result.options.body).toBe('今日はどんな一日だった？');
+    // pushDataにiconが指定されている場合はその値を使用
     expect(result.options.icon).toBe('/icon-192.png');
     expect(result.options.badge).toBe('/badge-72.png');
     expect(result.options.data.url).toBe('/new');
@@ -350,7 +351,7 @@ describe('Service Worker - handlePush', () => {
 
     expect(result.title).toBe('ヒビオル');
     expect(result.options.body).toBe('今日の記録を残しましょう');
-    expect(result.options.icon).toBe('/icon-192.png');
+    expect(result.options.icon).toBe('/icon-192x192.png');
     expect(result.options.badge).toBe('/badge-72.png');
     expect(result.options.data.url).toBe('/');
   });
