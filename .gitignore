@@ -50,3 +50,4 @@ Thumbs.db
 # Backup files
 _.mcp.json
 next-env.d.ts
+.vercel
