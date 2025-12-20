@@ -207,11 +207,9 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
         if (onSuccess) {
           onSuccess()
         } else {
-          // Server Action後のセッション同期のためrefreshを呼び出し
-          router.refresh()
           router.push('/timeline')
         }
-      }, 800)
+      }, 300)
     } catch (err) {
       submitError(err instanceof Error ? err.message : '投稿に失敗しました')
     }
