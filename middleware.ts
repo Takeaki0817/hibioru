@@ -1,7 +1,31 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+// 認証不要なパス（完全一致のみ）
+const PUBLIC_PATHS_EXACT = ['/', '/login', '/offline']
+
+// 認証不要なパス（プレフィックス一致）
+const PUBLIC_PATHS_PREFIX = ['/auth/callback']
+
+// パスが認証不要かどうかを判定
+function isPublicPath(pathname: string): boolean {
+  // 完全一致チェック
+  if (PUBLIC_PATHS_EXACT.includes(pathname)) {
+    return true
+  }
+  // プレフィックス一致チェック（/auth/callback のみ）
+  return PUBLIC_PATHS_PREFIX.some(path => pathname.startsWith(path))
+}
+
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // 認証不要なパスの場合、セッション確認をスキップ（高速化）
+  // ただし、ログインページとルートはリダイレクト判定が必要なため除外
+  if (pathname !== '/' && pathname !== '/login' && isPublicPath(pathname)) {
+    return NextResponse.next({ request })
+  }
+
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -34,28 +58,15 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  // 未認証ユーザーをログインページへリダイレクト
-  // /, /login, /auth/callback は認証不要
-  if (
-    !user &&
-    request.nextUrl.pathname !== '/' &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/auth/callback')
-  ) {
+  // 未認証ユーザーを保護されたルートからログインページへリダイレクト
+  if (!user && !isPublicPath(pathname)) {
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // 認証済みユーザーがログインページにアクセスした場合はタイムラインへ
-  if (user && request.nextUrl.pathname === '/login') {
-    const url = request.nextUrl.clone()
-    url.pathname = '/timeline'
-    return NextResponse.redirect(url)
-  }
-
-  // 認証済みユーザーがルートにアクセスした場合はタイムラインへ
-  if (user && request.nextUrl.pathname === '/') {
+  // 認証済みユーザーがログインページまたはルートにアクセスした場合はタイムラインへ
+  if (user && (pathname === '/login' || pathname === '/')) {
     const url = request.nextUrl.clone()
     url.pathname = '/timeline'
     return NextResponse.redirect(url)
