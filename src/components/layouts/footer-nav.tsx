@@ -99,6 +99,7 @@ export function FooterNav({ centerButton }: FooterNavProps) {
               >
                 <Link
                   href={item.href}
+                  prefetch={true}
                   className={cn(
                     'flex items-center justify-center w-16 h-16 rounded-full shadow-lg',
                     'bg-primary-500 text-white',
@@ -122,6 +123,7 @@ export function FooterNav({ centerButton }: FooterNavProps) {
             >
               <Link
                 href={item.href}
+                prefetch={true}
                 className={cn(
                   'flex flex-col items-center justify-center h-full py-2 transition-colors',
                   isActive

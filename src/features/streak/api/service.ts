@@ -216,21 +216,44 @@ export async function getWeeklyRecords(
       weekDates.push(date.toISOString().split('T')[0])
     }
 
-    // 各日付の記録有無を並行取得
-    const results = await Promise.all(
-      weekDates.map(date => hasEntryOnDate(userId, date))
-    )
+    // 日曜日の日付を計算
+    const sundayDate = new Date(mondayDate)
+    sundayDate.setUTCDate(sundayDate.getUTCDate() + 6)
 
-    // エラーチェック
-    for (const result of results) {
-      if (!result.ok) {
-        return result as Result<boolean[], StreakError>
+    // 1つのクエリで1週間分のエントリを取得（N+1解消）
+    const supabase = await createClient()
+    const { data, error } = await supabase
+      .from('entries')
+      .select('created_at')
+      .eq('user_id', userId)
+      .eq('is_deleted', false)
+      .gte('created_at', `${weekDates[0]}T00:00:00+09:00`)
+      .lte('created_at', `${weekDates[6]}T23:59:59+09:00`)
+
+    if (error) {
+      return {
+        ok: false,
+        error: {
+          code: 'DB_ERROR',
+          message: error.message
+        }
       }
     }
 
+    // 取得したエントリから各日付の有無を判定
+    const entries = data as { created_at: string }[] | null
+    const entriesByDate = new Set(
+      (entries ?? []).map(e => {
+        // created_at を JST の日付文字列に変換
+        const d = new Date(e.created_at)
+        const jstDate = new Date(d.getTime() + 9 * 60 * 60 * 1000)
+        return jstDate.toISOString().split('T')[0]
+      })
+    )
+
     return {
       ok: true,
-      value: results.map(r => (r as { ok: true; value: boolean }).value)
+      value: weekDates.map(date => entriesByDate.has(date))
     }
   } catch (error) {
     return {

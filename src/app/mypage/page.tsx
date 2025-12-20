@@ -20,10 +20,11 @@ export default async function MypagePage() {
     redirect('/login')
   }
 
-  // 実際のストリーク・ほつれデータをDBから取得
-  const [streakResult, weeklyResult] = await Promise.all([
+  // ストリーク・ほつれ・通知設定を並列取得（パフォーマンス最適化）
+  const [streakResult, weeklyResult, notificationResult] = await Promise.all([
     getStreakInfo(user.id),
     getWeeklyRecords(user.id),
+    getNotificationSettings(user.id),
   ])
   const stats = {
     currentStreak: streakResult.ok ? streakResult.value.currentStreak : 0,
@@ -32,9 +33,6 @@ export default async function MypagePage() {
     hotsureMax: 2,
   }
   const weeklyRecords = weeklyResult.ok ? weeklyResult.value : undefined
-
-  // 通知設定を取得
-  const notificationResult = await getNotificationSettings(user.id)
   const notificationSettings = notificationResult.ok
     ? notificationResult.value
     : {

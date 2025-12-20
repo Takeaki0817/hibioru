@@ -84,21 +84,28 @@ export async function fetchCalendarData(
   const startDate = new Date(year, month - 1, 1)
   const endDate = new Date(year, month, 0, 23, 59, 59, 999)
 
-  // 投稿日を取得
-  const { data: entries, error: entriesError } = await supabase
-    .from('entries')
-    .select('created_at')
-    .eq('user_id', userId)
-    .eq('is_deleted', false)
-    .gte('created_at', startDate.toISOString())
-    .lte('created_at', endDate.toISOString())
+  // entries と streaks を並列取得（パフォーマンス最適化）
+  const [entriesResult, streaksResult] = await Promise.all([
+    supabase
+      .from('entries')
+      .select('created_at')
+      .eq('user_id', userId)
+      .eq('is_deleted', false)
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString()),
+    supabase
+      .from('streaks')
+      .select('hotsure_used_dates')
+      .eq('user_id', userId)
+      .single()
+  ])
 
-  if (entriesError) {
-    throw new Error(`カレンダーデータの取得に失敗しました: ${entriesError.message}`)
+  if (entriesResult.error) {
+    throw new Error(`カレンダーデータの取得に失敗しました: ${entriesResult.error.message}`)
   }
 
   // 日付ごとにグループ化
-  const rawEntries = entries as { created_at: string }[] | null
+  const rawEntries = entriesResult.data as { created_at: string }[] | null
   const entryDates = Array.from(
     new Set(
       (rawEntries || []).map((entry) => {
@@ -109,14 +116,7 @@ export async function fetchCalendarData(
     )
   )
 
-  // ほつれ使用日を取得
-  const { data: streaks } = await supabase
-    .from('streaks')
-    .select('hotsure_used_dates')
-    .eq('user_id', userId)
-    .single()
-
-  const streakData = streaks as { hotsure_used_dates: string[] } | null
+  const streakData = streaksResult.data as { hotsure_used_dates: string[] } | null
   const hotsureDates = streakData?.hotsure_used_dates || []
 
   return {

@@ -11,7 +11,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             // デフォルトのstale時間（データが新鮮な状態を保つ時間）
-            staleTime: 60 * 1000, // 1分
+            staleTime: 5 * 60 * 1000, // 5分
             // キャッシュの保持時間（GC対象になるまでの時間）
             gcTime: 5 * 60 * 1000, // 5分
             // リトライ設定
