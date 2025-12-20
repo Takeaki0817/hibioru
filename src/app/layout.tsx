@@ -17,6 +17,8 @@ const mPlus1p = M_PLUS_1p({
 export const metadata: Metadata = {
   title: "ヒビオル - 日々を織る",
   description: "ADHD当事者のための瞬間記録アプリ",
+  // PWA manifest リンク
+  manifest: '/manifest.webmanifest',
   // PWA用メタデータ
   applicationName: "ヒビオル",
   appleWebApp: {
