@@ -16,7 +16,7 @@ const nextConfig: NextConfig = {
       // Supabase Storage（本番）
       {
         protocol: 'https',
-        hostname: '*.supabase.co',
+        hostname: 'ywfotxkfnsqzybndymsw.supabase.co',
         pathname: '/storage/v1/object/**',
       },
       // Supabase Storage（ローカル開発）

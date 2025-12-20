@@ -146,7 +146,9 @@ export const EntryCard = memo(function EntryCard({ entry }: EntryCardProps) {
                   src={url}
                   alt={`投稿画像 ${index + 1}`}
                   fill
-                  sizes={entry.imageUrls!.length === 1 ? '100vw' : '50vw'}
+                  sizes={entry.imageUrls!.length === 1
+                    ? '(max-width: 672px) 100vw, 672px'
+                    : '(max-width: 672px) 50vw, 336px'}
                   className="object-cover transition-transform hover:scale-105"
                 />
               </div>
