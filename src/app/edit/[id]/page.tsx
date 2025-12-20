@@ -12,18 +12,23 @@ export default async function EditEntryPage({
 }) {
   const { id } = await params
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
+  // 認証確認とエントリ取得を並列実行（パフォーマンス最適化）
+  const [userResult, entryResult] = await Promise.all([
+    supabase.auth.getUser(),
+    getEntry(id),
+  ])
+
+  const user = userResult.data.user
   if (!user) {
     redirect('/login')
   }
 
-  const result = await getEntry(id)
-  if (!result.ok) {
+  if (!entryResult.ok) {
     notFound()
   }
 
-  const entry = result.value
+  const entry = entryResult.value
 
   // 所有者チェック
   if (entry.user_id !== user.id) {

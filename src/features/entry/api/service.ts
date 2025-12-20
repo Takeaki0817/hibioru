@@ -57,21 +57,16 @@ export async function createEntry(
 
     const entry = data as Entry
 
-    // ストリーク更新（エントリー作成成功後に非同期で実行）
-    // この処理の失敗はエントリー作成結果に影響しない
-    updateStreakOnEntry(userData.user.id).catch(() => {
-      // ストリーク更新エラーはエントリー作成に影響しない
-    })
-
-    // 通知連携処理（エントリー作成成功後に非同期で実行）
-    // この処理の失敗はエントリー作成結果に影響しない
-    handleEntryCreated({
-      userId: userData.user.id,
-      entryId: entry.id,
-      createdAt: new Date(entry.created_at),
-    }).catch(() => {
-      // 通知連携処理のエラーはエントリー作成に影響しない
-    })
+    // ストリーク更新と通知連携を並列実行（パフォーマンス最適化）
+    // これらの処理の失敗はエントリー作成結果に影響しない
+    Promise.allSettled([
+      updateStreakOnEntry(userData.user.id),
+      handleEntryCreated({
+        userId: userData.user.id,
+        entryId: entry.id,
+        createdAt: new Date(entry.created_at),
+      }),
+    ])
 
     return { ok: true, value: entry }
   } catch (error) {
