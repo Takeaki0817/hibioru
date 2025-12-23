@@ -9,10 +9,9 @@ import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
 import { SuccessOverlay } from './success-overlay'
 import { ImagePreviewGrid } from './image-preview-grid'
-import { updateEntry, deleteEntry } from '@/features/entry/api/service'
+import { createEntry, updateEntry, deleteEntry } from '@/features/entry/api/service'
 import { uploadImage } from '@/features/entry/api/image-service'
-import { saveDraft, loadDraft } from '@/features/entry/api/draft-storage'
-import { useCreateEntry } from '../hooks/use-create-entry'
+import { saveDraft, loadDraft, clearDraft } from '@/features/entry/api/draft-storage'
 import { MotionButton } from '@/components/ui/motion-button'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -103,15 +102,6 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
 
-  // 楽観的UI対応の投稿フック（新規作成時のみ使用）
-  const { submit: createEntrySubmit, isPending: isOptimisticPending } = useCreateEntry({
-    userId,
-    onSuccess: () => {
-      // 成功アニメーションを表示（楽観的UIの場合は遷移後に表示されないが問題なし）
-      submitSuccess()
-    },
-  })
-
   // 外部から送信を呼び出せるようにする
   useImperativeHandle(ref, () => ({
     submit: () => {
@@ -170,26 +160,6 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-
-    // 画像の有無を判定
-    const hasNewImages = images.length > 0
-    const hasExistingImages = existingImageUrls.filter(url => !removedImageUrls.includes(url)).length > 0
-    const hasImages = hasNewImages || hasExistingImages
-
-    // 新規作成 かつ 画像なし → 楽観的UI
-    const useOptimisticUI = mode === 'create' && !hasImages
-
-    if (useOptimisticUI) {
-      // 楽観的UI: 即座にタイムラインへ遷移し、バックグラウンドで保存
-      createEntrySubmit(
-        { content, imageUrls: null },
-        { optimistic: true }
-      )
-      // 遷移とエラーハンドリングはuse-create-entry内で処理される
-      return
-    }
-
-    // 従来の処理（画像あり or 編集モード）
     submitStart()
 
     try {
@@ -213,51 +183,33 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
         }
       }
 
-      const finalImageUrls = imageUrls.length > 0 ? imageUrls : null
+      // エントリ作成/更新
+      const result =
+        mode === 'create'
+          ? await createEntry({ content, imageUrls: imageUrls.length > 0 ? imageUrls : null })
+          : await updateEntry(initialEntry!.id, { content, imageUrls: imageUrls.length > 0 ? imageUrls : null })
 
-      if (mode === 'edit') {
-        // 編集モード: updateEntryを使用
-        const result = await updateEntry(initialEntry!.id, {
-          content,
-          imageUrls: finalImageUrls,
-        })
-
-        if (!result.ok) {
-          submitError(result.error.message)
-          return
-        }
-
-        // 下書き削除は不要（編集時は下書きを使わない）
-        // 成功アニメーション表示
-        submitSuccess()
-
-        // 少し待ってから遷移
-        setTimeout(() => {
-          if (onSuccess) {
-            onSuccess()
-          } else {
-            router.push('/timeline')
-          }
-        }, 300)
-      } else {
-        // 新規作成（画像あり）- 楽観的UIなしで投稿
-        createEntrySubmit(
-          { content, imageUrls: finalImageUrls },
-          { optimistic: false }
-        )
-        // 下書き削除はuse-create-entry内で処理される
-        // 成功アニメーション表示
-        submitSuccess()
-
-        // 少し待ってから遷移
-        setTimeout(() => {
-          if (onSuccess) {
-            onSuccess()
-          } else {
-            router.push('/timeline')
-          }
-        }, 300)
+      if (!result.ok) {
+        submitError(result.error.message)
+        return
       }
+
+      // 下書き削除
+      if (mode === 'create') {
+        clearDraft()
+      }
+
+      // 成功アニメーション表示
+      submitSuccess()
+
+      // 少し待ってから遷移
+      setTimeout(() => {
+        if (onSuccess) {
+          onSuccess()
+        } else {
+          router.push('/timeline')
+        }
+      }, 300)
     } catch (err) {
       submitError(err instanceof Error ? err.message : '投稿に失敗しました')
     }
@@ -380,7 +332,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           type="submit"
           variant="sage"
           size="xl"
-          disabled={!canSubmit || isOptimisticPending}
+          disabled={!canSubmit}
           className="mt-4 w-full"
         >
           {isSubmitting ? (
