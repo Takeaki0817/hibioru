@@ -9,9 +9,10 @@ import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
 import { SuccessOverlay } from './success-overlay'
 import { ImagePreviewGrid } from './image-preview-grid'
-import { createEntry, updateEntry, deleteEntry } from '@/features/entry/api/service'
+import { updateEntry, deleteEntry } from '@/features/entry/api/service'
 import { uploadImage } from '@/features/entry/api/image-service'
-import { saveDraft, loadDraft, clearDraft } from '@/features/entry/api/draft-storage'
+import { saveDraft, loadDraft } from '@/features/entry/api/draft-storage'
+import { usePendingEntryStore, selectIsPending } from '@/stores/pending-entry-store'
 import { MotionButton } from '@/components/ui/motion-button'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -81,8 +82,15 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   const isSuccess = useEntryFormStore((s) => s.isSuccess)
   const isFocused = useEntryFormStore((s) => s.isFocused)
   const error = useEntryFormStore((s) => s.error)
-  const canSubmit = useEntryFormStore(selectCanSubmit)
+  const canSubmitBase = useEntryFormStore(selectCanSubmit)
   const canAddImage = useEntryFormStore(selectCanAddImage)
+
+  // ペンディング投稿状態（新規作成モードで使用）
+  const isPending = usePendingEntryStore(selectIsPending)
+  const startPendingSubmit = usePendingEntryStore((s) => s.startSubmit)
+
+  // ペンディング投稿中は送信不可
+  const canSubmit = canSubmitBase && !isPending
 
   const setContent = useEntryFormStore((s) => s.setContent)
   const addImage = useEntryFormStore((s) => s.addImage)
@@ -160,6 +168,32 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // 新規作成モード: 即座に遷移してバックグラウンドで保存
+    if (mode === 'create') {
+      // ペンディングストアに投稿データを保存
+      startPendingSubmit(content, images)
+
+      // 下書きを保存（失敗時の復元用）
+      saveDraft({
+        content,
+        imagePreview: images[0]?.previewUrl || null,
+        savedAt: new Date().toISOString(),
+      })
+
+      // フォームをリセット（再度入力できるように）
+      reset()
+
+      // 即座にタイムラインへ遷移
+      if (onSuccess) {
+        onSuccess()
+      } else {
+        router.push('/timeline')
+      }
+      return
+    }
+
+    // 編集モード: 従来通りの処理（完了を待ってから遷移）
     submitStart()
 
     try {
@@ -183,20 +217,15 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
         }
       }
 
-      // エントリ作成/更新
-      const result =
-        mode === 'create'
-          ? await createEntry({ content, imageUrls: imageUrls.length > 0 ? imageUrls : null })
-          : await updateEntry(initialEntry!.id, { content, imageUrls: imageUrls.length > 0 ? imageUrls : null })
+      // エントリ更新
+      const result = await updateEntry(initialEntry!.id, {
+        content,
+        imageUrls: imageUrls.length > 0 ? imageUrls : null,
+      })
 
       if (!result.ok) {
         submitError(result.error.message)
         return
-      }
-
-      // 下書き削除
-      if (mode === 'create') {
-        clearDraft()
       }
 
       // 成功アニメーション表示

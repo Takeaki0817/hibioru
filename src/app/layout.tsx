@@ -6,6 +6,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { SkipLink } from "@/components/ui/skip-link";
+import { Toaster } from "@/components/ui/sonner";
 import { APP_CONFIG, ICON_CONFIG } from "@/lib/constants/app-config";
 
 const mPlus1p = M_PLUS_1p({
@@ -60,6 +61,7 @@ export default function RootLayout({
           <AuthProvider>{children}</AuthProvider>
           <ServiceWorkerRegistration />
           <InstallBanner />
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

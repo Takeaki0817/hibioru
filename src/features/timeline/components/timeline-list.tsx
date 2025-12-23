@@ -2,11 +2,14 @@
 
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { format } from 'date-fns'
+import { AnimatePresence } from 'framer-motion'
 import { useTimeline } from '../hooks/use-timeline'
 import { EntryCard } from './entry-card'
+import { PendingEntryCard } from './pending-entry-card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTimelineStore } from '../stores/timeline-store'
+import { usePendingEntryStore } from '@/stores/pending-entry-store'
 
 // 1ページあたりの日付数
 const DATES_PER_PAGE = 5
@@ -29,6 +32,8 @@ export function TimelineList({
 }: TimelineListProps) {
   // Zustandストアからアクティブ日付更新関数を取得
   const setActiveDates = useTimelineStore((s) => s.setActiveDates)
+  // ペンディング投稿の取得
+  const pendingEntry = usePendingEntryStore((s) => s.pendingEntry)
   const containerRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const bottomSentinelRef = useRef<HTMLDivElement>(null)
@@ -390,6 +395,13 @@ export function TimelineList({
           </section>
         )
       })}
+
+      {/* ペンディング投稿表示 */}
+      <AnimatePresence>
+        {pendingEntry && pendingEntry.status !== 'success' && (
+          <PendingEntryCard entry={pendingEntry} />
+        )}
+      </AnimatePresence>
 
       {/* 下端検出用センチネル（最新データの読み込み） */}
       {hasPreviousPage && (
