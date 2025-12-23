@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useMemo, memo } from 'react'
+import { useCallback, useMemo, memo, forwardRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
@@ -59,42 +59,44 @@ function isEmojiOnly(content: string): boolean {
   return trimmed.length <= 20 && emojiRegex.test(trimmed)
 }
 
-export const EntryCard = memo(function EntryCard({ entry }: EntryCardProps) {
-  const router = useRouter()
+export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
+  function EntryCard({ entry }, ref) {
+    const router = useRouter()
 
-  // 絵文字のみかどうか
-  const emojiOnly = useMemo(() => isEmojiOnly(entry.content), [entry.content])
+    // 絵文字のみかどうか
+    const emojiOnly = useMemo(() => isEmojiOnly(entry.content), [entry.content])
 
-  // タップ処理
-  const handleTap = useCallback(() => {
-    router.push(`/edit/${entry.id}`)
-  }, [router, entry.id])
-
-  // キーボード操作（Enter/Spaceで編集画面へ）
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault()
+    // タップ処理
+    const handleTap = useCallback(() => {
       router.push(`/edit/${entry.id}`)
-    }
-  }, [router, entry.id])
+    }, [router, entry.id])
 
-  // アクセシビリティラベル用の時刻文字列
-  const timeLabel = entry.createdAt.toLocaleTimeString('ja-JP', {
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+    // キーボード操作（Enter/Spaceで編集画面へ）
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault()
+        router.push(`/edit/${entry.id}`)
+      }
+    }, [router, entry.id])
 
-  return (
-    <motion.div
-      role="button"
-      tabIndex={0}
-      aria-label={`${timeLabel}の記録を編集`}
-      variants={cardVariants}
-      initial="initial"
-      animate="animate"
-      whileHover="hover"
-      whileTap="tap"
-      className={cn(
+    // アクセシビリティラベル用の時刻文字列
+    const timeLabel = entry.createdAt.toLocaleTimeString('ja-JP', {
+      hour: '2-digit',
+      minute: '2-digit',
+    })
+
+    return (
+      <motion.div
+        ref={ref}
+        role="button"
+        tabIndex={0}
+        aria-label={`${timeLabel}の記録を編集`}
+        variants={cardVariants}
+        initial="initial"
+        animate="animate"
+        whileHover="hover"
+        whileTap="tap"
+        className={cn(
         'relative cursor-pointer rounded-xl',
         'transition-colors',
         // フォーカスリング
@@ -161,5 +163,6 @@ export const EntryCard = memo(function EntryCard({ entry }: EntryCardProps) {
         })()}
       </div>
     </motion.div>
-  )
-}, areEntryPropsEqual)
+    )
+  }
+), areEntryPropsEqual)

@@ -43,6 +43,8 @@ export function TimelineList({
   const [displayedDateCount, setDisplayedDateCount] = useState(DATES_PER_PAGE)
   const initialScrollDone = useRef(false)
   const isLoadingMore = useRef(false)
+  // 最新エントリへの ref
+  const latestEntryRef = useRef<HTMLDivElement>(null)
 
   const {
     entries,
@@ -139,22 +141,31 @@ export function TimelineList({
 
   // 初期表示時にスクロール
   // - initialDateが指定されている場合: その日付にスクロール
-  // - 指定されていない場合: 最新日付（一番下）にスクロール
+  // - 指定されていない場合: 最新エントリが見える位置にスクロール
   useEffect(() => {
     if (!initialScrollDone.current && displayedDates.length > 0 && containerRef.current) {
-      // initialDateが指定されている場合はその日付、なければ最新日付
-      const targetDate = initialDate
-        ? format(initialDate, 'yyyy-MM-dd')
-        : displayedDates[displayedDates.length - 1]
-
       // DOMが更新されるのを待ってからスクロール
       requestAnimationFrame(() => {
-        const element = dateRefs.current.get(targetDate)
-        if (element) {
-          element.scrollIntoView({ behavior: 'instant', block: 'start' })
-          visibleDateRef.current = targetDate
-          setVisibleDate(targetDate)
-          initialScrollDone.current = true
+        if (initialDate) {
+          // initialDateが指定されている場合はその日付セクションにスクロール
+          const targetDate = format(initialDate, 'yyyy-MM-dd')
+          const element = dateRefs.current.get(targetDate)
+          if (element) {
+            element.scrollIntoView({ behavior: 'instant', block: 'start' })
+            visibleDateRef.current = targetDate
+            setVisibleDate(targetDate)
+            initialScrollDone.current = true
+          }
+        } else {
+          // 最新エントリが見える位置にスクロール
+          if (latestEntryRef.current) {
+            latestEntryRef.current.scrollIntoView({ behavior: 'instant', block: 'center' })
+            // 最新日付を設定
+            const latestDate = displayedDates[displayedDates.length - 1]
+            visibleDateRef.current = latestDate
+            setVisibleDate(latestDate)
+            initialScrollDone.current = true
+          }
         }
       })
     }
@@ -362,9 +373,19 @@ export function TimelineList({
               </h2>
               {[...dateEntries]
                 .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-                .map((entry) => (
-                  <EntryCard key={entry.id} entry={entry} />
-                ))}
+                .map((entry, index, arr) => {
+                  // 最新日付セクションの最後のエントリかどうか
+                  const isLatestEntry =
+                    dateKey === displayedDates[displayedDates.length - 1] &&
+                    index === arr.length - 1
+                  return (
+                    <EntryCard
+                      key={entry.id}
+                      entry={entry}
+                      ref={isLatestEntry ? latestEntryRef : undefined}
+                    />
+                  )
+                })}
             </div>
           </section>
         )
