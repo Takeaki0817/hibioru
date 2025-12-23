@@ -5,6 +5,7 @@ import { Check } from 'lucide-react'
 import { EntryHeader } from '@/components/layouts/entry-header'
 import { FooterNav } from '@/components/layouts/footer-nav'
 import { PageLayout } from '@/components/layouts/page-layout'
+import { QueryProvider } from '@/components/providers/QueryProvider'
 import { EntryForm, type EntryFormHandle } from '@/features/entry/components/entry-form'
 import { useEntryFormStore, selectCanSubmit } from '@/features/entry/stores/entry-form-store'
 import type { Entry } from '@/lib/types/database'
@@ -14,7 +15,8 @@ interface EditEntryClientProps {
   userId: string
 }
 
-export function EditEntryClient({ entry, userId }: EditEntryClientProps) {
+// 内部コンポーネント（QueryProviderの中で使用）
+function EditEntryContent({ entry, userId }: EditEntryClientProps) {
   const formRef = useRef<EntryFormHandle>(null)
 
   // Zustandストアから状態を取得
@@ -48,5 +50,13 @@ export function EditEntryClient({ entry, userId }: EditEntryClientProps) {
         hideSubmitButton
       />
     </PageLayout>
+  )
+}
+
+export function EditEntryClient({ entry, userId }: EditEntryClientProps) {
+  return (
+    <QueryProvider>
+      <EditEntryContent entry={entry} userId={userId} />
+    </QueryProvider>
   )
 }
