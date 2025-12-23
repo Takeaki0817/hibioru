@@ -203,9 +203,12 @@ export function useCreateEntry(options: UseCreateEntryOptions): UseCreateEntryRe
 
     // 楽観的UIの場合は即座にタイムラインへ遷移
     if (optimistic) {
+      // 先にナビゲーションを開始（遷移を最優先）
       router.push('/timeline')
-      // バックグラウンドで投稿処理を実行（awaitしない）
-      mutation.mutate(input)
+      // 次のイベントループでmutationを実行（UIブロッキングを回避）
+      setTimeout(() => {
+        mutation.mutate(input)
+      }, 0)
     } else {
       // 楽観的UIでない場合はコールバックを呼んでからmutate
       onSuccess?.()
