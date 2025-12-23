@@ -23,7 +23,7 @@ interface SubmitOptions {
 
 interface UseCreateEntryReturn {
   // 楽観的UI対応の投稿関数
-  submit: (input: CreateEntryInput, options?: SubmitOptions) => Promise<void>
+  submit: (input: CreateEntryInput, options?: SubmitOptions) => void
   // 投稿中かどうか
   isPending: boolean
   // エラー
@@ -192,25 +192,25 @@ export function useCreateEntry(options: UseCreateEntryOptions): UseCreateEntryRe
     },
   })
 
-  const submit = async (
+  const submit = (
     input: CreateEntryInput,
     submitOptions?: SubmitOptions
-  ): Promise<void> => {
+  ): void => {
     const optimistic = submitOptions?.optimistic ?? true
 
     // refに現在の楽観的フラグを設定
     isOptimisticRef.current = optimistic
 
-    // コールバックを先に実行（遷移アニメーション等）
-    onSuccess?.()
-
     // 楽観的UIの場合は即座にタイムラインへ遷移
     if (optimistic) {
       router.push('/timeline')
+      // バックグラウンドで投稿処理を実行（awaitしない）
+      mutation.mutate(input)
+    } else {
+      // 楽観的UIでない場合はコールバックを呼んでからmutate
+      onSuccess?.()
+      mutation.mutate(input)
     }
-
-    // バックグラウンドで投稿処理を実行
-    await mutation.mutateAsync(input)
   }
 
   return {

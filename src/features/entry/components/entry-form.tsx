@@ -181,15 +181,11 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
     if (useOptimisticUI) {
       // 楽観的UI: 即座にタイムラインへ遷移し、バックグラウンドで保存
-      try {
-        await createEntrySubmit(
-          { content, imageUrls: null },
-          { optimistic: true }
-        )
-        // 下書きはuse-create-entry内で処理される
-      } catch {
-        // エラーはuse-create-entry内でToast表示される
-      }
+      createEntrySubmit(
+        { content, imageUrls: null },
+        { optimistic: true }
+      )
+      // 遷移とエラーハンドリングはuse-create-entry内で処理される
       return
     }
 
@@ -245,26 +241,22 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
         }, 300)
       } else {
         // 新規作成（画像あり）- 楽観的UIなしで投稿
-        try {
-          await createEntrySubmit(
-            { content, imageUrls: finalImageUrls },
-            { optimistic: false }
-          )
-          // 下書き削除はuse-create-entry内で処理される
-          // 成功アニメーション表示
-          submitSuccess()
+        createEntrySubmit(
+          { content, imageUrls: finalImageUrls },
+          { optimistic: false }
+        )
+        // 下書き削除はuse-create-entry内で処理される
+        // 成功アニメーション表示
+        submitSuccess()
 
-          // 少し待ってから遷移
-          setTimeout(() => {
-            if (onSuccess) {
-              onSuccess()
-            } else {
-              router.push('/timeline')
-            }
-          }, 300)
-        } catch {
-          // エラーはuse-create-entry内でToast表示される
-        }
+        // 少し待ってから遷移
+        setTimeout(() => {
+          if (onSuccess) {
+            onSuccess()
+          } else {
+            router.push('/timeline')
+          }
+        }, 300)
       }
     } catch (err) {
       submitError(err instanceof Error ? err.message : '投稿に失敗しました')
