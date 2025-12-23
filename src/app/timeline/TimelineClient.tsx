@@ -13,7 +13,6 @@ import {
   useTimelineStore,
   useTimelineStoreApi,
 } from '@/features/timeline/stores/timeline-store'
-import { useBackgroundSubmit } from '@/features/entry/hooks/use-background-submit'
 import type { Entry } from '@/lib/types/database'
 
 export interface TimelineClientProps {
@@ -32,9 +31,6 @@ function TimelineContent({
 }) {
   const router = useRouter()
   const [, startTransition] = useTransition()
-
-  // バックグラウンドでペンディング投稿を処理
-  useBackgroundSubmit(userId)
 
   // Zustandストアから状態取得
   const currentDate = useTimelineStore((s) => s.currentDate)
