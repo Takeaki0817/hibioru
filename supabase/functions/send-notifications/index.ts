@@ -180,22 +180,7 @@ async function processMainReminders(supabase: any, currentTimeUtc: Date): Promis
         continue;
       }
 
-      // 4. 当日の記録があるかチェック
-      const hasEntry = await checkTodayEntry(
-        supabase,
-        target.user_id,
-        target.timezone,
-        currentTimeUtc
-      );
-
-      if (hasEntry) {
-        // スキップログを記録
-        await logNotification(supabase, target.user_id, 'main_reminder', 'skipped');
-        stats.skipped++;
-        continue;
-      }
-
-      // 5. 購読情報を取得
+      // 4. 購読情報を取得
       const { data: subscriptions } = await supabase
         .from('push_subscriptions')
         .select('*')
@@ -276,20 +261,7 @@ async function processChaseReminders(supabase: any, currentTimeUtc: Date): Promi
         continue;
       }
 
-      // 4. 当日の記録があるかチェック
-      const hasEntry = await checkTodayEntry(
-        supabase,
-        setting.user_id,
-        setting.timezone,
-        currentTimeUtc
-      );
-
-      if (hasEntry) {
-        stats.skipped++;
-        continue;
-      }
-
-      // 5. 追いリマインド送信回数をカウント
+      // 4. 追いリマインド送信回数をカウント
       const chaseReminderCount = (logs || []).filter(
         (log: NotificationLog) => log.type === 'chase_reminder'
       ).length;

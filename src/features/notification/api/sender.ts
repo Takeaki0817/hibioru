@@ -467,27 +467,9 @@ export async function shouldSkipNotification(
 export async function dispatchMainNotification(
   userId: string,
   payload: NotificationPayload,
-  timezone: string
-): Promise<Result<SendResult[] | 'skipped', DispatchError | { type: 'DATABASE_ERROR'; message: string }>> {
-  const currentTime = new Date();
-
-  // 記録済みかチェック
-  const skipResult = await shouldSkipNotification(userId, currentTime, timezone);
-  if (!skipResult.ok) {
-    return skipResult;
-  }
-
-  if (skipResult.value) {
-    // スキップをログに記録
-    await logNotification({
-      userId,
-      type: 'main_reminder',
-      result: 'skipped',
-    });
-    return { ok: true, value: 'skipped' };
-  }
-
-  // 通知を送信
+  _timezone: string
+): Promise<Result<SendResult[], DispatchError | { type: 'DATABASE_ERROR'; message: string }>> {
+  // 通知を送信（投稿の有無に関わらず送信）
   const sendResult = await sendToAllDevices(userId, payload);
 
   // ログを記録

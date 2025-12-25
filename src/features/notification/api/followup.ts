@@ -330,29 +330,6 @@ export async function getNextFollowUpTime(
       return { ok: true, value: null };
     }
 
-    // 記録済みかチェック
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: entriesData, error: entriesError } = await (supabase as any)
-      .from('entries')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('is_deleted', false)
-      .gte('created_at', startOfDay.toISOString())
-      .lt('created_at', endOfDay.toISOString())
-      .limit(1);
-
-    if (entriesError) {
-      return {
-        ok: false,
-        error: { type: 'DATABASE_ERROR', message: entriesError.message },
-      };
-    }
-
-    // 記録済みの場合
-    if (entriesData && entriesData.length > 0) {
-      return { ok: true, value: null };
-    }
-
     // 次の追いリマインド時刻を取得
     const nextFollowUp = schedule.followUpTimes[chaseReminderCount];
     if (!nextFollowUp) {
@@ -458,36 +435,6 @@ export async function shouldSendFollowUp(
           shouldSend: false,
           followUpCount: chaseReminderCount,
           reason: 'max_count_reached',
-        },
-      };
-    }
-
-    // 記録済みかチェック
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: entriesData, error: entriesError } = await (supabase as any)
-      .from('entries')
-      .select('id')
-      .eq('user_id', userId)
-      .eq('is_deleted', false)
-      .gte('created_at', startOfDay.toISOString())
-      .lt('created_at', endOfDay.toISOString())
-      .limit(1);
-
-    if (entriesError) {
-      return {
-        ok: false,
-        error: { type: 'DATABASE_ERROR', message: entriesError.message },
-      };
-    }
-
-    // 記録済みの場合
-    if (entriesData && entriesData.length > 0) {
-      return {
-        ok: true,
-        value: {
-          shouldSend: false,
-          followUpCount: chaseReminderCount,
-          reason: 'already_recorded',
         },
       };
     }
