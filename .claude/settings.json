@@ -45,33 +45,7 @@
       "Bash(supabase:*)",
       "WebSearch"
     ],
-    "deny": [
-      "Bash(dd:*)",
-      "Bash(mkfs:*)",
-      "Read(.env*)",
-      "Read(*.env)",
-      "Read(.env.*)",
-      "Read(*/.env*)",
-      "Read(*/secrets*)",
-      "Read(*secret*)",
-      "Read(*.pem)",
-      "Read(*.key)",
-      "Read(*.p12)",
-      "Read(*.pfx)",
-      "Read(*credentials*)",
-      "Read(*password*)",
-      "Read(*.cert)",
-      "Read(*.crt)",
-      "Read(id_rsa*)",
-      "Read(id_dsa*)",
-      "Read(id_ecdsa*)",
-      "Read(id_ed25519*)",
-      "Read(*.keystore)",
-      "Read(*.jks)",
-      "Read(*token*)",
-      "Read(.aws/credentials)",
-      "Read(.ssh/*)"
-    ]
+    "deny": []
   },
   "hooks": {
     "Stop": [
