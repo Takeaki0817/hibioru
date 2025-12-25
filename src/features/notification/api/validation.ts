@@ -97,7 +97,7 @@ export function validateFollowUpIntervalMinutes(minutes: number): ValidationResu
 /**
  * followUpMaxCountのバリデーション
  *
- * 有効な範囲: 1〜3回の整数
+ * 有効な範囲: 1〜5回の整数
  *
  * @param count - 検証する回数
  * @returns バリデーション結果
@@ -111,9 +111,9 @@ export function validateFollowUpMaxCount(count: number): ValidationResult {
     return { isValid: false, errors };
   }
 
-  // 範囲チェック（1-3回）
-  if (count < 1 || count > 3) {
-    errors.push('followUpMaxCount must be between 1 and 3');
+  // 範囲チェック（1-5回）
+  if (count < 1 || count > 5) {
+    errors.push('followUpMaxCount must be between 1 and 5');
   }
 
   return {

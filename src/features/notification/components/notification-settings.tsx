@@ -7,6 +7,13 @@ import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useNotificationPermission } from '../hooks/use-notification-permission'
 import { usePushSubscription } from '../hooks/use-push-subscription'
 
@@ -20,6 +27,7 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
 
   const [enabled, setEnabled] = useState(initialSettings.enabled)
   const [reminderTime, setReminderTime] = useState(initialSettings.main_reminder_time)
+  const [followUpMaxCount, setFollowUpMaxCount] = useState(initialSettings.follow_up_max_count)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -102,6 +110,19 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
     }
   }
 
+  // 追いリマインド回数の変更
+  const handleFollowUpMaxCountChange = async (newCount: number) => {
+    const previousCount = followUpMaxCount
+    setFollowUpMaxCount(newCount)
+
+    try {
+      await updateSettings({ follow_up_max_count: newCount })
+    } catch {
+      // 失敗時はロールバック
+      setFollowUpMaxCount(previousCount)
+    }
+  }
+
   if (!isSupported) {
     return (
       <FeatureCard title="通知設定" titleSize="xl">
@@ -149,18 +170,44 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
 
       {/* リマインド時刻設定 */}
       {enabled && (
-        <div className="space-y-2">
-          <Label htmlFor="reminder-time">リマインド時刻</Label>
-          <Input
-            id="reminder-time"
-            type="time"
-            value={reminderTime}
-            disabled={isLoading}
-            onChange={(e) => handleTimeChange(e.target.value)}
-          />
-          <p className="text-sm text-muted-foreground">
-            毎日この時刻に記録のリマインドが届きます
-          </p>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="reminder-time">リマインド時刻</Label>
+            <Input
+              id="reminder-time"
+              type="time"
+              value={reminderTime}
+              disabled={isLoading}
+              onChange={(e) => handleTimeChange(e.target.value)}
+            />
+            <p className="text-sm text-muted-foreground">
+              毎日この時刻に記録のリマインドが届きます
+            </p>
+          </div>
+
+          {/* 追いリマインド回数設定 */}
+          <div className="space-y-2">
+            <Label htmlFor="follow-up-count">追いリマインド回数</Label>
+            <Select
+              value={String(followUpMaxCount)}
+              onValueChange={(v) => handleFollowUpMaxCountChange(Number(v))}
+              disabled={isLoading}
+            >
+              <SelectTrigger id="follow-up-count">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}回
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              記録がない場合、メイン通知後に追加で通知します
+            </p>
+          </div>
         </div>
       )}
     </FeatureCard>

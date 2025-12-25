@@ -38,6 +38,8 @@ export interface NotificationSettings {
   chase_reminder_enabled: boolean;
   /** 追いリマインド遅延時間（分） */
   chase_reminder_delay_minutes: number;
+  /** 追いリマインドの最大回数（1-5回） */
+  follow_up_max_count: number;
 }
 
 /**
@@ -48,6 +50,7 @@ export const DEFAULT_NOTIFICATION_SETTINGS: Omit<NotificationSettings, 'user_id'
   main_reminder_time: '21:00',
   chase_reminder_enabled: true,
   chase_reminder_delay_minutes: 60,
+  follow_up_max_count: 2,
 };
 
 /**

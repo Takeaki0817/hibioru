@@ -63,6 +63,30 @@ export const FOLLOW_UP_2_MESSAGES: NotificationMessage[] = [
 ];
 
 /**
+ * 追いリマインド3回目用の文言バリエーション
+ */
+export const FOLLOW_UP_3_MESSAGES: NotificationMessage[] = [
+  { title: NOTIFICATION_TITLE, body: 'まだ大丈夫' },
+  { title: NOTIFICATION_TITLE, body: '一言だけでOK' },
+];
+
+/**
+ * 追いリマインド4回目用の文言バリエーション
+ */
+export const FOLLOW_UP_4_MESSAGES: NotificationMessage[] = [
+  { title: NOTIFICATION_TITLE, body: 'あと少しで1日終わるよ' },
+  { title: NOTIFICATION_TITLE, body: '絵文字ひとつでいいよ' },
+];
+
+/**
+ * 追いリマインド5回目用の文言バリエーション（最終）
+ */
+export const FOLLOW_UP_5_MESSAGES: NotificationMessage[] = [
+  { title: NOTIFICATION_TITLE, body: '今日最後のお知らせ' },
+  { title: NOTIFICATION_TITLE, body: 'ほつれ使う？最後のチャンス' },
+];
+
+/**
  * 配列からランダムに1要素を選択する
  *
  * @param array - 選択元の配列
@@ -89,17 +113,27 @@ export function getMainMessage(): NotificationMessage {
  *
  * 追いリマインドの回数に応じて適切な文言を返します。
  * - count=1: FOLLOW_UP_1_MESSAGES（1回目用）
- * - count>=2: FOLLOW_UP_2_MESSAGES（2回目以降用）
+ * - count=2: FOLLOW_UP_2_MESSAGES（2回目用）
+ * - count=3: FOLLOW_UP_3_MESSAGES（3回目用）
+ * - count=4: FOLLOW_UP_4_MESSAGES（4回目用）
+ * - count>=5: FOLLOW_UP_5_MESSAGES（5回目用・最終）
  *
  * @param count - 追いリマインドの回数（1以上）
  * @returns ランダムに選択された追いリマインドメッセージ
  */
 export function getFollowUpMessage(count: number): NotificationMessage {
-  // 1以下の場合は1回目として扱う
   if (count <= 1) {
     return randomPick(FOLLOW_UP_1_MESSAGES);
   }
-
-  // 2回目以降は最終通知用の文言
-  return randomPick(FOLLOW_UP_2_MESSAGES);
+  if (count === 2) {
+    return randomPick(FOLLOW_UP_2_MESSAGES);
+  }
+  if (count === 3) {
+    return randomPick(FOLLOW_UP_3_MESSAGES);
+  }
+  if (count === 4) {
+    return randomPick(FOLLOW_UP_4_MESSAGES);
+  }
+  // 5回目以降は最終通知用の文言
+  return randomPick(FOLLOW_UP_5_MESSAGES);
 }

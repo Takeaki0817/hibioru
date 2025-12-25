@@ -47,6 +47,7 @@ export default async function MypagePage() {
         main_reminder_time: '21:00',
         chase_reminder_enabled: true,
         chase_reminder_delay_minutes: 60,
+        follow_up_max_count: 2,
       }
 
   return (
