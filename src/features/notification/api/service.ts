@@ -36,7 +36,6 @@ export async function getNotificationSettings(
           value: {
             user_id: userId,
             enabled: false,  // デフォルトはfalse
-            main_reminder_time: '21:00',
             reminders: DEFAULT_REMINDERS,
             chase_reminder_enabled: true,
             chase_reminder_delay_minutes: 60,

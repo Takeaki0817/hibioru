@@ -113,7 +113,6 @@ interface Reminder {
 interface NotificationSettings {
   user_id: string;
   enabled: boolean;
-  main_reminder_time: string;
   reminders: Reminder[];
   timezone: string;
   chase_reminder_enabled: boolean;
@@ -366,17 +365,12 @@ function findMainNotificationTargets(
 
     const currentTimeStr = `${hourPart.value.padStart(2, '0')}:${minutePart.value.padStart(2, '0')}`;
 
-    // reminders配列をチェック（新形式）
+    // reminders配列をチェック
     const hasMatchingReminder = setting.reminders?.some(
       (reminder: Reminder) => reminder.enabled && reminder.time === currentTimeStr
     );
 
-    // 後方互換性: remindersがない場合はmain_reminder_timeを使用
-    // main_reminder_timeは "HH:MM:SS" 形式なので、秒を除いて比較
-    const mainTimeWithoutSeconds = setting.main_reminder_time?.slice(0, 5);
-    const matchesMainTime = !setting.reminders?.length && currentTimeStr === mainTimeWithoutSeconds;
-
-    if (!hasMatchingReminder && !matchesMainTime) {
+    if (!hasMatchingReminder) {
       return false;
     }
 

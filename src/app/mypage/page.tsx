@@ -45,7 +45,6 @@ export default async function MypagePage() {
     : {
         user_id: user.id,
         enabled: false,
-        main_reminder_time: '21:00',
         reminders: DEFAULT_REMINDERS,
         chase_reminder_enabled: true,
         chase_reminder_delay_minutes: 60,

@@ -153,7 +153,6 @@ export type Database = {
           chase_reminder_enabled: boolean
           enabled: boolean
           follow_up_max_count: number
-          main_reminder_time: string
           notification_prompt_shown: boolean
           reminders: Json
           timezone: string
@@ -165,7 +164,6 @@ export type Database = {
           chase_reminder_enabled?: boolean
           enabled?: boolean
           follow_up_max_count?: number
-          main_reminder_time?: string
           notification_prompt_shown?: boolean
           reminders?: Json
           timezone?: string
@@ -177,7 +175,6 @@ export type Database = {
           chase_reminder_enabled?: boolean
           enabled?: boolean
           follow_up_max_count?: number
-          main_reminder_time?: string
           notification_prompt_shown?: boolean
           reminders?: Json
           timezone?: string

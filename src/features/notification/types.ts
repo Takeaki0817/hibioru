@@ -53,8 +53,6 @@ export interface NotificationSettings {
   user_id: string;
   /** 通知の有効/無効（全体のマスタースイッチ） */
   enabled: boolean;
-  /** メインリマインド時刻（HH:MM形式）- 後方互換性のため残す */
-  main_reminder_time: string;
   /** リマインド設定配列（最大5つ） */
   reminders: Reminder[];
   /** 追いリマインドの有効/無効 */
@@ -70,7 +68,6 @@ export interface NotificationSettings {
  */
 export const DEFAULT_NOTIFICATION_SETTINGS: Omit<NotificationSettings, 'user_id'> = {
   enabled: false,
-  main_reminder_time: '21:00',
   reminders: DEFAULT_REMINDERS,
   chase_reminder_enabled: true,
   chase_reminder_delay_minutes: 60,

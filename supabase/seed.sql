@@ -74,17 +74,17 @@ ON CONFLICT (user_id) DO UPDATE SET
   hotsure_used_dates = EXCLUDED.hotsure_used_dates;
 
 -- 通知設定を初期化
-INSERT INTO notification_settings (user_id, enabled, main_reminder_time, chase_reminder_enabled, chase_reminder_delay_minutes)
+INSERT INTO notification_settings (user_id, enabled, chase_reminder_enabled, chase_reminder_delay_minutes, reminders)
 VALUES (
   '00000000-0000-0000-0000-000000000001',
   TRUE,
-  '21:00',
   TRUE,
-  60
+  60,
+  '[{"time": "21:00", "enabled": true}, {"time": null, "enabled": false}, {"time": null, "enabled": false}, {"time": null, "enabled": false}, {"time": null, "enabled": false}]'::jsonb
 )
 ON CONFLICT (user_id) DO UPDATE SET
   enabled = EXCLUDED.enabled,
-  main_reminder_time = EXCLUDED.main_reminder_time;
+  reminders = EXCLUDED.reminders;
 
 -- 既存のテスト用エントリを削除
 DELETE FROM entries WHERE user_id = '00000000-0000-0000-0000-000000000001';

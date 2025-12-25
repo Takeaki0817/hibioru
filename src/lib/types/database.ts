@@ -109,20 +109,17 @@ export interface Database {
         Row: {
           user_id: string
           enabled: boolean
-          main_reminder_time: string
           chase_reminder_enabled: boolean
           chase_reminder_delay_minutes: number
         }
         Insert: {
           user_id: string
           enabled?: boolean
-          main_reminder_time?: string
           chase_reminder_enabled?: boolean
           chase_reminder_delay_minutes?: number
         }
         Update: {
           enabled?: boolean
-          main_reminder_time?: string
           chase_reminder_enabled?: boolean
           chase_reminder_delay_minutes?: number
         }
