@@ -5,7 +5,6 @@ import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
-import { NotificationPromptBanner } from "@/features/notification/components/notification-prompt-banner";
 import { SkipLink } from "@/components/ui/skip-link";
 import { APP_CONFIG, ICON_CONFIG } from "@/lib/constants/app-config";
 
