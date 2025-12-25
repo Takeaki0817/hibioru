@@ -105,13 +105,19 @@ Deno.serve(async (req: Request) => {
 // 型定義
 // ==================
 
+interface Reminder {
+  time: string | null;
+  enabled: boolean;
+}
+
 interface NotificationSettings {
   user_id: string;
   enabled: boolean;
-  primary_time: string;
+  main_reminder_time: string;
+  reminders: Reminder[];
   timezone: string;
-  follow_up_enabled: boolean;
-  follow_up_interval_minutes: number;
+  chase_reminder_enabled: boolean;
+  chase_reminder_delay_minutes: number;
   follow_up_max_count: number;
   active_days: number[];
 }
@@ -227,7 +233,7 @@ async function processChaseReminders(supabase: any, currentTimeUtc: Date): Promi
     .from('notification_settings')
     .select('*')
     .eq('enabled', true)
-    .eq('follow_up_enabled', true);
+    .eq('chase_reminder_enabled', true);
 
   if (settingsError) {
     console.error('Failed to fetch notification settings:', settingsError);
@@ -277,7 +283,7 @@ async function processChaseReminders(supabase: any, currentTimeUtc: Date): Promi
       const nextFollowUpNumber = chaseReminderCount + 1;
       const expectedTime = new Date(
         mainSentAt.getTime() +
-          nextFollowUpNumber * setting.follow_up_interval_minutes * 60 * 1000
+          nextFollowUpNumber * setting.chase_reminder_delay_minutes * 60 * 1000
       );
 
       // 予定時刻に達していない場合はスキップ
@@ -335,6 +341,7 @@ async function processChaseReminders(supabase: any, currentTimeUtc: Date): Promi
 
 /**
  * メインリマインド配信対象を特定する
+ * reminders配列内の有効なリマインドの時刻をチェック
  */
 function findMainNotificationTargets(
   settings: NotificationSettings[],
@@ -359,8 +366,17 @@ function findMainNotificationTargets(
 
     const currentTimeStr = `${hourPart.value.padStart(2, '0')}:${minutePart.value.padStart(2, '0')}`;
 
-    // 時刻が一致しない場合はスキップ
-    if (currentTimeStr !== setting.primary_time) {
+    // reminders配列をチェック（新形式）
+    const hasMatchingReminder = setting.reminders?.some(
+      (reminder: Reminder) => reminder.enabled && reminder.time === currentTimeStr
+    );
+
+    // 後方互換性: remindersがない場合はmain_reminder_timeを使用
+    // main_reminder_timeは "HH:MM:SS" 形式なので、秒を除いて比較
+    const mainTimeWithoutSeconds = setting.main_reminder_time?.slice(0, 5);
+    const matchesMainTime = !setting.reminders?.length && currentTimeStr === mainTimeWithoutSeconds;
+
+    if (!hasMatchingReminder && !matchesMainTime) {
       return false;
     }
 

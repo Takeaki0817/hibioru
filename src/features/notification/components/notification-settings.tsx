@@ -1,19 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import type { NotificationSettings as NotificationSettingsType } from '../types'
+import type { NotificationSettings as NotificationSettingsType, Reminder } from '../types'
+import { DEFAULT_REMINDERS } from '../types'
 import { FeatureCard } from '@/components/ui/feature-card'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useNotificationPermission } from '../hooks/use-notification-permission'
 import { usePushSubscription } from '../hooks/use-push-subscription'
 
@@ -26,8 +20,9 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
   const { subscribe, unsubscribe } = usePushSubscription()
 
   const [enabled, setEnabled] = useState(initialSettings.enabled)
-  const [reminderTime, setReminderTime] = useState(initialSettings.main_reminder_time)
-  const [followUpMaxCount, setFollowUpMaxCount] = useState(initialSettings.follow_up_max_count)
+  const [reminders, setReminders] = useState<Reminder[]>(
+    initialSettings.reminders?.length > 0 ? initialSettings.reminders : DEFAULT_REMINDERS
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -98,28 +93,33 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
     }
   }
 
-  // リマインド時刻の変更
-  const handleTimeChange = async (newTime: string) => {
-    setReminderTime(newTime)
+  // リマインドのトグル変更
+  const handleReminderToggle = async (index: number, newEnabled: boolean) => {
+    const previousReminders = [...reminders]
+    const updatedReminders = reminders.map((r, i) =>
+      i === index ? { ...r, enabled: newEnabled } : r
+    )
+    setReminders(updatedReminders)
 
     try {
-      await updateSettings({ main_reminder_time: newTime })
+      await updateSettings({ reminders: updatedReminders })
     } catch {
-      // 失敗時はロールバック
-      setReminderTime(reminderTime)
+      setReminders(previousReminders)
     }
   }
 
-  // 追いリマインド回数の変更
-  const handleFollowUpMaxCountChange = async (newCount: number) => {
-    const previousCount = followUpMaxCount
-    setFollowUpMaxCount(newCount)
+  // リマインド時刻の変更
+  const handleReminderTimeChange = async (index: number, newTime: string) => {
+    const previousReminders = [...reminders]
+    const updatedReminders = reminders.map((r, i) =>
+      i === index ? { ...r, time: newTime || null } : r
+    )
+    setReminders(updatedReminders)
 
     try {
-      await updateSettings({ follow_up_max_count: newCount })
+      await updateSettings({ reminders: updatedReminders })
     } catch {
-      // 失敗時はロールバック
-      setFollowUpMaxCount(previousCount)
+      setReminders(previousReminders)
     }
   }
 
@@ -168,46 +168,41 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
         </div>
       </div>
 
-      {/* リマインド時刻設定 */}
+      {/* リマインド時刻設定（5つ） */}
       {enabled && (
         <div className="space-y-6">
-          <div className="space-y-2">
-            <Label htmlFor="reminder-time">リマインド時刻</Label>
-            <Input
-              id="reminder-time"
-              type="time"
-              value={reminderTime}
-              disabled={isLoading}
-              onChange={(e) => handleTimeChange(e.target.value)}
-            />
+          <div className="space-y-4">
+            <Label>リマインド時刻</Label>
             <p className="text-sm text-muted-foreground">
-              毎日この時刻に記録のリマインドが届きます
+              設定した時刻に記録のリマインドが届きます（最大5つ）
             </p>
+
+            <div className="space-y-3">
+              {reminders.map((reminder, index) => (
+                <div
+                  key={index}
+                  className="flex items-center gap-3 p-3 rounded-lg border bg-background"
+                >
+                  <Input
+                    id={`reminder-time-${index}`}
+                    type="time"
+                    value={reminder.time || ''}
+                    disabled={isLoading || !reminder.enabled}
+                    onChange={(e) => handleReminderTimeChange(index, e.target.value)}
+                    className="flex-1"
+                    placeholder="--:--"
+                  />
+                  <Switch
+                    id={`reminder-toggle-${index}`}
+                    checked={reminder.enabled}
+                    onCheckedChange={(checked) => handleReminderToggle(index, checked)}
+                    disabled={isLoading}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* 追いリマインド回数設定 */}
-          <div className="space-y-2">
-            <Label htmlFor="follow-up-count">追いリマインド回数</Label>
-            <Select
-              value={String(followUpMaxCount)}
-              onValueChange={(v) => handleFollowUpMaxCountChange(Number(v))}
-              disabled={isLoading}
-            >
-              <SelectTrigger id="follow-up-count">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <SelectItem key={n} value={String(n)}>
-                    {n}回
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-sm text-muted-foreground">
-              記録がない場合、メイン通知後に追加で通知します
-            </p>
-          </div>
         </div>
       )}
     </FeatureCard>

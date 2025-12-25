@@ -26,14 +26,37 @@ export interface PushSubscriptionJSON {
 }
 
 /**
+ * 個別リマインド設定
+ */
+export interface Reminder {
+  /** リマインド時刻（HH:MM形式）、未設定時はnull */
+  time: string | null;
+  /** 有効/無効 */
+  enabled: boolean;
+}
+
+/**
+ * デフォルトのリマインド（5スロット）
+ */
+export const DEFAULT_REMINDERS: Reminder[] = [
+  { time: null, enabled: false },
+  { time: null, enabled: false },
+  { time: null, enabled: false },
+  { time: null, enabled: false },
+  { time: null, enabled: false },
+];
+
+/**
  * 通知設定
  */
 export interface NotificationSettings {
   user_id: string;
-  /** 通知の有効/無効 */
+  /** 通知の有効/無効（全体のマスタースイッチ） */
   enabled: boolean;
-  /** メインリマインド時刻（HH:MM形式） */
+  /** メインリマインド時刻（HH:MM形式）- 後方互換性のため残す */
   main_reminder_time: string;
+  /** リマインド設定配列（最大5つ） */
+  reminders: Reminder[];
   /** 追いリマインドの有効/無効 */
   chase_reminder_enabled: boolean;
   /** 追いリマインド遅延時間（分） */
@@ -46,8 +69,9 @@ export interface NotificationSettings {
  * 通知設定のデフォルト値
  */
 export const DEFAULT_NOTIFICATION_SETTINGS: Omit<NotificationSettings, 'user_id'> = {
-  enabled: true,
+  enabled: false,
   main_reminder_time: '21:00',
+  reminders: DEFAULT_REMINDERS,
   chase_reminder_enabled: true,
   chase_reminder_delay_minutes: 60,
   follow_up_max_count: 2,

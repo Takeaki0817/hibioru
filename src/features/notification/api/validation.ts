@@ -8,7 +8,10 @@
  * - followUpIntervalMinutesの範囲チェック（15-180分）
  * - followUpMaxCountの範囲チェック（1-3回）
  * - activeDaysの形式検証（0-6の配列）
+ * - remindersの形式検証（最大5つ、時刻形式チェック）
  */
+
+import type { Reminder } from '../types';
 
 /**
  * バリデーション結果
@@ -32,6 +35,8 @@ export interface NotificationSettingsInput {
   followUpMaxCount?: number;
   /** 通知を送信する曜日（0:日曜〜6:土曜） */
   activeDays?: number[];
+  /** リマインド設定配列 */
+  reminders?: Reminder[];
 }
 
 /**
@@ -163,6 +168,63 @@ export function validateActiveDays(days: number[]): ValidationResult {
 }
 
 /**
+ * remindersのバリデーション
+ *
+ * 有効な形式: 最大5つのReminder配列
+ * 各Reminderは { time: string | null, enabled: boolean } の形式
+ *
+ * @param reminders - 検証するリマインド配列
+ * @returns バリデーション結果
+ */
+export function validateReminders(reminders: Reminder[]): ValidationResult {
+  const errors: string[] = [];
+
+  // 配列チェック
+  if (!Array.isArray(reminders)) {
+    errors.push('reminders must be an array');
+    return { isValid: false, errors };
+  }
+
+  // 最大5つまで
+  if (reminders.length > 5) {
+    errors.push('reminders must have at most 5 items');
+  }
+
+  // 各リマインドの検証
+  for (let i = 0; i < reminders.length; i++) {
+    const reminder = reminders[i];
+
+    // enabled が boolean かチェック
+    if (typeof reminder.enabled !== 'boolean') {
+      errors.push(`reminders[${i}].enabled must be a boolean`);
+    }
+
+    // time が null または HH:mm 形式かチェック
+    if (reminder.time !== null) {
+      if (typeof reminder.time !== 'string') {
+        errors.push(`reminders[${i}].time must be a string or null`);
+      } else if (!TIME_PATTERN.test(reminder.time)) {
+        errors.push(
+          `reminders[${i}].time must be in HH:mm format (00:00-23:59)`
+        );
+      }
+    }
+
+    // enabled が true なら time は必須
+    if (reminder.enabled && reminder.time === null) {
+      errors.push(
+        `reminders[${i}].time is required when enabled is true`
+      );
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+/**
  * 通知設定全体のバリデーション
  *
  * 指定された設定項目のみをバリデーションします。
@@ -203,6 +265,14 @@ export function validateNotificationSettings(
   // activeDaysのバリデーション
   if (settings.activeDays !== undefined) {
     const result = validateActiveDays(settings.activeDays);
+    if (!result.isValid) {
+      errors.push(...result.errors);
+    }
+  }
+
+  // remindersのバリデーション
+  if (settings.reminders !== undefined) {
+    const result = validateReminders(settings.reminders);
     if (!result.isValid) {
       errors.push(...result.errors);
     }

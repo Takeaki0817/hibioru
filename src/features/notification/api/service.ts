@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import type { NotificationSettings } from '../types'
+import { DEFAULT_REMINDERS } from '../types'
 
 export type Result<T, E> =
   | { ok: true; value: T }
@@ -34,8 +35,9 @@ export async function getNotificationSettings(
           ok: true,
           value: {
             user_id: userId,
-            enabled: false,
+            enabled: false,  // デフォルトはfalse
             main_reminder_time: '21:00',
+            reminders: DEFAULT_REMINDERS,
             chase_reminder_enabled: true,
             chase_reminder_delay_minutes: 60,
             follow_up_max_count: 2,
@@ -49,7 +51,18 @@ export async function getNotificationSettings(
       }
     }
 
-    return { ok: true, value: data as NotificationSettings }
+    // remindersがない古いデータの場合はデフォルト値を付与
+    const settings = data as NotificationSettings
+    if (!settings.reminders || !Array.isArray(settings.reminders)) {
+      settings.reminders = DEFAULT_REMINDERS
+    } else {
+      // 5つ未満の場合はデフォルトで埋める
+      while (settings.reminders.length < 5) {
+        settings.reminders.push({ time: null, enabled: false })
+      }
+    }
+
+    return { ok: true, value: settings }
   } catch (error) {
     return {
       ok: false,

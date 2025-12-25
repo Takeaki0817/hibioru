@@ -11,6 +11,7 @@ import { LogoutButton } from '@/features/mypage/components/logout-button'
 import { PageLayout } from '@/components/layouts/page-layout'
 import { getStreakInfo, getWeeklyRecords } from '@/features/streak/api/service'
 import { getNotificationSettings } from '@/features/notification/api/service'
+import { DEFAULT_REMINDERS } from '@/features/notification/types'
 
 export const metadata: Metadata = {
   title: 'マイページ - ヒビオル',
@@ -45,6 +46,7 @@ export default async function MypagePage() {
         user_id: user.id,
         enabled: false,
         main_reminder_time: '21:00',
+        reminders: DEFAULT_REMINDERS,
         chase_reminder_enabled: true,
         chase_reminder_delay_minutes: 60,
         follow_up_max_count: 2,
