@@ -148,27 +148,39 @@ export type Database = {
       }
       notification_settings: {
         Row: {
+          active_days: number[]
           chase_reminder_delay_minutes: number
           chase_reminder_enabled: boolean
           enabled: boolean
+          follow_up_max_count: number
           main_reminder_time: string
           notification_prompt_shown: boolean
+          reminders: Json
+          timezone: string
           user_id: string
         }
         Insert: {
+          active_days?: number[]
           chase_reminder_delay_minutes?: number
           chase_reminder_enabled?: boolean
           enabled?: boolean
+          follow_up_max_count?: number
           main_reminder_time?: string
           notification_prompt_shown?: boolean
+          reminders?: Json
+          timezone?: string
           user_id: string
         }
         Update: {
+          active_days?: number[]
           chase_reminder_delay_minutes?: number
           chase_reminder_enabled?: boolean
           enabled?: boolean
+          follow_up_max_count?: number
           main_reminder_time?: string
           notification_prompt_shown?: boolean
+          reminders?: Json
+          timezone?: string
           user_id?: string
         }
         Relationships: [
