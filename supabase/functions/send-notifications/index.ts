@@ -29,10 +29,12 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    // Service Role Keyの検証
-    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    // Service Role Keyの検証（カスタムシークレットを使用）
+    const serviceRoleKey = Deno.env.get('CUSTOM_SERVICE_ROLE_KEY');
     const providedKey = authHeader.replace('Bearer ', '');
+
     if (providedKey !== serviceRoleKey) {
+      console.error('Auth failed - key mismatch');
       return new Response(
         JSON.stringify({ error: 'Invalid service role key' }),
         { status: 403, headers: { 'Content-Type': 'application/json' } }
