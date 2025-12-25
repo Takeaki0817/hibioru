@@ -25,6 +25,7 @@ pnpm-debug.log*
 .env
 .env*.local
 .env.production
+.env.functions
 
 # IDE
 .vscode/
