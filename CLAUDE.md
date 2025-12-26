@@ -16,13 +16,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 技術スタック
 
-- **フレームワーク**: Next.js 16 (App Router, Turbopack)
+- **フレームワーク**: Next.js 16 (App Router, Turbopack, React Compiler)
 - **言語**: TypeScript（strictモード、any禁止）
 - **スタイリング**: Tailwind CSS v4
 - **UIコンポーネント**: shadcn/ui, Radix UI, Lucide Icons
 - **アニメーション**: framer-motion
 - **状態管理**: Zustand（フィーチャー内の stores/ ディレクトリ）
 - **データフェッチ**: TanStack Query (React Query)
+- **日付処理**: date-fns（ストリーク計算等で使用）
 - **バックエンド/DB**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
 - **認証**: Google OAuth (Supabase Auth)
 - **ホスティング**: Vercel
@@ -45,6 +46,13 @@ const supabase = await createClient()
 import { createClient } from '@/lib/supabase/client'
 const supabase = createClient()
 ```
+
+### 認証フロー
+
+`middleware.ts` でセッション管理と自動リダイレクトを実行:
+- **公開パス**: `/`, `/login`, `/offline`, `/lp`, `/auth/callback`
+- **保護されたパス**: 上記以外（未認証→`/login`にリダイレクト）
+- **認証済み**: `/` or `/login` → `/timeline` にリダイレクト
 
 ## 開発コマンド
 
@@ -162,8 +170,10 @@ src/                          # @/エイリアスのルート
 ├── components/              # 共有UIコンポーネント
 │   ├── layouts/             # レイアウト系
 │   ├── providers/           # コンテキストプロバイダー
-│   └── ui/                  # 汎用UIプリミティブ
+│   ├── pwa/                 # PWA関連（通知許可等）
+│   └── ui/                  # 汎用UIプリミティブ（shadcn/ui）
 └── lib/                     # 共通ライブラリ
+    ├── constants/           # アプリ設定（app-config.ts）
     ├── supabase/            # Supabaseクライアント
     └── types/               # 型定義（database.generated.ts等）
 ```
@@ -174,13 +184,19 @@ src/                          # @/エイリアスのルート
 src/features/{feature}/
 ├── api/                     # ビジネスロジック、Server Actions
 ├── components/              # 機能固有コンポーネント
-├── hooks/                   # 機能固有フック
-├── stores/                  # Zustand ストア（Props Drilling解消用）
+├── hooks/                   # 機能固有フック（オプション）
+├── stores/                  # Zustand ストア（オプション）
 ├── __tests__/               # テストファイル
 └── types.ts                 # 型定義
 ```
 
 **機能一覧**: entry, timeline, streak, hotsure, notification, auth, mypage
+
+### PWA/Service Worker
+
+`src/lib/constants/app-config.ts` と `public/sw.js` は手動で同期が必要:
+- アプリ名、通知設定、キャッシュバージョン等の変更時
+- sw.jsは静的ファイルのためビルド時に自動反映されない
 
 ## 用語定義
 
