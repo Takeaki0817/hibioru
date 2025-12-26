@@ -1,5 +1,7 @@
 'use server'
 
+import 'server-only'
+
 import { createClient } from '@/lib/supabase/server'
 import type { StreakInsert } from '@/lib/types/database'
 import type { StreakInfo, StreakError, Result } from '../types'

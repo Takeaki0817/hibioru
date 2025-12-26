@@ -1,5 +1,7 @@
 'use server'
 
+import 'server-only'
+
 import { createClient } from '@/lib/supabase/server'
 import type { EntryInsert, EntryUpdate } from '@/lib/types/database'
 import type { Entry, CreateEntryInput, UpdateEntryInput, EntryError, Result } from '../types'

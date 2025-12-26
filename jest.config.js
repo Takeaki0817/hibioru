@@ -6,6 +6,8 @@ const config = {
   testMatch: ['**/__tests__/**/*.test.ts'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/src/$1',
+    // server-onlyパッケージをモック（Jestはサーバー環境で実行）
+    '^server-only$': '<rootDir>/__mocks__/server-only.js',
   },
   collectCoverageFrom: [
     'lib/**/*.ts',

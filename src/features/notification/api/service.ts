@@ -1,5 +1,7 @@
 'use server'
 
+import 'server-only'
+
 import { createClient } from '@/lib/supabase/server'
 import type { NotificationSettings } from '../types'
 import { DEFAULT_REMINDERS } from '../types'
