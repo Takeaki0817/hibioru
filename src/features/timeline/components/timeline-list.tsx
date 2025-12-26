@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
-import { format } from 'date-fns'
+import { format, eachDayOfInterval, max, startOfDay, subDays } from 'date-fns'
 import { useTimeline } from '../hooks/use-timeline'
 import { EntryCard } from './entry-card'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,12 @@ export interface TimelineListProps {
   initialDate?: Date
   onDateChange?: (date: Date) => void
   scrollToDateRef?: React.MutableRefObject<((date: Date) => void) | null>
+  /** 指定日付まで読み込んでからスクロールする関数を公開 */
+  loadAndScrollToDateRef?: React.MutableRefObject<((date: Date) => Promise<void>) | null>
+  /** 指定日付からN日前までのデータを先読みする関数を公開 */
+  prefetchDaysRef?: React.MutableRefObject<
+    ((date: Date, days: number) => Promise<void>) | null
+  >
 }
 
 export function TimelineList({
@@ -26,6 +32,8 @@ export function TimelineList({
   initialDate,
   onDateChange,
   scrollToDateRef,
+  loadAndScrollToDateRef,
+  prefetchDaysRef,
 }: TimelineListProps) {
   // Zustandストアからアクティブ日付更新関数を取得
   const setActiveDates = useTimelineStore((s) => s.setActiveDates)
@@ -35,7 +43,6 @@ export function TimelineList({
   const todayStr = useMemo(() => getTodayStr(), [])
   const [_visibleDate, setVisibleDate] = useState<string>(todayStr)
   const dateRefs = useRef<Map<string, HTMLDivElement>>(new Map())
-  const observerRef = useRef<IntersectionObserver | null>(null)
   const topObserverRef = useRef<IntersectionObserver | null>(null)
   const bottomObserverRef = useRef<IntersectionObserver | null>(null)
   const prevDatesRef = useRef<string>('')
@@ -45,6 +52,13 @@ export function TimelineList({
   const isLoadingMore = useRef(false)
   // 最新エントリへの ref
   const latestEntryRef = useRef<HTMLDivElement>(null)
+  // onDateChange をrefで保持（Observer再作成を防止）
+  const onDateChangeRef = useRef(onDateChange)
+
+  // propsの最新値をrefに同期
+  useEffect(() => {
+    onDateChangeRef.current = onDateChange
+  }, [onDateChange])
 
   const {
     entries,
@@ -74,10 +88,35 @@ export function TimelineList({
     return grouped
   }, [entries])
 
-  // 全日付リスト（古い順にソート）
+  // 全日付リスト（古い順にソート、今日までの空の日付も含む）
   const allDates = useMemo(() => {
-    return Array.from(groupedEntries.keys()).sort((a, b) => a.localeCompare(b))
-  }, [groupedEntries])
+    const entryDates = Array.from(groupedEntries.keys())
+    if (entryDates.length === 0) {
+      // エントリがない場合は今日のみ
+      return [todayStr]
+    }
+
+    // エントリがある日付をDateオブジェクトに変換
+    const entryDateObjects = entryDates.map((d) => new Date(d))
+    const today = startOfDay(new Date())
+
+    // 最新のエントリ日付と今日の日付のうち、より新しい方を終点とする
+    const latestEntryDate = max(entryDateObjects)
+    const endDate = latestEntryDate > today ? latestEntryDate : today
+
+    // 最も古いエントリ日付から今日までの全日付を生成
+    const oldestEntryDate = entryDateObjects.reduce((oldest, d) => (d < oldest ? d : oldest))
+    const allDateObjects = eachDayOfInterval({ start: oldestEntryDate, end: endDate })
+
+    return allDateObjects.map((d) => format(d, 'yyyy-MM-dd'))
+  }, [groupedEntries, todayStr])
+
+  // 日付 → インデックスの Map（O(1) 検索用）
+  const dateIndexMap = useMemo(() => {
+    const map = new Map<string, number>()
+    allDates.forEach((date, index) => map.set(date, index))
+    return map
+  }, [allDates])
 
   // 表示する日付（最新のN日分のみ）
   // initialDateが指定されている場合は、その日付から最新までを含める
@@ -85,8 +124,8 @@ export function TimelineList({
     // initialDateが指定されている場合、その日付から最新までを表示
     if (initialDate) {
       const initialDateStr = format(initialDate, 'yyyy-MM-dd')
-      const initialIndex = allDates.indexOf(initialDateStr)
-      if (initialIndex !== -1) {
+      const initialIndex = dateIndexMap.get(initialDateStr)  // O(1) 参照
+      if (initialIndex !== undefined) {
         // initialDateから最新までの日付数を計算
         const datesAfterInitial = allDates.length - initialIndex
         const countNeeded = Math.max(datesAfterInitial, displayedDateCount)
@@ -99,7 +138,7 @@ export function TimelineList({
       return allDates
     }
     return allDates.slice(-displayedDateCount)
-  }, [allDates, displayedDateCount, initialDate])
+  }, [allDates, dateIndexMap, displayedDateCount, initialDate])
 
   // さらに古い日付があるか
   const hasMoreOlderDates = displayedDates.length < allDates.length || hasNextPage
@@ -125,15 +164,190 @@ export function TimelineList({
     }
   }, [scrollToDate, scrollToDateRef])
 
+  // 指定日付まで読み込んでからスクロールする関数
+  const loadAndScrollToDate = useCallback(
+    async (targetDate: Date) => {
+      const targetDateStr = format(targetDate, 'yyyy-MM-dd')
+
+      // 既に読み込み済みの場合はスクロールのみ
+      if (dateIndexMap.has(targetDateStr)) {
+        // 表示範囲に含まれていない場合は表示範囲を拡大
+        if (!displayedDates.includes(targetDateStr)) {
+          const targetIndex = dateIndexMap.get(targetDateStr)!
+          const datesAfterTarget = allDates.length - targetIndex
+          setDisplayedDateCount(Math.max(datesAfterTarget, displayedDateCount))
+        }
+        // DOMが更新されるのを待ってからスクロール
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+        scrollToDate(targetDate)
+        return
+      }
+
+      // 現在の範囲を確認
+      const oldestDate = allDates[0]
+      const newestDate = allDates[allDates.length - 1]
+
+      // 過去方向の読み込みが必要
+      if (targetDateStr < oldestDate && hasNextPage) {
+        // 読み込み中フラグを設定
+        isLoadingMore.current = true
+
+        // 指定日付に到達するまで読み込み
+        let attempts = 0
+        const maxAttempts = 20 // 無限ループ防止
+
+        while (attempts < maxAttempts) {
+          await fetchNextPage()
+          attempts++
+
+          // 表示範囲も拡大
+          setDisplayedDateCount((prev) => prev + DATES_PER_PAGE)
+
+          // 少し待ってから状態を確認
+          await new Promise((resolve) => setTimeout(resolve, 50))
+
+          // dateRefs が更新されているか確認
+          if (dateRefs.current.has(targetDateStr)) {
+            break
+          }
+
+          // これ以上読み込めない場合は終了
+          if (!hasNextPage) {
+            break
+          }
+        }
+
+        isLoadingMore.current = false
+
+        // DOMが更新されるのを待ってからスクロール
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+        scrollToDate(targetDate)
+      }
+      // 未来方向の読み込みが必要（通常は発生しない）
+      else if (targetDateStr > newestDate && hasPreviousPage) {
+        isLoadingMore.current = true
+
+        let attempts = 0
+        const maxAttempts = 20
+
+        while (attempts < maxAttempts) {
+          await fetchPreviousPage()
+          attempts++
+
+          await new Promise((resolve) => setTimeout(resolve, 50))
+
+          if (dateRefs.current.has(targetDateStr)) {
+            break
+          }
+
+          if (!hasPreviousPage) {
+            break
+          }
+        }
+
+        isLoadingMore.current = false
+
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+        scrollToDate(targetDate)
+      }
+    },
+    [
+      dateIndexMap,
+      displayedDates,
+      allDates,
+      displayedDateCount,
+      hasNextPage,
+      hasPreviousPage,
+      fetchNextPage,
+      fetchPreviousPage,
+      scrollToDate,
+    ]
+  )
+
+  // 親コンポーネントにloadAndScrollToDate関数を公開
+  useEffect(() => {
+    if (loadAndScrollToDateRef) {
+      loadAndScrollToDateRef.current = loadAndScrollToDate
+    }
+    return () => {
+      if (loadAndScrollToDateRef) {
+        loadAndScrollToDateRef.current = null
+      }
+    }
+  }, [loadAndScrollToDate, loadAndScrollToDateRef])
+
+  // 指定日付からN日前までのデータを先読みする関数（スクロールなし）
+  const prefetchDays = useCallback(
+    async (targetDate: Date, days: number) => {
+      const prefetchTargetStr = format(subDays(targetDate, days), 'yyyy-MM-dd')
+
+      // 既に読み込み済みならスキップ
+      if (dateIndexMap.has(prefetchTargetStr)) return
+
+      // 読み込み中なら新しい読み込みをスキップ
+      if (isLoadingMore.current) return
+
+      // 現在の最古日付より過去なら読み込み
+      const oldestDate = allDates[0]
+      if (prefetchTargetStr < oldestDate && hasNextPage) {
+        isLoadingMore.current = true
+
+        let attempts = 0
+        const maxAttempts = 20
+
+        while (attempts < maxAttempts) {
+          await fetchNextPage()
+          attempts++
+
+          // 表示範囲も拡大
+          setDisplayedDateCount((prev) => prev + DATES_PER_PAGE)
+
+          // 少し待ってから状態を確認
+          await new Promise((resolve) => setTimeout(resolve, 50))
+
+          // 目標日付に到達したかチェック
+          if (dateRefs.current.has(prefetchTargetStr)) {
+            break
+          }
+
+          // これ以上読み込めない場合は終了
+          if (!hasNextPage) {
+            break
+          }
+        }
+
+        isLoadingMore.current = false
+      }
+    },
+    [dateIndexMap, allDates, hasNextPage, fetchNextPage]
+  )
+
+  // 親コンポーネントにprefetchDays関数を公開
+  useEffect(() => {
+    if (prefetchDaysRef) {
+      prefetchDaysRef.current = prefetchDays
+    }
+    return () => {
+      if (prefetchDaysRef) {
+        prefetchDaysRef.current = null
+      }
+    }
+  }, [prefetchDays, prefetchDaysRef])
+
   // 記録がある日付のSet（メモ化）
   const activeDatesSet = useMemo(() => new Set(allDates), [allDates])
 
-  // 記録がある日付をストアに通知
+  // 記録がある日付をストアに通知（O(1)比較に最適化）
   useEffect(() => {
     if (entries.length > 0) {
-      const dateList = allDates.join(',')
-      if (dateList !== prevDatesRef.current) {
-        prevDatesRef.current = dateList
+      // 配列長と境界値のみで比較（O(n) join を回避）
+      const first = allDates[0]
+      const last = allDates[allDates.length - 1]
+      const len = allDates.length
+      const key = `${len}:${first}:${last}`
+
+      if (key !== prevDatesRef.current) {
+        prevDatesRef.current = key
         setActiveDates(activeDatesSet)
       }
     }
@@ -142,6 +356,7 @@ export function TimelineList({
   // 初期表示時にスクロール
   // - initialDateが指定されている場合: その日付にスクロール
   // - 指定されていない場合: 最新エントリが見える位置にスクロール
+  // 注意: 日付の検知は detectDateAtLine に任せる（visibleDateRef は設定しない）
   useEffect(() => {
     if (!initialScrollDone.current && displayedDates.length > 0 && containerRef.current) {
       // DOMが更新されるのを待ってからスクロール
@@ -152,65 +367,71 @@ export function TimelineList({
           const element = dateRefs.current.get(targetDate)
           if (element) {
             element.scrollIntoView({ behavior: 'instant', block: 'start' })
-            visibleDateRef.current = targetDate
-            setVisibleDate(targetDate)
             initialScrollDone.current = true
           }
         } else {
-          // 最新エントリが見える位置にスクロール
-          if (latestEntryRef.current) {
-            latestEntryRef.current.scrollIntoView({ behavior: 'instant', block: 'center' })
-            // 最新日付を設定
-            const latestDate = displayedDates[displayedDates.length - 1]
-            visibleDateRef.current = latestDate
-            setVisibleDate(latestDate)
-            initialScrollDone.current = true
-          }
+          // 一番下までスクロール
+          containerRef.current!.scrollTop = containerRef.current!.scrollHeight
+          initialScrollDone.current = true
         }
       })
     }
   }, [displayedDates, initialDate])
 
-  // Intersection Observerで可視日付を検出
-  // 検出ライン: コンテナ上端から100pxの位置（1pxの高さ）
+  // onDateChangeRef を最新に保つ
+  useEffect(() => {
+    onDateChangeRef.current = onDateChange
+  }, [onDateChange])
+
+  // スクロール時に検知ラインにある日付を検出
+  // 検出ライン: ヘッダー下辺から12px下の位置
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
-    // 検出ラインを上端から100pxの位置に1pxの高さで作成
-    const containerHeight = container.clientHeight
-    const bottomMargin = -(containerHeight - 101)
+    const detectionOffset = 12  // ヘッダー下辺から12px下
+    let rafId: number | null = null
 
-    observerRef.current = new IntersectionObserver(
-      (observerEntries) => {
-        for (const entry of observerEntries) {
-          if (entry.isIntersecting) {
-            const dateStr = entry.target.getAttribute('data-date')
-            // refで比較してstateを更新（依存配列にvisibleDateを含めない）
-            if (dateStr && dateStr !== visibleDateRef.current) {
-              visibleDateRef.current = dateStr
-              setVisibleDate(dateStr)
-              onDateChange?.(new Date(dateStr))
-            }
+    const detectDateAtLine = () => {
+      const containerRect = container.getBoundingClientRect()
+      const detectionLineY = containerRect.top + detectionOffset
+
+      // 全ての日付セクションをチェック
+      for (const [dateKey, element] of dateRefs.current) {
+        const rect = element.getBoundingClientRect()
+        if (rect.top <= detectionLineY && rect.bottom >= detectionLineY) {
+          if (dateKey !== visibleDateRef.current) {
+            visibleDateRef.current = dateKey
+            setVisibleDate(dateKey)
+            onDateChangeRef.current?.(new Date(dateKey))
           }
+          break
         }
-      },
-      {
-        root: container,
-        rootMargin: `-100px 0px ${bottomMargin}px 0px`,
-        threshold: 0,
       }
-    )
+    }
 
-    // 日付divを監視
-    dateRefs.current.forEach((element) => {
-      observerRef.current?.observe(element)
-    })
+    const handleScroll = () => {
+      // requestAnimationFrameでスロットル
+      if (rafId !== null) return
+      rafId = requestAnimationFrame(() => {
+        detectDateAtLine()
+        rafId = null
+      })
+    }
+
+    // 初期読み込み時に検出
+    requestAnimationFrame(detectDateAtLine)
+
+    // スクロール時に検出
+    container.addEventListener('scroll', handleScroll, { passive: true })
 
     return () => {
-      observerRef.current?.disconnect()
+      container.removeEventListener('scroll', handleScroll)
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId)
+      }
     }
-  }, [displayedDates, onDateChange])
+  }, [displayedDates])
 
   // 上端検出: 古い日付を追加読み込み
   useEffect(() => {
@@ -345,7 +566,7 @@ export function TimelineList({
   }
 
   return (
-    <div ref={containerRef} className="h-full overflow-auto">
+    <div ref={containerRef} className="relative h-full overflow-auto snap-y snap-proximity">
       {/* 上端検出用センチネル */}
       <div ref={topSentinelRef} className="h-1" />
 
@@ -358,6 +579,7 @@ export function TimelineList({
 
       {displayedDates.map((dateKey) => {
         const dateEntries = groupedEntries.get(dateKey) || []
+        const hasEntries = dateEntries.length > 0
 
         return (
           <section
@@ -365,27 +587,40 @@ export function TimelineList({
             ref={setDateRef(dateKey)}
             data-date={dateKey}
             aria-label={`${dateKey.replace(/-/g, '/')}の記録`}
-            className="min-h-full border-b border-border"
+            className="min-h-full border-b border-border snap-start"
           >
             <div className="space-y-2 px-4 py-2">
               <h2 className="pt-3 text-center text-sm text-gray-400 dark:text-gray-500">
                 {dateKey.replace(/-/g, '/')}
               </h2>
-              {[...dateEntries]
-                .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
-                .map((entry, index, arr) => {
-                  // 最新日付セクションの最後のエントリかどうか
-                  const isLatestEntry =
-                    dateKey === displayedDates[displayedDates.length - 1] &&
-                    index === arr.length - 1
-                  return (
-                    <EntryCard
-                      key={entry.id}
-                      entry={entry}
-                      ref={isLatestEntry ? latestEntryRef : undefined}
-                    />
-                  )
-                })}
+              {hasEntries ? (
+                [...dateEntries]
+                  .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+                  .map((entry, index, arr) => {
+                    // 最新日付セクションの最後のエントリかどうか
+                    const isLatestEntry =
+                      dateKey === displayedDates[displayedDates.length - 1] &&
+                      index === arr.length - 1
+                    return (
+                      <EntryCard
+                        key={entry.id}
+                        entry={entry}
+                        ref={isLatestEntry ? latestEntryRef : undefined}
+                      />
+                    )
+                  })
+              ) : (
+                <div
+                  ref={
+                    dateKey === displayedDates[displayedDates.length - 1]
+                      ? latestEntryRef
+                      : undefined
+                  }
+                  className="flex h-32 items-center justify-center text-muted-foreground"
+                >
+                  <p className="text-sm">記録がありません</p>
+                </div>
+              )}
             </div>
           </section>
         )

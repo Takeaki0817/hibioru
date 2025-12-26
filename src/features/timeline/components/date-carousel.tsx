@@ -1,6 +1,6 @@
 'use client'
 
-import { format } from 'date-fns'
+import { format, isToday } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import {
   Carousel,
@@ -13,7 +13,9 @@ import { cn } from '@/lib/utils'
 interface DateCarouselProps {
   dates: Date[]
   selectedIndex: number
-  activeDates?: Set<string>
+  // 投稿がある日付（全期間、スキップ判定・視覚表示用）
+  entryDates?: Set<string>
+  hotsureDates?: Set<string>
   centerIndex: number
   setApi: (api: CarouselApi) => void
   onDateClick: (index: number) => void
@@ -25,7 +27,8 @@ interface DateCarouselProps {
 export function DateCarousel({
   dates,
   selectedIndex,
-  activeDates,
+  entryDates,
+  hotsureDates,
   centerIndex,
   setApi,
   onDateClick,
@@ -54,8 +57,11 @@ export function DateCarousel({
             const day = date.getDate()
             const isCenter = index === selectedIndex
             const dateKey = format(date, 'yyyy-MM-dd')
-            const isActive = !activeDates || activeDates.has(dateKey)
-            const hasRecord = activeDates?.has(dateKey)
+            // 今日は常にアクティブ、または投稿がある日付
+            const isTodayDate = isToday(date)
+            const hasRecord = entryDates?.has(dateKey)
+            const isActive = isTodayDate || !entryDates || entryDates.size === 0 || hasRecord
+            const hasHotsure = hotsureDates?.has(dateKey)
 
             return (
               <CarouselItem key={dateKey} className="basis-1/5 pl-1">
@@ -71,7 +77,13 @@ export function DateCarousel({
                   )}
                   aria-label={format(date, 'M月d日', { locale: ja })}
                 >
-                  {day}
+                  <span className="flex items-center justify-center gap-0.5">
+                    {day}
+                    {/* ほつれ使用日の糸マーク（中央の選択中日付のみ） */}
+                    {isCenter && hasHotsure && (
+                      <span className="text-xs" aria-label="ほつれ使用日">🧵</span>
+                    )}
+                  </span>
                   {/* 記録ありドットインジケーター */}
                   {!isCenter && hasRecord && (
                     <span className="absolute bottom-0 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-accent-300" />

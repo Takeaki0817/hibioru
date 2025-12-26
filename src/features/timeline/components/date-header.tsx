@@ -10,7 +10,10 @@ import { DateCarousel } from './date-carousel'
 
 export interface DateHeaderProps {
   currentDate: Date
-  activeDates?: Set<string> // 記録がある日付（YYYY-MM-DD形式）
+  // 投稿がある日付（全期間、スキップ判定用）
+  entryDates?: Set<string>
+  // ほつれを使用した日付（YYYY-MM-DD形式）
+  hotsureDates?: Set<string>
   onDateChange?: (date: Date) => void
   // 外部からの日付変更を受け付けるref
   externalDateChangeRef?: React.MutableRefObject<((date: Date) => void) | null>
@@ -18,7 +21,8 @@ export interface DateHeaderProps {
 
 export function DateHeader({
   currentDate,
-  activeDates,
+  entryDates,
+  hotsureDates,
   onDateChange,
   externalDateChangeRef,
 }: DateHeaderProps) {
@@ -35,7 +39,7 @@ export function DateHeader({
     centerIndex,
   } = useDateCarousel({
     currentDate,
-    activeDates,
+    entryDates,
     onDateChange,
     externalDateChangeRef,
   })
@@ -54,7 +58,8 @@ export function DateHeader({
         <DateCarousel
           dates={dates}
           selectedIndex={selectedIndex}
-          activeDates={activeDates}
+          entryDates={entryDates}
+          hotsureDates={hotsureDates}
           centerIndex={centerIndex}
           setApi={setApi}
           onDateClick={handleDateClick}
