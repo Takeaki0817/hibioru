@@ -2,6 +2,7 @@
 
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
 import { format, eachDayOfInterval, max, startOfDay, subDays } from 'date-fns'
+import { Spool } from 'lucide-react'
 import { useTimeline } from '../hooks/use-timeline'
 import { EntryCard } from './entry-card'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,8 @@ const getTodayStr = () => format(new Date(), 'yyyy-MM-dd')
 export interface TimelineListProps {
   userId: string
   initialDate?: Date
+  /** ほつれを使用した日付セット（YYYY-MM-DD形式） */
+  hotsureDates?: Set<string>
   onDateChange?: (date: Date) => void
   scrollToDateRef?: React.MutableRefObject<((date: Date) => void) | null>
   /** 指定日付まで読み込んでからスクロールする関数を公開 */
@@ -30,6 +33,7 @@ export interface TimelineListProps {
 export function TimelineList({
   userId,
   initialDate,
+  hotsureDates,
   onDateChange,
   scrollToDateRef,
   loadAndScrollToDateRef,
@@ -580,6 +584,13 @@ export function TimelineList({
       {displayedDates.map((dateKey) => {
         const dateEntries = groupedEntries.get(dateKey) || []
         const hasEntries = dateEntries.length > 0
+        const isToday = dateKey === todayStr
+        const hasHotsure = hotsureDates?.has(dateKey)
+
+        // 当日以外で記録もほつれもない場合はスキップ
+        if (!isToday && !hasEntries && !hasHotsure) {
+          return null
+        }
 
         return (
           <section
@@ -609,7 +620,21 @@ export function TimelineList({
                       />
                     )
                   })
+              ) : hasHotsure ? (
+                // ほつれ直し表示
+                <div
+                  ref={
+                    dateKey === displayedDates[displayedDates.length - 1]
+                      ? latestEntryRef
+                      : undefined
+                  }
+                  className="flex h-32 items-center justify-center gap-1 text-muted-foreground"
+                >
+                  <Spool className="h-5 w-5" />
+                  <span className="text-sm">ほつれ直し</span>
+                </div>
               ) : (
+                // 当日で記録がない場合
                 <div
                   ref={
                     dateKey === displayedDates[displayedDates.length - 1]

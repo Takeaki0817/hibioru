@@ -158,6 +158,7 @@ function TimelineContent({
         <TimelineList
           userId={userId}
           initialDate={initialDate ? parsedInitialDate : undefined}
+          hotsureDates={hotsureDates}
           onDateChange={handleScrollDateChange}
           scrollToDateRef={scrollToDateRef}
           loadAndScrollToDateRef={loadAndScrollToDateRef}
