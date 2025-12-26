@@ -43,39 +43,41 @@ export function DateHeader({
   const monthStr = format(currentDate, 'M月', { locale: ja })
 
   return (
-    <header className="sticky top-0 z-10 flex h-20 items-center justify-between border-b border-border bg-background px-4 shadow-sm">
-      {/* 左: ロゴ */}
-      <h1 className="text-lg font-bold text-primary-600 dark:text-primary-400">
-        ヒビオル
-      </h1>
+    <header className="sticky top-0 z-10 border-b border-border bg-background shadow-sm">
+      <div className="mx-auto flex h-20 max-w-400 items-center justify-between px-4">
+        {/* 左: ロゴ */}
+        <h1 className="text-lg font-bold text-primary-600 dark:text-primary-400">
+          ヒビオル
+        </h1>
 
-      {/* 中央: カルーセル日付 */}
-      <DateCarousel
-        dates={dates}
-        selectedIndex={selectedIndex}
-        activeDates={activeDates}
-        centerIndex={centerIndex}
-        setApi={setApi}
-        onDateClick={handleDateClick}
-      />
+        {/* 中央: カルーセル日付 */}
+        <DateCarousel
+          dates={dates}
+          selectedIndex={selectedIndex}
+          activeDates={activeDates}
+          centerIndex={centerIndex}
+          setApi={setApi}
+          onDateClick={handleDateClick}
+        />
 
-      {/* 右: 月（カレンダーボタン） */}
-      <button
-        onClick={toggleCalendar}
-        className={cn(
-          'flex items-center gap-1.5 px-3 py-1.5 rounded-lg',
-          'text-sm font-medium',
-          'text-primary-600 dark:text-primary-400',
-          'bg-primary-100 hover:bg-primary-200',
-          'dark:bg-primary-100 dark:hover:bg-primary-200',
-          'transition-all active:scale-95'
-        )}
-        aria-label={isCalendarOpen ? 'カレンダーを閉じる' : 'カレンダーを開く'}
-        aria-expanded={isCalendarOpen}
-      >
-        <Calendar className="w-4 h-4" aria-hidden="true" />
-        {monthStr}
-      </button>
+        {/* 右: 月（カレンダーボタン） */}
+        <button
+          onClick={toggleCalendar}
+          className={cn(
+            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg',
+            'text-sm font-medium',
+            'text-primary-600 dark:text-primary-400',
+            'bg-primary-100 hover:bg-primary-200',
+            'dark:bg-primary-100 dark:hover:bg-primary-200',
+            'transition-all active:scale-95'
+          )}
+          aria-label={isCalendarOpen ? 'カレンダーを閉じる' : 'カレンダーを開く'}
+          aria-expanded={isCalendarOpen}
+        >
+          <Calendar className="w-4 h-4" aria-hidden="true" />
+          {monthStr}
+        </button>
+      </div>
     </header>
   )
 }

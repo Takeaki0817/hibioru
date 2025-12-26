@@ -43,7 +43,7 @@ export function FooterNav({ centerButton }: FooterNavProps) {
 
   return (
     <nav aria-label="メインナビゲーション" className="shrink-0 bg-background border-t border-border pb-safe">
-      <div className="flex items-center justify-around h-16">
+      <div className="mx-auto flex max-w-400 items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
           const Icon = item.icon
