@@ -65,5 +65,18 @@
 
 #### Acceptance Criteria
 1. When 未認証ユーザーが保護されたページにアクセスする, the Auth Module shall ユーザーをログイン画面にリダイレクトする
-2. The Auth Module shall /login 以外のすべてのページを認証必須とする
-3. When 認証後にリダイレクトされた場合, the Auth Module shall 元のアクセス先ページに戻す
+2. The Auth Module shall /login および /lp 以外のすべてのページを認証必須とする
+3. When 認証後にリダイレクトされた場合, the Auth Module shall メインタイムライン画面（/timeline）にリダイレクトする
+
+### Requirement 8: アカウント削除
+**Objective:** As a ユーザー, I want アカウントを削除したい, so that サービスの利用を完全に終了できる
+
+#### Acceptance Criteria
+1. The Mypage shall アカウント削除ボタンを表示する
+2. When ユーザーがアカウント削除ボタンをクリックする, the Auth Module shall 確認モーダルを表示する
+3. The Confirmation Modal shall ユーザーに「delete」と入力することを求める
+4. When ユーザーが「delete」と正確に入力して確認ボタンをクリックする, the Auth Module shall アカウント削除を実行する
+5. When アカウント削除が実行される, the Auth Module shall 該当ユーザーのすべてのデータ（entries, images, hotsure履歴, 通知設定等）を削除する
+6. When アカウント削除が実行される, the Auth Module shall Supabase Authからユーザーを削除する
+7. When アカウント削除が完了する, the Auth Module shall ユーザーをログイン画面にリダイレクトする
+8. If 「delete」以外の文字列が入力される, then the Auth Module shall 削除を実行せず、エラーメッセージを表示する
