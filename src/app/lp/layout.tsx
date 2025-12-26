@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { M_PLUS_1p } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
+import './lp.css'
 
 const mPlus1p = M_PLUS_1p({
   variable: '--font-m-plus-1p',

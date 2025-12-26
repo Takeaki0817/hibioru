@@ -7,7 +7,7 @@ import { FAQSection } from './components/faq-section'
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="lp-page min-h-screen bg-background">
       <HeroSection />
       <ProblemsSection />
       <FeaturesSection />

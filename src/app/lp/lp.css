@@ -1,0 +1,6 @@
+/* LPページ専用スタイル: グローバルのoverflow-hiddenをリセット */
+html:has(.lp-page),
+body:has(.lp-page) {
+  overflow: auto !important;
+  height: auto !important;
+}
