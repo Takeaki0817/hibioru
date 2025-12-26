@@ -7,6 +7,7 @@ import { HotsureDisplay } from '@/features/hotsure/components/hotsure-display'
 import { NotificationSettings } from '@/features/notification/components/notification-settings'
 import { AppearanceSection } from '@/features/mypage/components/appearance-section'
 import { ExportSection } from '@/features/mypage/components/export-section'
+import { FeedbackSection } from '@/features/mypage/components/feedback-section'
 import { LogoutButton } from '@/features/mypage/components/logout-button'
 import { PageLayout } from '@/components/layouts/page-layout'
 import { getStreakInfo, getWeeklyRecords } from '@/features/streak/api/service'
@@ -86,6 +87,11 @@ export default async function MypagePage() {
         {/* データエクスポートセクション */}
         <div className="mt-6">
           <ExportSection />
+        </div>
+
+        {/* フィードバックセクション */}
+        <div className="mt-6">
+          <FeedbackSection />
         </div>
 
         {/* ログアウトボタン */}
