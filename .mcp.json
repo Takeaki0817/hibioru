@@ -2,11 +2,32 @@
   "mcpServers": {
     "playwright-test": {
       "command": "npx",
-      "args": ["playwright", "run-test-mcp-server"]
+      "args": [
+        "playwright",
+        "run-test-mcp-server"
+      ]
     },
     "next-devtools": {
       "command": "npx",
-      "args": ["-y", "next-devtools-mcp@latest"]
+      "args": [
+        "-y",
+        "next-devtools-mcp@latest"
+      ]
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--project",
+        "/Users/takeaki0817/WorkSpace/01_Private/apps/hibioru"
+      ],
+      "env": {}
     }
   }
 }
