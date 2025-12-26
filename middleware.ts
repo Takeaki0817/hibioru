@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 // 認証不要なパス（完全一致のみ）
-const PUBLIC_PATHS_EXACT = ['/', '/login', '/offline']
+const PUBLIC_PATHS_EXACT = ['/', '/login', '/offline', '/lp']
 
 // 認証不要なパス（プレフィックス一致）
 const PUBLIC_PATHS_PREFIX = ['/auth/callback']
