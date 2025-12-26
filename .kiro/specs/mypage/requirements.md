@@ -45,11 +45,12 @@
 
 #### Acceptance Criteria
 1. When ユーザーが通知設定セクションにアクセスする, the マイページ shall 現在の通知設定状態を表示する
-2. When ユーザーが通知オン/オフを切り替える, the マイページ shall 通知許可設定を更新する
-3. When 通知が有効な状態でユーザーがリマインド時刻を変更する, the マイページ shall 定時リマインドの時刻設定を保存する
-4. If ブラウザが通知をサポートしていない場合, then the マイページ shall 通知非対応である旨のメッセージを表示する
-5. If ユーザーがブラウザの通知許可を拒否している場合, then the マイページ shall ブラウザ設定からの許可が必要である旨を案内する
-6. The マイページ shall 通知設定の変更を即時に反映する
+2. When ユーザーが通知オン/オフを切り替える, the マイページ shall ブラウザの通知許可ダイアログを表示する
+3. The マイページ shall 最大5つのリマインド設定を表示する
+4. The 各リマインド設定 shall 時刻（00:00〜23:59）と有効/無効トグルを持つ
+5. When ユーザーがリマインド設定を変更する, the マイページ shall 変更内容を即時にDBに保存する
+6. If ブラウザが通知をサポートしていない場合, then the マイページ shall 通知非対応である旨のメッセージを表示する
+7. If ユーザーがブラウザの通知許可を拒否している場合, then the マイページ shall ブラウザ設定からの許可が必要である旨を案内する
 
 ### Requirement 5: データエクスポート
 **Objective:** As a ユーザー, I want 自分の投稿データをエクスポートしたい, so that AI（Claude等）を使った振り返りや分析、バックアップに活用できる
@@ -74,7 +75,27 @@
 4. When ログアウト処理が完了する, the マイページ shall ローカルに保存されたセッション情報をクリアする
 5. If ログアウト処理中にエラーが発生した場合, then the マイページ shall エラーメッセージを表示し、再試行を促す
 
-### Requirement 7: アクセス制御
+### Requirement 7: アカウント削除
+**Objective:** As a ユーザー, I want アカウントを削除したい, so that サービスの利用を完全に終了できる
+
+#### Acceptance Criteria
+1. The マイページ shall アカウント削除ボタンを表示する
+2. When ユーザーがアカウント削除ボタンをクリックする, the マイページ shall 確認モーダルを表示する
+3. The 確認モーダル shall ユーザーに「delete」と入力することを求める
+4. When ユーザーが「delete」と正確に入力して確認ボタンをクリックする, the マイページ shall アカウント削除処理を実行する
+5. When アカウント削除が実行される, the システム shall 該当ユーザーのすべてのデータ（entries, images, hotsure履歴, 通知設定等）を削除する
+6. When アカウント削除が実行される, the システム shall Supabase Authからユーザーを削除する
+7. When アカウント削除が完了する, the マイページ shall ユーザーをログイン画面にリダイレクトする
+8. If 「delete」以外の文字列が入力される, then the マイページ shall 削除を実行せず、エラーメッセージを表示する
+
+### Requirement 8: お問い合わせ
+**Objective:** As a ユーザー, I want サービスに関する問い合わせやフィードバックを送りたい, so that 問題報告や改善提案ができる
+
+#### Acceptance Criteria
+1. The マイページ shall お問い合わせフォームへのリンクを表示する
+2. When ユーザーがお問い合わせリンクをタップする, the マイページ shall 外部のお問い合わせフォーム（Google Form等）を新しいタブで開く
+
+### Requirement 9: アクセス制御
 **Objective:** As a システム, I want マイページへのアクセスを認証済みユーザーに限定したい, so that ユーザーのプライバシーとデータセキュリティを保護できる
 
 #### Acceptance Criteria
@@ -82,7 +103,7 @@
 2. While セッションが有効な状態, the マイページ shall ユーザー固有のデータのみを表示する
 3. The マイページ shall 他のユーザーのデータにアクセスできないようにする
 
-### Requirement 8: レスポンシブ対応
+### Requirement 10: レスポンシブ対応
 **Objective:** As a ユーザー, I want どのデバイスからでもマイページを快適に利用したい, so that 場所を選ばずアカウント管理ができる
 
 #### Acceptance Criteria

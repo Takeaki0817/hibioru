@@ -45,7 +45,7 @@
 4. The Streak Service shall ほつれの最大保持数を2個とする
 5. If 週次リセット処理中にエラーが発生した場合, the Streak Service shall エラーをログに記録し、リトライ処理をスケジュールする
 
-### Requirement 5: ストリークデータの初期化
+### Requirement 5: ストリークデータの初期化と有効化
 **Objective:** As a 新規ユーザー, I want アカウント作成時にストリークデータが正しく初期化される, so that すぐに継続記録を始められる
 
 #### Acceptance Criteria
@@ -54,6 +54,8 @@
 3. When streaksレコードが作成される, the Streak Service shall longest_streakを0に設定する
 4. When streaksレコードが作成される, the Streak Service shall hotsure_remainingを2に設定する
 5. When streaksレコードが作成される, the Streak Service shall hotsure_used_datesを空配列に設定する
+6. The Streak Service shall ユーザーが最初の記録を作成するまでストリーク・ほつれ機能を有効化しない
+7. When ユーザーが最初の記録を作成する, the Streak Service shall ストリーク・ほつれ機能を有効化する（日次バッチ処理の対象となる）
 
 ### Requirement 6: ストリーク情報の取得
 **Objective:** As a ユーザー, I want 現在のストリーク状態を確認できる, so that 継続のモチベーションを維持できる
@@ -74,3 +76,14 @@
 4. When 前日の記録がない and ほつれが利用不可の場合, the Streak Service shall ストリーク途切れ処理を実行する
 5. The Streak Service shall バッチ処理の実行結果をログに記録する
 6. If バッチ処理中に個別ユーザーでエラーが発生した場合, the Streak Service shall 該当ユーザーをスキップして処理を継続し、エラーを記録する
+
+### Requirement 8: ストリーク・ほつれの表示
+**Objective:** As a ユーザー, I want ストリークとほつれの状態を確認できる, so that 継続のモチベーションを維持し、セーフティネットの残数を把握できる
+
+#### Acceptance Criteria
+1. The マイページ shall 現在のストリーク数（current_streak）を表示する
+2. The マイページ shall 最長ストリーク数（longest_streak）を表示する
+3. The マイページ shall ほつれ残数（hotsure_remaining）を表示する
+4. The タイムラインヘッダー shall 記録のある日付を識別可能な形で表示する（ストリーク数自体は表示しない）
+5. The 月カレンダー shall 記録のある日付を識別可能な形で表示する（ストリーク数自体は表示しない）
+6. The 月カレンダー shall ほつれを使用した日付を🧵マークで表示する
