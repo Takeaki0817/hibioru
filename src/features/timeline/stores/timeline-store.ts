@@ -14,6 +14,10 @@ interface TimelineState {
   isCalendarOpen: boolean
   // 読み込み済みの日付セット（YYYY-MM-DD形式）
   activeDates: Set<string>
+  // ほつれを使用した日付セット（YYYY-MM-DD形式）
+  hotsureDates: Set<string>
+  // 投稿がある日付セット（全期間、YYYY-MM-DD形式）- カルーセル用
+  entryDates: Set<string>
   // スクロール同期中フラグ（無限ループ防止用）
   isSnapping: boolean
   // 同期ソース（carousel/timeline）
@@ -30,6 +34,10 @@ interface TimelineActions {
   // アクティブ日付管理
   setActiveDates: (dates: Set<string>) => void
   addActiveDates: (dates: string[]) => void
+  // ほつれ日付管理
+  setHotsureDates: (dates: Set<string>) => void
+  // 投稿日付管理（全期間）
+  setEntryDates: (dates: Set<string>) => void
   // 同期制御
   setIsSnapping: (value: boolean) => void
   setSyncSource: (source: 'carousel' | 'timeline' | null) => void
@@ -47,6 +55,8 @@ const defaultInitState: TimelineState = {
   currentDate: new Date(),
   isCalendarOpen: false,
   activeDates: new Set(),
+  hotsureDates: new Set(),
+  entryDates: new Set(),
   isSnapping: false,
   syncSource: null,
 }
@@ -80,6 +90,12 @@ export const createTimelineStore = (
         dates.forEach((d) => newSet.add(d))
         return { activeDates: newSet }
       }),
+
+    // ほつれ日付管理
+    setHotsureDates: (dates) => set({ hotsureDates: dates }),
+
+    // 投稿日付管理（全期間）
+    setEntryDates: (dates) => set({ entryDates: dates }),
 
     // 同期制御
     setIsSnapping: (value) => set({ isSnapping: value }),

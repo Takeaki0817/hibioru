@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useCallback, useTransition, useEffect } from 'react'
+import { useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { QueryProvider } from '@/components/providers/QueryProvider'
@@ -13,6 +13,7 @@ import {
   useTimelineStore,
   useTimelineStoreApi,
 } from '@/features/timeline/stores/timeline-store'
+import { useAllEntryDates } from '@/features/timeline/hooks/use-all-entry-dates'
 import type { Entry } from '@/lib/types/database'
 
 export interface TimelineClientProps {
@@ -30,14 +31,16 @@ function TimelineContent({
   initialDate?: string
 }) {
   const router = useRouter()
-  const [, startTransition] = useTransition()
 
   // Zustandストアから状態取得
   const currentDate = useTimelineStore((s) => s.currentDate)
-  const activeDates = useTimelineStore((s) => s.activeDates)
+  const activeDates = useTimelineStore((s) => s.activeDates) // 読み込み済みデータ判定用
   const syncSource = useTimelineStore((s) => s.syncSource)
   const setCurrentDate = useTimelineStore((s) => s.setCurrentDate)
   const setSyncSource = useTimelineStore((s) => s.setSyncSource)
+
+  // 全期間の投稿日付を取得（カルーセル用）
+  const { entryDates, hotsureDates } = useAllEntryDates({ userId })
 
   // ストアAPIに直接アクセス（初期化用）
   const storeApi = useTimelineStoreApi()
@@ -52,7 +55,11 @@ function TimelineContent({
 
   // スクロール制御用ref（子コンポーネントから関数を受け取る）
   const scrollToDateRef = useRef<((date: Date) => void) | null>(null)
+  const loadAndScrollToDateRef = useRef<((date: Date) => Promise<void>) | null>(null)
   const carouselDateChangeRef = useRef<((date: Date) => void) | null>(null)
+  const prefetchDaysRef = useRef<((date: Date, days: number) => Promise<void>) | null>(null)
+  // 同期フラグのクリアタイマー（高速操作時の同期漏れを防止）
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // initialDateが指定されている場合、その日付にスクロール
   useEffect(() => {
@@ -83,43 +90,66 @@ function TimelineContent({
       if (activeDates.has(dateStr)) {
         // 読み込み済み → スクロール＆URLパラメータ削除
         if (syncSource === 'timeline') return
+
+        // 既存タイマーをクリア（高速操作時の競合を防止）
+        if (syncTimeoutRef.current) {
+          clearTimeout(syncTimeoutRef.current)
+        }
+
         setSyncSource('carousel')
         setCurrentDate(date)
         scrollToDateRef.current?.(date)
         clearUrlParam()
-        requestAnimationFrame(() => {
+
+        // 100ms後にクリア（スクロール完了を待つ）
+        syncTimeoutRef.current = setTimeout(() => {
           setSyncSource(null)
-        })
+        }, 100)
+
+        // 先読み: すぐに-4日分を読み込み
+        prefetchDaysRef.current?.(date, 4)
       } else {
-        // 未読み込み → URLパラメータで遷移（ページがその日付から読み込み開始）
-        router.push(`/timeline?date=${dateStr}`)
+        // 未読み込み → データを読み込んでからスクロール
+        if (syncTimeoutRef.current) {
+          clearTimeout(syncTimeoutRef.current)
+        }
+
+        setSyncSource('carousel')
+        setCurrentDate(date)
+
+        // 読み込んでからスクロール
+        loadAndScrollToDateRef.current?.(date).then(() => {
+          carouselDateChangeRef.current?.(date)
+          syncTimeoutRef.current = setTimeout(() => {
+            setSyncSource(null)
+          }, 100)
+
+          // 先読み: すぐに-4日分を読み込み
+          prefetchDaysRef.current?.(date, 4)
+        })
       }
     },
-    [activeDates, syncSource, router, clearUrlParam, setSyncSource, setCurrentDate]
+    [activeDates, syncSource, clearUrlParam, setSyncSource, setCurrentDate]
   )
 
   // TimelineListのスクロールで日付が変わった時 → カルーセルも同期
   const handleScrollDateChange = useCallback(
     (date: Date) => {
       if (syncSource === 'carousel') return // カルーセルからの同期中は無視
-      setSyncSource('timeline')
-      startTransition(() => {
-        setCurrentDate(date)
-      })
+
+      setCurrentDate(date)
       carouselDateChangeRef.current?.(date)
       clearUrlParam()
-      requestAnimationFrame(() => {
-        setSyncSource(null)
-      })
     },
-    [syncSource, clearUrlParam, setSyncSource, setCurrentDate]
+    [syncSource, clearUrlParam, setCurrentDate]
   )
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden">
       <DateHeader
         currentDate={currentDate}
-        activeDates={activeDates}
+        entryDates={entryDates}
+        hotsureDates={hotsureDates}
         onDateChange={handleDateChange}
         externalDateChangeRef={carouselDateChangeRef}
       />
@@ -128,8 +158,11 @@ function TimelineContent({
         <TimelineList
           userId={userId}
           initialDate={initialDate ? parsedInitialDate : undefined}
+          hotsureDates={hotsureDates}
           onDateChange={handleScrollDateChange}
           scrollToDateRef={scrollToDateRef}
+          loadAndScrollToDateRef={loadAndScrollToDateRef}
+          prefetchDaysRef={prefetchDaysRef}
         />
       </main>
 

@@ -84,6 +84,7 @@ export function MonthCalendar({
   // Zustandストアからカレンダー開閉状態を取得
   const isOpen = useTimelineStore((s) => s.isCalendarOpen)
   const closeCalendar = useTimelineStore((s) => s.closeCalendar)
+  const setHotsureDates = useTimelineStore((s) => s.setHotsureDates)
   // 表示中の月を管理（DayPickerの月切り替えに対応）
   const [displayMonth, setDisplayMonth] = useState(selectedDate)
 
@@ -142,6 +143,13 @@ export function MonthCalendar({
     () => new Set(days.filter((d) => d.hasHotsure).map((d) => d.date)),
     [days]
   )
+
+  // ほつれ日付をストアに設定（DateCarouselで使用）
+  useEffect(() => {
+    if (hotsureDateSet.size > 0) {
+      setHotsureDates(hotsureDateSet)
+    }
+  }, [hotsureDateSet, setHotsureDates])
 
   // DayButtonコンポーネントをhotsureDateSetでカリー化
   const DayButtonWithHotsure = useCallback(

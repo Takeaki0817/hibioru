@@ -124,3 +124,60 @@ export async function fetchCalendarData(
     hotsureDates,
   }
 }
+
+// カルーセル用: 全期間の投稿日付を取得（日付のみ、軽量）
+export interface FetchAllEntryDatesParams {
+  userId: string
+}
+
+export interface FetchAllEntryDatesResponse {
+  entryDates: string[] // YYYY-MM-DD[]
+  hotsureDates: string[] // YYYY-MM-DD[]
+}
+
+export async function fetchAllEntryDates(
+  params: FetchAllEntryDatesParams
+): Promise<FetchAllEntryDatesResponse> {
+  const { userId } = params
+  const supabase = createClient()
+
+  // entries と streaks を並列取得
+  const [entriesResult, streaksResult] = await Promise.all([
+    supabase
+      .from('entries')
+      .select('created_at')
+      .eq('user_id', userId)
+      .eq('is_deleted', false)
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('streaks')
+      .select('hotsure_used_dates')
+      .eq('user_id', userId)
+      .single()
+  ])
+
+  if (entriesResult.error) {
+    throw new Error(`投稿日付の取得に失敗しました: ${entriesResult.error.message}`)
+  }
+
+  // 日付ごとにグループ化（重複除去）
+  const rawEntries = entriesResult.data as { created_at: string }[] | null
+  const entryDates = Array.from(
+    new Set(
+      (rawEntries || []).map((entry) => {
+        const date = new Date(entry.created_at)
+        // JSTに変換
+        const jstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000)
+        return jstDate.toISOString().split('T')[0]
+      })
+    )
+  )
+
+  const streakData = streaksResult.data as { hotsure_used_dates: string[] } | null
+  const hotsureDates = streakData?.hotsure_used_dates || []
+
+  return {
+    entryDates,
+    hotsureDates,
+  }
+}

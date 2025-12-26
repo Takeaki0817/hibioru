@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { format, addDays, differenceInDays } from 'date-fns'
+import { format, addDays, differenceInDays, startOfDay, isToday } from 'date-fns'
 import type { CarouselApi } from '@/components/ui/carousel'
 
 // ウィンドウサイズ（前後の日数）
@@ -11,7 +11,8 @@ const CENTER_INDEX = WINDOW_DAYS // 15
 
 interface UseDateCarouselProps {
   currentDate: Date
-  activeDates?: Set<string>
+  // 投稿がある日付（全期間、スキップ判定用）
+  entryDates?: Set<string>
   onDateChange?: (date: Date) => void
   externalDateChangeRef?: React.MutableRefObject<((date: Date) => void) | null>
 }
@@ -31,7 +32,7 @@ interface UseDateCarouselReturn {
  */
 export function useDateCarousel({
   currentDate,
-  activeDates,
+  entryDates,
   onDateChange,
   externalDateChangeRef,
 }: UseDateCarouselProps): UseDateCarouselReturn {
@@ -53,25 +54,35 @@ export function useDateCarousel({
     return result
   }, [windowCenter])
 
-  // activeDatesの最小・最大日付を取得
+  // 今日の日付文字列（YYYY-MM-DD）
+  const todayStr = useMemo(() => format(new Date(), 'yyyy-MM-dd'), [])
+
+  // entryDatesの最小・最大日付を取得（投稿がある日付の範囲）
   const { minDate, maxDate } = useMemo(() => {
-    if (!activeDates || activeDates.size === 0) {
-      return { minDate: null, maxDate: null }
+    if (!entryDates || entryDates.size === 0) {
+      // entryDatesがない場合は今日のみ
+      return { minDate: todayStr, maxDate: todayStr }
     }
-    const sortedDates = Array.from(activeDates).sort()
+    // 今日も含めてソート
+    const allDates = new Set(entryDates)
+    allDates.add(todayStr)
+    const sortedDates = Array.from(allDates).sort()
     return {
       minDate: sortedDates[0],
       maxDate: sortedDates[sortedDates.length - 1],
     }
-  }, [activeDates])
+  }, [entryDates, todayStr])
 
-  // 日付がアクティブかどうかチェック
+  // 日付がアクティブかどうかチェック（投稿有無 または 今日）
   const isDateActive = useCallback(
     (date: Date) => {
-      if (!activeDates || activeDates.size === 0) return true
-      return activeDates.has(format(date, 'yyyy-MM-dd'))
+      // 今日は常にアクティブ（投稿がなくても空セクションを表示するため）
+      if (isToday(date)) return true
+      // entryDatesが未取得の場合は全てアクティブとして扱う
+      if (!entryDates || entryDates.size === 0) return true
+      return entryDates.has(format(date, 'yyyy-MM-dd'))
     },
-    [activeDates]
+    [entryDates]
   )
 
   // 指定方向で次のアクティブなインデックスを探す
@@ -110,19 +121,20 @@ export function useDateCarousel({
   }, [api])
 
   // activeDatesが取得されたら最新日付（maxDate）に移動
+  // 注意: 初期化時は onDateChange を呼ばない（TimelineList のスクロール検出を優先）
   useEffect(() => {
     if (!api || !maxDate || hasInitializedToMaxDate.current) return
 
     hasInitializedToMaxDate.current = true
     const maxDateObj = new Date(maxDate)
 
-    const diff = differenceInDays(maxDateObj, windowCenter)
+    const diff = differenceInDays(startOfDay(maxDateObj), startOfDay(windowCenter))
     if (Math.abs(diff) <= WINDOW_DAYS) {
       const targetIndex = CENTER_INDEX + diff
       api.scrollTo(targetIndex, true)
       setSelectedIndex(targetIndex)
       prevIndexRef.current = targetIndex
-      onDateChange?.(maxDateObj)
+      // 初期化時は onDateChange を呼ばない
     } else {
       setWindowCenter(maxDateObj)
       isInitialized.current = false
@@ -130,10 +142,10 @@ export function useDateCarousel({
         api.scrollTo(CENTER_INDEX, true)
         setSelectedIndex(CENTER_INDEX)
         prevIndexRef.current = CENTER_INDEX
-        onDateChange?.(maxDateObj)
+        // 初期化時は onDateChange を呼ばない
       })
     }
-  }, [api, maxDate, windowCenter, onDateChange])
+  }, [api, maxDate, windowCenter])
 
   // 外部からの日付変更を受け付ける関数を公開
   useEffect(() => {
@@ -143,11 +155,13 @@ export function useDateCarousel({
       if (!api) return
       isExternalUpdate.current = true
 
-      const diff = differenceInDays(date, windowCenter)
+      // startOfDayで正規化してタイムゾーン問題を回避
+      const diff = differenceInDays(startOfDay(date), startOfDay(windowCenter))
       if (Math.abs(diff) <= WINDOW_DAYS) {
-        api.scrollTo(CENTER_INDEX + diff, true)
-        setSelectedIndex(CENTER_INDEX + diff)
-        prevIndexRef.current = CENTER_INDEX + diff
+        const targetIndex = CENTER_INDEX + diff
+        api.scrollTo(targetIndex, true)
+        setSelectedIndex(targetIndex)
+        prevIndexRef.current = targetIndex
       } else {
         setWindowCenter(date)
         requestAnimationFrame(() => {
@@ -186,21 +200,34 @@ export function useDateCarousel({
     const selectedDate = dates[index]
     const dateKey = format(selectedDate, 'yyyy-MM-dd')
 
-    // 範囲外チェック
+    // 範囲外チェック - 未読み込みデータへのアクセス時は読み込み済みの最古日付に戻す
     if (minDate && dateKey < minDate) {
       isSkipping.current = true
-      const minIndex = dates.findIndex((d) => format(d, 'yyyy-MM-dd') === minDate)
-      if (minIndex >= 0) {
-        api.scrollTo(minIndex)
-        setSelectedIndex(minIndex)
-        prevIndexRef.current = minIndex
+
+      // ウィンドウ内で最初のアクティブな日付を探す（読み込み済みの最古日付）
+      let targetIndex = -1
+      for (let i = 0; i < dates.length; i++) {
+        if (isDateActive(dates[i])) {
+          targetIndex = i
+          break
+        }
       }
+
+      if (targetIndex >= 0) {
+        api.scrollTo(targetIndex)
+        setSelectedIndex(targetIndex)
+        prevIndexRef.current = targetIndex
+        // 移動先を通知（先読みトリガー）
+        onDateChange?.(dates[targetIndex])
+      }
+
       requestAnimationFrame(() => {
         isSkipping.current = false
       })
       return
     }
     if (maxDate && dateKey > maxDate) {
+      // 未来方向への移動 → maxDate の位置に戻す
       isSkipping.current = true
       const maxIndex = dates.findIndex((d) => format(d, 'yyyy-MM-dd') === maxDate)
       if (maxIndex >= 0) {
