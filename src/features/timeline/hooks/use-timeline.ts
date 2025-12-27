@@ -1,6 +1,7 @@
 'use client'
 
 import { useInfiniteQuery } from '@tanstack/react-query'
+import { queryKeys } from '@/lib/constants/query-keys'
 import { fetchEntries } from '../api/queries'
 import type { TimelineEntry } from '../types'
 
@@ -55,7 +56,7 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
     fetchPreviousPage,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ['entries', 'timeline', userId, initialCursor],
+    queryKey: queryKeys.entries.timeline(userId, initialCursor),
     queryFn: ({ pageParam }) =>
       fetchEntries({
         userId,

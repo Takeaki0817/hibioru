@@ -1,5 +1,9 @@
 // streak機能の型定義
 
+import type { Result } from '@/lib/types/result'
+
+export type { Result }
+
 export interface StreakInfo {
   currentStreak: number
   longestStreak: number
@@ -17,5 +21,3 @@ export type StreakError =
   | { code: 'UNAUTHORIZED'; message: string }
   | { code: 'DB_ERROR'; message: string }
   | { code: 'INVALID_DATE'; message: string }
-
-export type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }

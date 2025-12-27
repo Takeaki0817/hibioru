@@ -3,18 +3,9 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { getJSTToday, getJSTDateString } from '@/lib/date-utils'
 import type { StreakInsert } from '@/lib/types/database'
 import type { StreakInfo, StreakError, Result } from '../types'
-
-/**
- * JSTで今日の日付を取得
- */
-function getJSTToday(): string {
-  const now = new Date()
-  const jstOffset = 9 * 60 // JST = UTC+9
-  const jstDate = new Date(now.getTime() + jstOffset * 60 * 1000)
-  return jstDate.toISOString().split('T')[0]
-}
 
 /**
  * ストリーク情報を取得
@@ -275,9 +266,7 @@ export async function getWeeklyRecords(
     const entriesByDate = new Set(
       (entries ?? []).map(e => {
         // created_at を JST の日付文字列に変換
-        const d = new Date(e.created_at)
-        const jstDate = new Date(d.getTime() + 9 * 60 * 60 * 1000)
-        return jstDate.toISOString().split('T')[0]
+        return getJSTDateString(new Date(e.created_at))
       })
     )
 

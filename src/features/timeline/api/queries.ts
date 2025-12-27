@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
+import { isoToJSTDateString } from '@/lib/date-utils'
 import type { Entry } from '@/lib/types/database'
 import type { TimelinePage } from '../types'
 import { convertToTimelineEntry } from '../types'
@@ -113,11 +114,7 @@ export async function fetchCalendarData(
   const rawEntries = entriesResult.data as { created_at: string }[] | null
   const entryDates = Array.from(
     new Set(
-      (rawEntries || []).map((entry) => {
-        const date = new Date(entry.created_at)
-        const jstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000)
-        return jstDate.toISOString().split('T')[0]
-      })
+      (rawEntries || []).map((entry) => isoToJSTDateString(entry.created_at))
     )
   )
 
@@ -176,12 +173,7 @@ export async function fetchAllEntryDates(
   const rawEntries = entriesResult.data as { created_at: string }[] | null
   const entryDates = Array.from(
     new Set(
-      (rawEntries || []).map((entry) => {
-        const date = new Date(entry.created_at)
-        // JSTに変換
-        const jstDate = new Date(date.getTime() + 9 * 60 * 60 * 1000)
-        return jstDate.toISOString().split('T')[0]
-      })
+      (rawEntries || []).map((entry) => isoToJSTDateString(entry.created_at))
     )
   )
 

@@ -85,11 +85,9 @@ export const createTimelineStore = (
     // アクティブ日付管理
     setActiveDates: (dates) => set({ activeDates: dates }),
     addActiveDates: (dates) =>
-      set((state) => {
-        const newSet = new Set(state.activeDates)
-        dates.forEach((d) => newSet.add(d))
-        return { activeDates: newSet }
-      }),
+      set((state) => ({
+        activeDates: new Set([...state.activeDates, ...dates]),
+      })),
 
     // ほつれ日付管理
     setHotsureDates: (dates) => set({ hotsureDates: dates }),

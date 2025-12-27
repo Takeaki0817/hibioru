@@ -1,6 +1,7 @@
 // タイムライン機能の型定義
 
 import type { Entry } from '@/lib/types/database'
+import { getJSTDateString } from '@/lib/date-utils'
 
 // タイムライン表示用のエントリー型
 export interface TimelineEntry {
@@ -35,9 +36,6 @@ export interface CalendarDayData {
 // データベースのEntryをTimelineEntryに変換
 export function convertToTimelineEntry(entry: Entry): TimelineEntry {
   const createdAt = new Date(entry.created_at)
-  // 日本時間(JST)でYYYY-MM-DDを取得
-  const jstDate = new Date(createdAt.getTime() + 9 * 60 * 60 * 1000)
-  const date = jstDate.toISOString().split('T')[0]
 
   return {
     id: entry.id,
@@ -45,6 +43,6 @@ export function convertToTimelineEntry(entry: Entry): TimelineEntry {
     content: entry.content,
     imageUrls: entry.image_urls,
     createdAt,
-    date,
+    date: getJSTDateString(createdAt),
   }
 }

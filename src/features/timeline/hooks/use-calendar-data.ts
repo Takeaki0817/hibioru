@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { queryKeys } from '@/lib/constants/query-keys'
 import { fetchCalendarData } from '../api/queries'
 import type { CalendarDayData } from '../types'
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isToday } from 'date-fns'
@@ -27,7 +28,7 @@ export function useCalendarData(
   const queryClient = useQueryClient()
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['entries', 'calendar', userId, year, month],
+    queryKey: queryKeys.entries.calendar(userId, year, month),
     queryFn: () => fetchCalendarData({ userId, year, month }),
     // カレンダーは日次更新なので中程度のstaleTime
     staleTime: 5 * 60 * 1000, // 5分
@@ -38,7 +39,7 @@ export function useCalendarData(
   useEffect(() => {
     const prefetchMonth = (y: number, m: number) => {
       queryClient.prefetchQuery({
-        queryKey: ['entries', 'calendar', userId, y, m],
+        queryKey: queryKeys.entries.calendar(userId, y, m),
         queryFn: () => fetchCalendarData({ userId, year: y, month: m }),
         staleTime: 5 * 60 * 1000, // 5分間はstaleにしない
       })
