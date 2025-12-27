@@ -7,7 +7,7 @@ import { useTimeline } from '../hooks/use-timeline'
 import { EntryCard } from './entry-card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useTimelineStore } from '../stores/timeline-store'
+import { useTimelineStore, useTimelineStoreApi } from '../stores/timeline-store'
 
 // 1ページあたりの日付数
 const DATES_PER_PAGE = 5
@@ -24,10 +24,6 @@ export interface TimelineListProps {
   scrollToDateRef?: React.MutableRefObject<((date: Date) => void) | null>
   /** 指定日付まで読み込んでからスクロールする関数を公開 */
   loadAndScrollToDateRef?: React.MutableRefObject<((date: Date) => Promise<void>) | null>
-  /** 指定日付からN日前までのデータを先読みする関数を公開 */
-  prefetchDaysRef?: React.MutableRefObject<
-    ((date: Date, days: number) => Promise<void>) | null
-  >
 }
 
 export function TimelineList({
@@ -37,10 +33,11 @@ export function TimelineList({
   onDateChange,
   scrollToDateRef,
   loadAndScrollToDateRef,
-  prefetchDaysRef,
 }: TimelineListProps) {
   // Zustandストアからアクティブ日付更新関数を取得
   const setActiveDates = useTimelineStore((s) => s.setActiveDates)
+  // ストアAPIを取得（detectDateAtLine内で直接syncSourceを参照するため）
+  const storeApi = useTimelineStoreApi()
   const containerRef = useRef<HTMLDivElement>(null)
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const bottomSentinelRef = useRef<HTMLDivElement>(null)
@@ -168,12 +165,64 @@ export function TimelineList({
     }
   }, [scrollToDate, scrollToDateRef])
 
+  // DOM要素の出現を待機するヘルパー関数
+  // requestAnimationFrameを使用してReactのレンダリング完了を確実に待つ
+  const waitForDomElement = useCallback(
+    async (targetDateStr: string, maxWaitMs = 500): Promise<boolean> => {
+      // 即座にチェック（既に存在すれば待機不要）
+      if (dateRefs.current.has(targetDateStr)) {
+        return true
+      }
+
+      const startTime = Date.now()
+      while (Date.now() - startTime < maxWaitMs) {
+        // requestAnimationFrameで1フレーム待機
+        await new Promise((resolve) => requestAnimationFrame(resolve))
+
+        if (dateRefs.current.has(targetDateStr)) {
+          // レイアウト完了を確実にするためもう1フレーム待機
+          await new Promise((resolve) => requestAnimationFrame(resolve))
+          return true
+        }
+      }
+      return false
+    },
+    []
+  )
+
   // 指定日付まで読み込んでからスクロールする関数
+  // スクロール後のずれを防ぐため、目標日付 + 4日前までを先に読み込む
+  const PREFETCH_DAYS = 4
+
   const loadAndScrollToDate = useCallback(
     async (targetDate: Date) => {
       const targetDateStr = format(targetDate, 'yyyy-MM-dd')
+      // 先読み目標: 目標日付の4日前
+      const prefetchTargetStr = format(subDays(targetDate, PREFETCH_DAYS), 'yyyy-MM-dd')
 
-      // 既に読み込み済みの場合はスクロールのみ
+      // ヘルパー: 過去方向に先読み目標まで読み込む
+      const prefetchToPast = async (goalDateStr: string) => {
+        if (isLoadingMore.current) return
+        const oldestDate = allDates[0]
+        if (!oldestDate || goalDateStr >= oldestDate || !hasNextPage) return
+
+        isLoadingMore.current = true
+        let attempts = 0
+        const maxAttempts = 20
+
+        while (attempts < maxAttempts && hasNextPage) {
+          await fetchNextPage()
+          attempts++
+          setDisplayedDateCount((prev) => prev + DATES_PER_PAGE)
+
+          // 目標に到達したかチェック（100msに短縮）
+          const found = await waitForDomElement(goalDateStr, 100)
+          if (found) break
+        }
+        isLoadingMore.current = false
+      }
+
+      // 既に読み込み済みの場合
       if (dateIndexMap.has(targetDateStr)) {
         // 表示範囲に含まれていない場合は表示範囲を拡大
         if (!displayedDates.includes(targetDateStr)) {
@@ -181,8 +230,24 @@ export function TimelineList({
           const datesAfterTarget = allDates.length - targetIndex
           setDisplayedDateCount(Math.max(datesAfterTarget, displayedDateCount))
         }
-        // DOMが更新されるのを待ってからスクロール
-        await new Promise((resolve) => requestAnimationFrame(resolve))
+
+        // 既にDOMに存在する場合は即座にスクロール
+        if (dateRefs.current.has(targetDateStr)) {
+          scrollToDate(targetDate)
+          // 先読みは非同期で実行（スクロールをブロックしない）
+          if (!dateIndexMap.has(prefetchTargetStr)) {
+            prefetchToPast(prefetchTargetStr) // awaitしない
+          }
+          return
+        }
+
+        // DOMに存在しない場合: 先読みしてからスクロール
+        if (!dateIndexMap.has(prefetchTargetStr)) {
+          await prefetchToPast(prefetchTargetStr)
+        }
+
+        // DOM要素の出現を待機してからスクロール
+        await waitForDomElement(targetDateStr, 300)
         scrollToDate(targetDate)
         return
       }
@@ -191,40 +256,13 @@ export function TimelineList({
       const oldestDate = allDates[0]
       const newestDate = allDates[allDates.length - 1]
 
-      // 過去方向の読み込みが必要
+      // 過去方向の読み込みが必要（先読み目標まで読み込む）
       if (targetDateStr < oldestDate && hasNextPage) {
-        // 読み込み中フラグを設定
-        isLoadingMore.current = true
+        // 先読み目標まで読み込み（targetDateStrより更に4日前まで）
+        await prefetchToPast(prefetchTargetStr)
 
-        // 指定日付に到達するまで読み込み
-        let attempts = 0
-        const maxAttempts = 20 // 無限ループ防止
-
-        while (attempts < maxAttempts) {
-          await fetchNextPage()
-          attempts++
-
-          // 表示範囲も拡大
-          setDisplayedDateCount((prev) => prev + DATES_PER_PAGE)
-
-          // 少し待ってから状態を確認
-          await new Promise((resolve) => setTimeout(resolve, 50))
-
-          // dateRefs が更新されているか確認
-          if (dateRefs.current.has(targetDateStr)) {
-            break
-          }
-
-          // これ以上読み込めない場合は終了
-          if (!hasNextPage) {
-            break
-          }
-        }
-
-        isLoadingMore.current = false
-
-        // DOMが更新されるのを待ってからスクロール
-        await new Promise((resolve) => requestAnimationFrame(resolve))
+        // 最終確認してからスクロール
+        await waitForDomElement(targetDateStr, 300)
         scrollToDate(targetDate)
       }
       // 未来方向の読み込みが必要（通常は発生しない）
@@ -238,9 +276,9 @@ export function TimelineList({
           await fetchPreviousPage()
           attempts++
 
-          await new Promise((resolve) => setTimeout(resolve, 50))
-
-          if (dateRefs.current.has(targetDateStr)) {
+          // DOM要素の出現を待機（最大200ms）
+          const found = await waitForDomElement(targetDateStr, 200)
+          if (found) {
             break
           }
 
@@ -251,7 +289,8 @@ export function TimelineList({
 
         isLoadingMore.current = false
 
-        await new Promise((resolve) => requestAnimationFrame(resolve))
+        // 最終確認してからスクロール
+        await waitForDomElement(targetDateStr, 300)
         scrollToDate(targetDate)
       }
     },
@@ -265,6 +304,7 @@ export function TimelineList({
       fetchNextPage,
       fetchPreviousPage,
       scrollToDate,
+      waitForDomElement,
     ]
   )
 
@@ -279,64 +319,6 @@ export function TimelineList({
       }
     }
   }, [loadAndScrollToDate, loadAndScrollToDateRef])
-
-  // 指定日付からN日前までのデータを先読みする関数（スクロールなし）
-  const prefetchDays = useCallback(
-    async (targetDate: Date, days: number) => {
-      const prefetchTargetStr = format(subDays(targetDate, days), 'yyyy-MM-dd')
-
-      // 既に読み込み済みならスキップ
-      if (dateIndexMap.has(prefetchTargetStr)) return
-
-      // 読み込み中なら新しい読み込みをスキップ
-      if (isLoadingMore.current) return
-
-      // 現在の最古日付より過去なら読み込み
-      const oldestDate = allDates[0]
-      if (prefetchTargetStr < oldestDate && hasNextPage) {
-        isLoadingMore.current = true
-
-        let attempts = 0
-        const maxAttempts = 20
-
-        while (attempts < maxAttempts) {
-          await fetchNextPage()
-          attempts++
-
-          // 表示範囲も拡大
-          setDisplayedDateCount((prev) => prev + DATES_PER_PAGE)
-
-          // 少し待ってから状態を確認
-          await new Promise((resolve) => setTimeout(resolve, 50))
-
-          // 目標日付に到達したかチェック
-          if (dateRefs.current.has(prefetchTargetStr)) {
-            break
-          }
-
-          // これ以上読み込めない場合は終了
-          if (!hasNextPage) {
-            break
-          }
-        }
-
-        isLoadingMore.current = false
-      }
-    },
-    [dateIndexMap, allDates, hasNextPage, fetchNextPage]
-  )
-
-  // 親コンポーネントにprefetchDays関数を公開
-  useEffect(() => {
-    if (prefetchDaysRef) {
-      prefetchDaysRef.current = prefetchDays
-    }
-    return () => {
-      if (prefetchDaysRef) {
-        prefetchDaysRef.current = null
-      }
-    }
-  }, [prefetchDays, prefetchDaysRef])
 
   // 記録がある日付のSet（メモ化）
   const activeDatesSet = useMemo(() => new Set(allDates), [allDates])
@@ -403,6 +385,10 @@ export function TimelineList({
     let rafId: number | null = null
 
     const detectDateAtLine = () => {
+      // カルーセルからの同期中はスキップ（意図しない日付変更を防止）
+      // ストアから直接取得することで、Reactの更新サイクルに依存しない
+      if (storeApi.getState().syncSource === 'carousel') return
+
       const containerRect = container.getBoundingClientRect()
       const detectionLineY = containerRect.top + detectionOffset
 

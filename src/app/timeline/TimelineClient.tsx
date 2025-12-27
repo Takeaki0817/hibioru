@@ -2,7 +2,6 @@
 
 import { useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { format } from 'date-fns'
 import { QueryProvider } from '@/components/providers/QueryProvider'
 import { DateHeader } from '@/features/timeline/components/date-header'
 import { MonthCalendar } from '@/features/timeline/components/month-calendar'
@@ -34,7 +33,6 @@ function TimelineContent({
 
   // Zustandストアから状態取得
   const currentDate = useTimelineStore((s) => s.currentDate)
-  const activeDates = useTimelineStore((s) => s.activeDates) // 読み込み済みデータ判定用
   const syncSource = useTimelineStore((s) => s.syncSource)
   const setCurrentDate = useTimelineStore((s) => s.setCurrentDate)
   const setSyncSource = useTimelineStore((s) => s.setSyncSource)
@@ -57,7 +55,6 @@ function TimelineContent({
   const scrollToDateRef = useRef<((date: Date) => void) | null>(null)
   const loadAndScrollToDateRef = useRef<((date: Date) => Promise<void>) | null>(null)
   const carouselDateChangeRef = useRef<((date: Date) => void) | null>(null)
-  const prefetchDaysRef = useRef<((date: Date, days: number) => Promise<void>) | null>(null)
   // 同期フラグのクリアタイマー（高速操作時の同期漏れを防止）
   const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
@@ -82,54 +79,30 @@ function TimelineContent({
   }, [initialDate, router])
 
   // ヘッダーの日付変更（カルーセルスライド）→ TimelineListをスクロール
+  // 常にloadAndScrollToDateを使用し、DOM存在チェックを確実に行う
   const handleDateChange = useCallback(
     (date: Date) => {
-      const dateStr = format(date, 'yyyy-MM-dd')
+      // 既存タイマーをクリア（高速操作時の競合を防止）
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current)
+      }
 
-      // 日付がタイムラインに読み込まれているか確認
-      if (activeDates.has(dateStr)) {
-        // 読み込み済み → スクロール＆URLパラメータ削除
-        if (syncSource === 'timeline') return
+      setSyncSource('carousel')
+      setCurrentDate(date)
 
-        // 既存タイマーをクリア（高速操作時の競合を防止）
-        if (syncTimeoutRef.current) {
-          clearTimeout(syncTimeoutRef.current)
-        }
-
-        setSyncSource('carousel')
-        setCurrentDate(date)
-        scrollToDateRef.current?.(date)
+      // loadAndScrollToDateは内部でDOM待機 + 先読みを行うため、
+      // スクロール後のDOM変化によるずれが発生しない
+      loadAndScrollToDateRef.current?.(date).then(() => {
+        carouselDateChangeRef.current?.(date)
         clearUrlParam()
 
-        // 100ms後にクリア（スクロール完了を待つ）
+        // スクロール完了後にsyncSourceを解除
         syncTimeoutRef.current = setTimeout(() => {
           setSyncSource(null)
         }, 100)
-
-        // 先読み: すぐに-4日分を読み込み
-        prefetchDaysRef.current?.(date, 4)
-      } else {
-        // 未読み込み → データを読み込んでからスクロール
-        if (syncTimeoutRef.current) {
-          clearTimeout(syncTimeoutRef.current)
-        }
-
-        setSyncSource('carousel')
-        setCurrentDate(date)
-
-        // 読み込んでからスクロール
-        loadAndScrollToDateRef.current?.(date).then(() => {
-          carouselDateChangeRef.current?.(date)
-          syncTimeoutRef.current = setTimeout(() => {
-            setSyncSource(null)
-          }, 100)
-
-          // 先読み: すぐに-4日分を読み込み
-          prefetchDaysRef.current?.(date, 4)
-        })
-      }
+      })
     },
-    [activeDates, syncSource, clearUrlParam, setSyncSource, setCurrentDate]
+    [clearUrlParam, setSyncSource, setCurrentDate]
   )
 
   // TimelineListのスクロールで日付が変わった時 → カルーセルも同期
@@ -162,7 +135,6 @@ function TimelineContent({
           onDateChange={handleScrollDateChange}
           scrollToDateRef={scrollToDateRef}
           loadAndScrollToDateRef={loadAndScrollToDateRef}
-          prefetchDaysRef={prefetchDaysRef}
         />
       </main>
 
