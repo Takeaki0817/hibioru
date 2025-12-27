@@ -80,6 +80,14 @@ export async function deleteAccount(): Promise<Result<void, DeleteAccountError>>
       return err({ code: 'DELETE_ERROR', message: 'アカウント削除に失敗しました' })
     }
 
+    // 3. セッションをサインアウト（Cookieクリア）
+    // ユーザー削除後はセッションが無効なため、エラーは無視
+    try {
+      await supabase.auth.signOut()
+    } catch {
+      // 削除済みユーザーのセッションクリアはエラーになる場合があるが無視
+    }
+
     return ok(undefined)
   } catch (error) {
     console.error('deleteAccount error:', error)
