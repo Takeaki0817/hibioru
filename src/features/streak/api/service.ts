@@ -91,7 +91,7 @@ export async function updateStreakOnEntry(
     // 現在のストリーク情報を取得
     const { data: existing, error: fetchError } = await supabase
       .from('streaks')
-      .select('*')
+      .select('current_streak, longest_streak, last_entry_date, hotsure_remaining, hotsure_used_dates')
       .eq('user_id', userId)
       .single()
 
@@ -110,9 +110,18 @@ export async function updateStreakOnEntry(
       hotsure_used_dates: string[]
     } | null
 
-    // 同日2回目以降の記録の場合は更新しない
+    // 同日2回目以降の記録の場合は更新しない（現在の情報をそのまま返す）
     if (streakData?.last_entry_date === today) {
-      return getStreakInfo(userId)
+      return {
+        ok: true,
+        value: {
+          currentStreak: streakData.current_streak,
+          longestStreak: streakData.longest_streak,
+          lastEntryDate: streakData.last_entry_date,
+          hotsureRemaining: streakData.hotsure_remaining,
+          hotsureUsedCount: streakData.hotsure_used_dates?.length || 0
+        }
+      }
     }
 
     // 新しいストリーク値を計算
@@ -122,7 +131,7 @@ export async function updateStreakOnEntry(
       streakData?.longest_streak || 0
     )
 
-    // 更新または作成
+    // 更新または作成（.select()で更新後のデータを取得）
     const updateData: StreakInsert = {
       user_id: userId,
       current_streak: newCurrentStreak,
@@ -131,9 +140,11 @@ export async function updateStreakOnEntry(
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error: updateError } = await (supabase as any)
+    const { data: updatedData, error: updateError } = await (supabase as any)
       .from('streaks')
       .upsert(updateData)
+      .select('current_streak, longest_streak, last_entry_date, hotsure_remaining, hotsure_used_dates')
+      .single()
 
     if (updateError) {
       return {
@@ -142,7 +153,24 @@ export async function updateStreakOnEntry(
       }
     }
 
-    return getStreakInfo(userId)
+    const updated = updatedData as {
+      current_streak: number
+      longest_streak: number
+      last_entry_date: string | null
+      hotsure_remaining: number
+      hotsure_used_dates: string[]
+    }
+
+    return {
+      ok: true,
+      value: {
+        currentStreak: updated.current_streak,
+        longestStreak: updated.longest_streak,
+        lastEntryDate: updated.last_entry_date,
+        hotsureRemaining: updated.hotsure_remaining,
+        hotsureUsedCount: updated.hotsure_used_dates?.length || 0
+      }
+    }
   } catch (error) {
     return {
       ok: false,

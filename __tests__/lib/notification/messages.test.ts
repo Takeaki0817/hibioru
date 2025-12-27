@@ -3,8 +3,7 @@
  *
  * Requirements: 3.2, 4.2, 4.3
  * - メインリマインド用の文言バリエーション
- * - 追いリマインド1回目用の文言
- * - 追いリマインド2回目用の文言
+ * - 追いリマインド1〜5回目用の文言
  * - ランダム選択ロジック
  */
 
@@ -14,6 +13,9 @@ import {
   MAIN_MESSAGES,
   FOLLOW_UP_1_MESSAGES,
   FOLLOW_UP_2_MESSAGES,
+  FOLLOW_UP_3_MESSAGES,
+  FOLLOW_UP_4_MESSAGES,
+  FOLLOW_UP_5_MESSAGES,
   type NotificationMessage,
 } from '@/features/notification/messages';
 
@@ -176,10 +178,43 @@ describe('通知文言生成', () => {
     });
 
     describe('count=3（追いリマインド3回目）', () => {
-      it('FOLLOW_UP_2_MESSAGESのいずれかを返す（最大回数用文言）', () => {
+      it('FOLLOW_UP_3_MESSAGESのいずれかを返す', () => {
         const message = getFollowUpMessage(3);
 
-        const isValid = FOLLOW_UP_2_MESSAGES.some(
+        const isValid = FOLLOW_UP_3_MESSAGES.some(
+          (m) => m.title === message.title && m.body === message.body
+        );
+        expect(isValid).toBe(true);
+      });
+    });
+
+    describe('count=4（追いリマインド4回目）', () => {
+      it('FOLLOW_UP_4_MESSAGESのいずれかを返す', () => {
+        const message = getFollowUpMessage(4);
+
+        const isValid = FOLLOW_UP_4_MESSAGES.some(
+          (m) => m.title === message.title && m.body === message.body
+        );
+        expect(isValid).toBe(true);
+      });
+    });
+
+    describe('count=5（追いリマインド5回目）', () => {
+      it('FOLLOW_UP_5_MESSAGESのいずれかを返す', () => {
+        const message = getFollowUpMessage(5);
+
+        const isValid = FOLLOW_UP_5_MESSAGES.some(
+          (m) => m.title === message.title && m.body === message.body
+        );
+        expect(isValid).toBe(true);
+      });
+    });
+
+    describe('count=6以上（5回目以降）', () => {
+      it('FOLLOW_UP_5_MESSAGESのいずれかを返す', () => {
+        const message = getFollowUpMessage(6);
+
+        const isValid = FOLLOW_UP_5_MESSAGES.some(
           (m) => m.title === message.title && m.body === message.body
         );
         expect(isValid).toBe(true);

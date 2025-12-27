@@ -19,7 +19,7 @@ export async function fetchEntries(
 
   let query = supabase
     .from('entries')
-    .select('*')
+    .select('id, user_id, content, image_urls, created_at')
     .eq('user_id', userId)
     .eq('is_deleted', false)
     .order('created_at', { ascending: false })
@@ -104,6 +104,11 @@ export async function fetchCalendarData(
     throw new Error(`カレンダーデータの取得に失敗しました: ${entriesResult.error.message}`)
   }
 
+  // streaksのエラーはログのみ（エントリがあればカレンダー表示は可能）
+  if (streaksResult.error) {
+    console.error('ストリーク取得失敗:', streaksResult.error.message)
+  }
+
   // 日付ごとにグループ化
   const rawEntries = entriesResult.data as { created_at: string }[] | null
   const entryDates = Array.from(
@@ -116,7 +121,9 @@ export async function fetchCalendarData(
     )
   )
 
-  const streakData = streaksResult.data as { hotsure_used_dates: string[] } | null
+  const streakData = streaksResult.error
+    ? null
+    : (streaksResult.data as { hotsure_used_dates: string[] } | null)
   const hotsureDates = streakData?.hotsure_used_dates || []
 
   return {
@@ -160,6 +167,11 @@ export async function fetchAllEntryDates(
     throw new Error(`投稿日付の取得に失敗しました: ${entriesResult.error.message}`)
   }
 
+  // streaksのエラーはログのみ（エントリがあればカルーセル表示は可能）
+  if (streaksResult.error) {
+    console.error('ストリーク取得失敗:', streaksResult.error.message)
+  }
+
   // 日付ごとにグループ化（重複除去）
   const rawEntries = entriesResult.data as { created_at: string }[] | null
   const entryDates = Array.from(
@@ -173,7 +185,9 @@ export async function fetchAllEntryDates(
     )
   )
 
-  const streakData = streaksResult.data as { hotsure_used_dates: string[] } | null
+  const streakData = streaksResult.error
+    ? null
+    : (streaksResult.data as { hotsure_used_dates: string[] } | null)
   const hotsureDates = streakData?.hotsure_used_dates || []
 
   return {

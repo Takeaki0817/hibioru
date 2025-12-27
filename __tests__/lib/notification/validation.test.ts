@@ -4,7 +4,7 @@
  * Requirements: 2.4, 2.5, 2.6, 2.7
  * - primaryTimeの範囲チェック（00:00-23:59）
  * - followUpIntervalMinutesの範囲チェック（15-180分）
- * - followUpMaxCountの範囲チェック（1-3回）
+ * - followUpMaxCountの範囲チェック（1-5回）
  * - activeDaysの形式検証（0-6の配列）
  */
 
@@ -99,7 +99,9 @@ describe('通知設定バリデーション', () => {
       it.each([
         [1, '最小値'],
         [2, 'デフォルト値'],
-        [3, '最大値'],
+        [3, '中間値'],
+        [4, '4回'],
+        [5, '最大値'],
       ])('%d回 は有効な回数（%s）', (count) => {
         const result = validateFollowUpMaxCount(count);
         expect(result.isValid).toBe(true);
@@ -111,7 +113,7 @@ describe('通知設定バリデーション', () => {
       it.each([
         [0, '0回は無効'],
         [-1, '負の値は無効'],
-        [4, '4回は無効'],
+        [6, '6回は無効（上限超過）'],
         [10, '10回は無効'],
       ])('%d回 は無効な回数（%s）', (count) => {
         const result = validateFollowUpMaxCount(count);
@@ -182,7 +184,7 @@ describe('通知設定バリデーション', () => {
       const settings: NotificationSettingsInput = {
         primaryTime: '25:00',
         followUpIntervalMinutes: 10,
-        followUpMaxCount: 5,
+        followUpMaxCount: 6,  // 6は無効（上限超過）
         activeDays: [0, 7],
       };
 
@@ -210,7 +212,7 @@ describe('通知設定バリデーション', () => {
       const settings: NotificationSettingsInput = {
         primaryTime: 'invalid',
         followUpIntervalMinutes: 10,
-        followUpMaxCount: 5,
+        followUpMaxCount: 6,  // 6は無効（上限超過）
         activeDays: [7],
       };
 

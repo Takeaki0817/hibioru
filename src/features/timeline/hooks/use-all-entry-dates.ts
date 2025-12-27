@@ -26,7 +26,7 @@ export function useAllEntryDates(
   const { userId } = options
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['all-entry-dates', userId],
+    queryKey: ['entries', 'dates', userId],
     queryFn: () => fetchAllEntryDates({ userId }),
     staleTime: 5 * 60 * 1000, // 5分間はstaleにしない
     gcTime: 30 * 60 * 1000, // 30分間キャッシュ保持

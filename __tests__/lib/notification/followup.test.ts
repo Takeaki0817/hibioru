@@ -42,6 +42,20 @@ const mockSupabase = {
 describe('FollowUpScheduler', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // 各メソッドのモックをリセット（mockResolvedValueOnceの残りをクリア）
+    mockSupabase.single.mockReset();
+    mockSupabase.limit.mockReset();
+    // デフォルトのチェーン動作を再設定
+    mockSupabase.from.mockReturnValue(mockSupabase);
+    mockSupabase.select.mockReturnValue(mockSupabase);
+    mockSupabase.insert.mockReturnValue(mockSupabase);
+    mockSupabase.update.mockReturnValue(mockSupabase);
+    mockSupabase.delete.mockReturnValue(mockSupabase);
+    mockSupabase.eq.mockReturnValue(mockSupabase);
+    mockSupabase.gte.mockReturnValue(mockSupabase);
+    mockSupabase.lt.mockReturnValue(mockSupabase);
+    mockSupabase.is.mockReturnValue(mockSupabase);
+    mockSupabase.order.mockReturnValue(mockSupabase);
     // createClientモックをリセット
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     mockedCreateClient.mockResolvedValue(mockSupabase as any);
@@ -251,17 +265,10 @@ describe('FollowUpScheduler', () => {
       });
 
       // モック: notification_logs（メインリマインドのみ送信済み）
-      mockSupabase.order.mockReturnValueOnce(mockSupabase);
       mockSupabase.limit.mockResolvedValueOnce({
         data: [
           { type: 'main_reminder', sent_at: '2024-01-15T12:00:00Z' },
         ],
-        error: null,
-      });
-
-      // モック: entries（記録なし）
-      mockSupabase.limit.mockResolvedValueOnce({
-        data: [],
         error: null,
       });
 
@@ -274,9 +281,15 @@ describe('FollowUpScheduler', () => {
       }
     });
 
-    it('記録済みの場合はshouldSend=falseでreason="already_recorded"を返す', async () => {
+    /**
+     * 仕様: Requirements 3.2
+     * 「当日の記録有無に関わらず通知を送信する（記録済みでもスキップしない）」
+     * 記録済みでも追いリマインドは送信対象となる
+     */
+    it('記録済みでも追いリマインドは送信される（仕様: 記録有無に関わらず送信）', async () => {
       const userId = 'test-user-123';
-      const currentTime = new Date('2024-01-15T13:00:00Z');
+      // JST 22:00 = primaryTime(21:00) + 60分 = 1回目の追いリマインド時刻
+      const currentTime = new Date('2024-01-15T13:00:00Z'); // UTC 13:00 = JST 22:00
 
       // モック: notification_settings
       mockSupabase.single.mockResolvedValueOnce({
@@ -293,16 +306,12 @@ describe('FollowUpScheduler', () => {
         error: null,
       });
 
-      // モック: notification_logs
+      // モック: notification_logs（まだ追いリマインド未送信）
       mockSupabase.order.mockReturnValueOnce(mockSupabase);
       mockSupabase.limit.mockResolvedValueOnce({
-        data: [],
-        error: null,
-      });
-
-      // モック: entries（記録あり）
-      mockSupabase.limit.mockResolvedValueOnce({
-        data: [{ id: 'entry-1' }],
+        data: [
+          { type: 'main_reminder', sent_at: '2024-01-15T12:00:00Z' },
+        ],
         error: null,
       });
 
@@ -310,17 +319,19 @@ describe('FollowUpScheduler', () => {
 
       expect(result.ok).toBe(true);
       if (result.ok) {
-        expect(result.value.shouldSend).toBe(false);
-        expect(result.value.reason).toBe('already_recorded');
+        // 記録有無に関わらず、時刻条件を満たせば送信される
+        expect(result.value.shouldSend).toBe(true);
       }
     });
 
     /**
      * Task 8.1: followUpMaxCountに達した場合
+     * 追いリマインドがmaxCount回送信済みの場合、それ以上送信しない
      */
     it('maxCountに達した場合はshouldSend=falseでreason="max_count_reached"を返す', async () => {
       const userId = 'test-user-123';
-      const currentTime = new Date('2024-01-15T15:00:00Z'); // JST 00:00
+      // JST 23:30 = 追いリマインド3回目の時刻を過ぎているが、maxCount=2なので送信しない
+      const currentTime = new Date('2024-01-15T14:30:00Z'); // UTC 14:30 = JST 23:30
 
       // モック: notification_settings（maxCount: 2）
       mockSupabase.single.mockResolvedValueOnce({
@@ -338,19 +349,12 @@ describe('FollowUpScheduler', () => {
       });
 
       // モック: notification_logs（追いリマインド2回送信済み）
-      mockSupabase.order.mockReturnValueOnce(mockSupabase);
       mockSupabase.limit.mockResolvedValueOnce({
         data: [
           { type: 'main_reminder', sent_at: '2024-01-15T12:00:00Z' },
           { type: 'chase_reminder', sent_at: '2024-01-15T13:00:00Z' },
           { type: 'chase_reminder', sent_at: '2024-01-15T14:00:00Z' },
         ],
-        error: null,
-      });
-
-      // モック: entries（記録なし）
-      mockSupabase.limit.mockResolvedValueOnce({
-        data: [],
         error: null,
       });
 
@@ -386,22 +390,10 @@ describe('FollowUpScheduler', () => {
       });
 
       // モック: notification_logs（メインリマインド送信済み、追いリマインドなし）
-      // shouldSendFollowUp は notification_logs を order().limit() で呼ぶ
-      mockSupabase.order.mockImplementationOnce(() => {
-        // order() が呼ばれた後、limit() の結果を返す
-        mockSupabase.limit.mockResolvedValueOnce({
-          data: [
-            { type: 'main_reminder', sent_at: '2024-01-15T12:00:00Z' },
-          ],
-          error: null,
-        });
-        return mockSupabase;
-      });
-
-      // モック: entries（記録なし）
-      // entries は limit() だけで呼ばれる
       mockSupabase.limit.mockResolvedValueOnce({
-        data: [],
+        data: [
+          { type: 'main_reminder', sent_at: '2024-01-15T12:00:00Z' },
+        ],
         error: null,
       });
 

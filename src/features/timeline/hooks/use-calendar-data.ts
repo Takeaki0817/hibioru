@@ -27,15 +27,18 @@ export function useCalendarData(
   const queryClient = useQueryClient()
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['calendar', userId, year, month],
+    queryKey: ['entries', 'calendar', userId, year, month],
     queryFn: () => fetchCalendarData({ userId, year, month }),
+    // カレンダーは日次更新なので中程度のstaleTime
+    staleTime: 5 * 60 * 1000, // 5分
+    gcTime: 30 * 60 * 1000, // 30分（月移動時のキャッシュ保持）
   })
 
   // 前後月のプリフェッチ（月切り替え時のちらつき防止）
   useEffect(() => {
     const prefetchMonth = (y: number, m: number) => {
       queryClient.prefetchQuery({
-        queryKey: ['calendar', userId, y, m],
+        queryKey: ['entries', 'calendar', userId, y, m],
         queryFn: () => fetchCalendarData({ userId, year: y, month: m }),
         staleTime: 5 * 60 * 1000, // 5分間はstaleにしない
       })

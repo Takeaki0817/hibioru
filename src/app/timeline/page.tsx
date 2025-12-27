@@ -32,7 +32,7 @@ export default async function TimelinePage({
   const userPromise = supabase.auth.getUser()
   const entriesPromise = supabase
     .from('entries')
-    .select('*')
+    .select('id, user_id, content, image_urls, created_at')
     .eq('is_deleted', false)
     .gte('created_at', today.toISOString())
     .lt('created_at', tomorrow.toISOString())
@@ -43,6 +43,11 @@ export default async function TimelinePage({
   const user = userResult.data.user
   if (!user) {
     redirect('/login')
+  }
+
+  // エントリ取得エラーはログのみ（空リストで続行可能）
+  if (entriesResult.error) {
+    console.error('エントリ取得失敗:', entriesResult.error.message)
   }
 
   // 二重防御: RLSが無効化された場合に備えてuser_idでフィルタリング

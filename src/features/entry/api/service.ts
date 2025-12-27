@@ -60,15 +60,24 @@ export async function createEntry(
     const entry = data as Entry
 
     // ストリーク更新と通知連携を並列実行（パフォーマンス最適化）
-    // これらの処理の失敗はエントリー作成結果に影響しない
-    Promise.allSettled([
+    // これらの処理の失敗はエントリー作成結果に影響しない（ログのみ）
+    await Promise.allSettled([
       updateStreakOnEntry(userData.user.id),
       handleEntryCreated({
         userId: userData.user.id,
         entryId: entry.id,
         createdAt: new Date(entry.created_at),
       }),
-    ])
+    ]).then((results) => {
+      results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+          console.error(
+            `並列処理[${index}]失敗:`,
+            result.reason instanceof Error ? result.reason.message : result.reason
+          )
+        }
+      })
+    })
 
     return { ok: true, value: entry }
   } catch (error) {

@@ -55,7 +55,7 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
     fetchPreviousPage,
     refetch,
   } = useInfiniteQuery({
-    queryKey: ['timeline', userId, initialCursor],
+    queryKey: ['entries', 'timeline', userId, initialCursor],
     queryFn: ({ pageParam }) =>
       fetchEntries({
         userId,
@@ -63,6 +63,8 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
         limit: pageSize,
         direction: pageParam.direction,
       }),
+    // タイムラインは更新頻度が低いため長めのstaleTime
+    staleTime: 10 * 60 * 1000, // 10分
     // 過去方向（古いデータ）
     getNextPageParam: (lastPage) =>
       lastPage.nextCursor

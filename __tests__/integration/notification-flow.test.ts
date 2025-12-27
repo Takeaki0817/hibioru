@@ -407,9 +407,11 @@ describe('バリデーションとエラーケーステスト（タスク14.2）
       it.each([
         [1, true, '最小値1回は有効'],
         [2, true, 'デフォルト値2回は有効'],
-        [3, true, '最大値3回は有効'],
+        [3, true, '3回は有効'],
+        [4, true, '4回は有効'],
+        [5, true, '最大値5回は有効'],
         [0, false, '0回は無効'],
-        [4, false, '4回は無効'],
+        [6, false, '6回は無効（上限超過）'],
         [-1, false, '負の値は無効'],
         [1.5, false, '小数は無効'],
       ])('followUpMaxCount %d回 はisValid=%s（%s）', (count, expectedValid, description) => {
@@ -451,7 +453,7 @@ describe('バリデーションとエラーケーステスト（タスク14.2）
         const result = validateNotificationSettings({
           primaryTime: '25:00',        // 無効
           followUpIntervalMinutes: 10, // 無効
-          followUpMaxCount: 5,         // 無効
+          followUpMaxCount: 6,         // 無効（6は上限超過）
           activeDays: [7],             // 無効
         });
 
