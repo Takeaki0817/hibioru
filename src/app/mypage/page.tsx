@@ -9,6 +9,7 @@ import { AppearanceSection } from '@/features/mypage/components/appearance-secti
 import { ExportSection } from '@/features/mypage/components/export-section'
 import { FeedbackSection } from '@/features/mypage/components/feedback-section'
 import { LogoutButton } from '@/features/mypage/components/logout-button'
+import { DeleteAccountSection } from '@/features/mypage/components/delete-account-section'
 import { PageLayout } from '@/components/layouts/page-layout'
 import { getStreakInfo, getWeeklyRecords } from '@/features/streak/api/service'
 import { getNotificationSettings } from '@/features/notification/api/service'
@@ -97,6 +98,11 @@ export default async function MypagePage() {
         {/* ログアウトボタン */}
         <div className="mt-8">
           <LogoutButton />
+        </div>
+
+        {/* アカウント削除セクション */}
+        <div className="mt-4">
+          <DeleteAccountSection />
         </div>
       </div>
     </PageLayout>
