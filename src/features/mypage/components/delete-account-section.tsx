@@ -44,8 +44,8 @@ export function DeleteAccountSection() {
         return
       }
 
-      // 削除成功、ログイン画面へリダイレクト
-      router.push('/login')
+      // 削除成功、ルートへリダイレクト
+      router.push('/')
       router.refresh()
     } catch {
       setError('予期しないエラーが発生しました')
