@@ -55,9 +55,21 @@ const supabase = createClient()
 .select('id, user_id, content, created_at')  // ✅
 .select('*')                                  // ❌
 
-// TanStack Query: queryKey階層化
-['entries', 'timeline', userId, cursor]       // ✅
+// TanStack Query: queryKeyファクトリーを使用
+import { queryKeys } from '@/lib/constants/query-keys'
+queryKeys.entries.timeline(userId)            // ✅
 ['timeline', userId]                          // ❌
+```
+
+### 共有ユーティリティ
+
+```typescript
+// Result型（Railway Oriented Programming）
+import type { Result } from '@/lib/types/result'
+import { ok, err, isOk } from '@/lib/types/result'
+
+// JST日付処理（ストリーク計算、日次制限チェック等）
+import { getJSTToday, getJSTDayBounds } from '@/lib/date-utils'
 ```
 
 ### 認証フロー
@@ -176,9 +188,10 @@ src/                          # @/エイリアスのルート
 │   ├── pwa/                 # PWA関連（通知許可等）
 │   └── ui/                  # 汎用UIプリミティブ（shadcn/ui）
 └── lib/                     # 共通ライブラリ
-    ├── constants/           # アプリ設定（app-config.ts）
+    ├── constants/           # アプリ設定、queryKeyファクトリー
     ├── supabase/            # Supabaseクライアント
-    └── types/               # 型定義（database.generated.ts等）
+    ├── types/               # 型定義（database.generated.ts, result.ts等）
+    └── date-utils.ts        # JST日付処理ユーティリティ
 ```
 
 ### フィーチャー構造テンプレート
@@ -190,6 +203,7 @@ src/features/{feature}/
 ├── hooks/                   # 機能固有フック（オプション）
 ├── stores/                  # Zustand ストア（オプション）
 ├── __tests__/               # テストファイル
+├── constants.ts             # 機能固有の定数（オプション）
 └── types.ts                 # 型定義
 ```
 
