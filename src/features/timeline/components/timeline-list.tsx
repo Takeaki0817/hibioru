@@ -220,6 +220,10 @@ export function TimelineList({
 
       // 既に読み込み済みの場合
       if (dateIndexMap.has(targetDateStr)) {
+        // 4日前も既に読み込み済みか判定（これ以上過去がない場合も先読み不要）
+        const prefetchRangeAlreadyLoaded =
+          dateIndexMap.has(prefetchTargetStr) || !hasNextPage
+
         // 表示範囲に含まれていない場合は表示範囲を拡大
         if (!displayedDates.includes(targetDateStr)) {
           const targetIndex = dateIndexMap.get(targetDateStr)!
@@ -228,17 +232,14 @@ export function TimelineList({
         }
 
         // 既にDOMに存在する場合は即座にスクロール
+        // スムーズスクロール中のDOM変更によるスクロール位置ずれを防ぐため、prefetchはスキップ
         if (dateRefs.current.has(targetDateStr)) {
           scrollToDate(targetDate)
-          // 先読みは非同期で実行（スクロールをブロックしない）
-          if (!dateIndexMap.has(prefetchTargetStr)) {
-            prefetchToPast(prefetchTargetStr) // awaitしない
-          }
           return
         }
 
-        // DOMに存在しない場合: 先読みしてからスクロール
-        if (!dateIndexMap.has(prefetchTargetStr)) {
+        // DOMに存在しない場合: 先読み範囲が未読み込みなら先読みしてからスクロール
+        if (!prefetchRangeAlreadyLoaded) {
           await prefetchToPast(prefetchTargetStr)
         }
 
