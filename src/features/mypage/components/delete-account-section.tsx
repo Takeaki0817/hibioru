@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -18,7 +17,6 @@ import { deleteAccount } from '@/features/auth/api/actions'
 const CONFIRMATION_TEXT = 'delete'
 
 export function DeleteAccountSection() {
-  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [confirmText, setConfirmText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -44,9 +42,8 @@ export function DeleteAccountSection() {
         return
       }
 
-      // 削除成功、ルートへリダイレクト
-      router.push('/')
-      router.refresh()
+      // 削除成功、ルートへハードリダイレクト（セッション削除後はrouter.pushが動作しないため）
+      window.location.href = '/'
     } catch {
       setError('予期しないエラーが発生しました')
       setIsLoading(false)
