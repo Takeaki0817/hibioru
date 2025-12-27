@@ -374,8 +374,14 @@ export function TimelineList({
             initialScrollDone.current = true
           }
         } else {
-          // 一番下までスクロール
-          containerRef.current!.scrollTop = containerRef.current!.scrollHeight
+          // 最新の日付セクションにスクロール（検出ラインに入るようにblock: 'start'）
+          const latestDate = displayedDates[displayedDates.length - 1]
+          if (latestDate) {
+            const element = dateRefs.current.get(latestDate)
+            if (element) {
+              element.scrollIntoView({ behavior: 'instant', block: 'start' })
+            }
+          }
           initialScrollDone.current = true
         }
       })
