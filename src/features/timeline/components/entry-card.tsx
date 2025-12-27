@@ -79,11 +79,15 @@ export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
       }
     }, [router, entry.id])
 
-    // アクセシビリティラベル用の時刻文字列
-    const timeLabel = entry.createdAt.toLocaleTimeString('ja-JP', {
-      hour: '2-digit',
-      minute: '2-digit',
-    })
+    // アクセシビリティラベル用・表示用の時刻文字列（メモ化）
+    const timeLabel = useMemo(
+      () =>
+        entry.createdAt.toLocaleTimeString('ja-JP', {
+          hour: '2-digit',
+          minute: '2-digit',
+        }),
+      [entry.createdAt]
+    )
 
     return (
       <motion.div
@@ -111,10 +115,7 @@ export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
       <div className="px-4 py-6">
         {/* 時刻表示 */}
         <div className="text-xs text-muted-foreground font-medium">
-          {entry.createdAt.toLocaleTimeString('ja-JP', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
+          {timeLabel}
         </div>
 
         {/* コンテンツ表示 */}

@@ -87,39 +87,49 @@ export function MonthCalendar({
 
   const { days, isLoading } = useCalendarData({ userId, year, month })
 
-  // 各カテゴリの日付を抽出（メモ化）
-  const entryDays = useMemo(
-    () => days.filter((d) => d.hasEntry).map((d) => new Date(d.date)),
-    [days]
-  )
-  const streakStartDays = useMemo(
-    () => days.filter((d) => d.isStreakStart).map((d) => new Date(d.date)),
-    [days]
-  )
-  const streakMiddleDays = useMemo(
-    () => days.filter((d) => d.isStreakMiddle).map((d) => new Date(d.date)),
-    [days]
-  )
-  const streakEndDays = useMemo(
-    () => days.filter((d) => d.isStreakEnd).map((d) => new Date(d.date)),
-    [days]
-  )
-  const streakSingleDays = useMemo(
-    () => days.filter((d) => d.isStreakSingle).map((d) => new Date(d.date)),
-    [days]
-  )
+  // 各カテゴリの日付を一括で抽出（依存配列チェックを1回に削減）
+  const calendarCategories = useMemo(() => {
+    const entryDays: Date[] = []
+    const streakStartDays: Date[] = []
+    const streakMiddleDays: Date[] = []
+    const streakEndDays: Date[] = []
+    const streakSingleDays: Date[] = []
+    const noEntryDays: Date[] = []
+    let today: Date | undefined
 
-  // 記録がない日（クリック不可）- ほつれ使用日も記録なし扱い
-  const noEntryDays = useMemo(
-    () => days.filter((d) => !d.hasEntry).map((d) => new Date(d.date)),
-    [days]
-  )
+    for (const d of days) {
+      const dateObj = new Date(d.date)
 
-  // 今日
-  const today = useMemo(() => {
-    const todayData = days.find((d) => d.isToday)
-    return todayData ? new Date(todayData.date) : undefined
+      if (d.hasEntry) entryDays.push(dateObj)
+      else noEntryDays.push(dateObj)
+
+      if (d.isStreakStart) streakStartDays.push(dateObj)
+      if (d.isStreakMiddle) streakMiddleDays.push(dateObj)
+      if (d.isStreakEnd) streakEndDays.push(dateObj)
+      if (d.isStreakSingle) streakSingleDays.push(dateObj)
+      if (d.isToday) today = dateObj
+    }
+
+    return {
+      entryDays,
+      streakStartDays,
+      streakMiddleDays,
+      streakEndDays,
+      streakSingleDays,
+      noEntryDays,
+      today,
+    }
   }, [days])
+
+  const {
+    entryDays,
+    streakStartDays,
+    streakMiddleDays,
+    streakEndDays,
+    streakSingleDays,
+    noEntryDays,
+    today,
+  } = calendarCategories
 
   if (!isOpen) return null
 

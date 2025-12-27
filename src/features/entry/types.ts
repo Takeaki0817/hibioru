@@ -1,6 +1,9 @@
 // entry-input機能の型定義
 
 import type { Entry } from '@/lib/types/database'
+import type { Result } from '@/lib/types/result'
+
+export type { Result }
 
 export type { Entry }
 
@@ -48,5 +51,3 @@ export type ImageError =
 
 export type LimitError =
   | { code: 'DB_ERROR'; message: string }
-
-export type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }

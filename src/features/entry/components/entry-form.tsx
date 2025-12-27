@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react'
+import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cva } from 'class-variance-authority'
@@ -149,14 +149,23 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   }, [])
 
   // キーボードショートカット（Command/Ctrl + Enter で送信）
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault()
       if (canSubmit) {
         formRef.current?.requestSubmit()
       }
     }
-  }
+  }, [canSubmit])
+
+  // テキストエリアのイベントハンドラー（useCallbackで安定化）
+  const handleContentChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value),
+    [setContent]
+  )
+  const handleFocus = useCallback(() => setFocused(true), [setFocused])
+  const handleBlur = useCallback(() => setFocused(false), [setFocused])
+  const handleShowDeleteConfirm = useCallback(() => setShowDeleteConfirm(true), [setShowDeleteConfirm])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -258,9 +267,9 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
         <textarea
           ref={textareaRef}
           value={content}
-          onChange={(e) => setContent(e.target.value)}
-          onFocus={() => setFocused(true)}
-          onBlur={() => setFocused(false)}
+          onChange={handleContentChange}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           placeholder="絵文字1つでもOK 🌟"
           aria-label="記録内容"
@@ -301,7 +310,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           <Button
             type="button"
             variant="ghost"
-            onClick={() => setShowDeleteConfirm(true)}
+            onClick={handleShowDeleteConfirm}
             disabled={isSubmitting || isDeleting || isSuccess}
             aria-label="この記録を削除"
             className="w-20 h-20 rounded-lg bg-accent/60 hover:bg-accent/70"

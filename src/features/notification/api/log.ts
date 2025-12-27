@@ -10,8 +10,11 @@
  * - 6.3: 90日経過したログの自動削除
  */
 
-import { createClient } from '@/lib/supabase/server';
-import type { NotificationType, NotificationResult } from '../types';
+import { createClient } from '@/lib/supabase/server'
+import type { Result } from '@/lib/types/result'
+import type { NotificationType, NotificationResult } from '../types'
+
+export type { Result }
 
 /**
  * データベースのログ行
@@ -65,16 +68,9 @@ export interface NotificationLog {
  * ログエラーの型
  */
 export type LogError = {
-  type: 'DATABASE_ERROR';
-  message: string;
-};
-
-/**
- * Result型
- */
-export type Result<T, E> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
+  type: 'DATABASE_ERROR'
+  message: string
+}
 
 /**
  * 通知送信ログを記録する

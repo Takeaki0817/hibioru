@@ -3,36 +3,13 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { getJSTDayBounds } from '@/lib/date-utils'
 import type { LimitStatus, LimitError, Result } from '../types'
+import { DAILY_LIMITS } from '../constants'
 
-// 日次制限の定数
-export const DAILY_ENTRY_LIMIT = 20  // 1日の投稿上限
-export const DAILY_IMAGE_LIMIT = 5   // 1日の画像上限
-
-/**
- * JST基準で当日の開始・終了時刻を取得
- */
-function getJSTDayBounds(): { start: Date; end: Date } {
-  const now = new Date()
-
-  // JST（UTC+9）のオフセットを適用
-  const jstOffset = 9 * 60 * 60 * 1000
-  const jstNow = new Date(now.getTime() + jstOffset)
-
-  // JSTでの当日0:00を計算
-  const jstDate = new Date(
-    jstNow.getUTCFullYear(),
-    jstNow.getUTCMonth(),
-    jstNow.getUTCDate(),
-    0, 0, 0, 0
-  )
-
-  // UTCに戻す（JSTオフセット分を引く）
-  const startUtc = new Date(jstDate.getTime() - jstOffset)
-  const endUtc = new Date(startUtc.getTime() + 24 * 60 * 60 * 1000)
-
-  return { start: startUtc, end: endUtc }
-}
+// 日次制限の定数（後方互換性のため再エクスポート）
+export const DAILY_ENTRY_LIMIT = DAILY_LIMITS.ENTRY_LIMIT
+export const DAILY_IMAGE_LIMIT = DAILY_LIMITS.IMAGE_LIMIT
 
 /**
  * 当日の投稿件数を取得（JST 0:00基準）

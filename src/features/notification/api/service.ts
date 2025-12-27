@@ -3,12 +3,9 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import type { Result } from '@/lib/types/result'
 import type { NotificationSettings } from '../types'
 import { DEFAULT_REMINDERS } from '../types'
-
-export type Result<T, E> =
-  | { ok: true; value: T }
-  | { ok: false; error: E }
 
 export interface NotificationError {
   code: 'DB_ERROR' | 'NOT_FOUND' | 'UNAUTHORIZED'

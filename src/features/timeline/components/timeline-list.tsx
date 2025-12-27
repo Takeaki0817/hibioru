@@ -1,15 +1,17 @@
 'use client'
 
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
+import { useRef, useEffect, useCallback, useMemo, useState } from 'react'
 import { format, eachDayOfInterval, max, startOfDay, subDays } from 'date-fns'
 import { useTimeline } from '../hooks/use-timeline'
+import { useDateDetection } from '../hooks/use-date-detection'
+import { useInfiniteScroll } from '../hooks/use-infinite-scroll'
 import { EntryCard } from './entry-card'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useTimelineStore, useTimelineStoreApi } from '../stores/timeline-store'
+import { TIMELINE_CONFIG } from '../constants'
 
-// 1ページあたりの日付数
-const DATES_PER_PAGE = 5
+const { DATES_PER_PAGE, PREFETCH_DAYS } = TIMELINE_CONFIG
 
 // 今日の日付文字列を取得
 const getTodayStr = () => format(new Date(), 'yyyy-MM-dd')
@@ -38,24 +40,13 @@ export function TimelineList({
   const topSentinelRef = useRef<HTMLDivElement>(null)
   const bottomSentinelRef = useRef<HTMLDivElement>(null)
   const todayStr = useMemo(() => getTodayStr(), [])
-  const [_visibleDate, setVisibleDate] = useState<string>(todayStr)
   const dateRefs = useRef<Map<string, HTMLDivElement>>(new Map())
-  const topObserverRef = useRef<IntersectionObserver | null>(null)
-  const bottomObserverRef = useRef<IntersectionObserver | null>(null)
   const prevDatesRef = useRef<string>('')
-  const visibleDateRef = useRef<string>(todayStr)
-  const [displayedDateCount, setDisplayedDateCount] = useState(DATES_PER_PAGE)
   const initialScrollDone = useRef(false)
-  const isLoadingMore = useRef(false)
   // 最新エントリへの ref
   const latestEntryRef = useRef<HTMLDivElement>(null)
-  // onDateChange をrefで保持（Observer再作成を防止）
-  const onDateChangeRef = useRef(onDateChange)
-
-  // propsの最新値をrefに同期
-  useEffect(() => {
-    onDateChangeRef.current = onDateChange
-  }, [onDateChange])
+  // 表示日付数
+  const [displayedDateCount, setDisplayedDateCount] = useState<number>(DATES_PER_PAGE)
 
   const {
     entries,
@@ -140,6 +131,35 @@ export function TimelineList({
   // さらに古い日付があるか
   const hasMoreOlderDates = displayedDates.length < allDates.length || hasNextPage
 
+  // 無限スクロールフック
+  const { isLoadingMoreRef } = useInfiniteScroll({
+    containerRef,
+    topSentinelRef,
+    bottomSentinelRef,
+    dateRefs,
+    displayedDates,
+    allDates,
+    hasMoreOlderDates,
+    hasNextPage,
+    hasPreviousPage,
+    fetchNextPage,
+    fetchPreviousPage,
+    setDisplayedDateCount,
+  })
+
+  // 日付検出フック
+  useDateDetection({
+    containerRef,
+    dateRefs,
+    displayedDates,
+    storeApi,
+    initialDateStr: todayStr,
+    onDateChange,
+  })
+
+  // isLoadingMore の参照（loadAndScrollToDate で使用）
+  const isLoadingMore = isLoadingMoreRef
+
   // 日付divへスクロール
   const scrollToDate = useCallback((date: Date) => {
     const dateKey = format(date, 'yyyy-MM-dd')
@@ -187,8 +207,7 @@ export function TimelineList({
   )
 
   // 指定日付まで読み込んでからスクロールする関数
-  // スクロール後のずれを防ぐため、目標日付 + 4日前までを先に読み込む
-  const PREFETCH_DAYS = 4
+  // スクロール後のずれを防ぐため、目標日付 + PREFETCH_DAYS日前までを先に読み込む
 
   const loadAndScrollToDate = useCallback(
     async (targetDate: Date) => {
@@ -366,143 +385,6 @@ export function TimelineList({
       })
     }
   }, [displayedDates, initialDate])
-
-  // onDateChangeRef を最新に保つ
-  useEffect(() => {
-    onDateChangeRef.current = onDateChange
-  }, [onDateChange])
-
-  // スクロール時に検知ラインにある日付を検出
-  // 検出ライン: ヘッダー下辺から12px下の位置
-  useEffect(() => {
-    const container = containerRef.current
-    if (!container) return
-
-    const detectionOffset = 12  // ヘッダー下辺から12px下
-    let rafId: number | null = null
-
-    const detectDateAtLine = () => {
-      // カルーセルからの同期中はスキップ（意図しない日付変更を防止）
-      // ストアから直接取得することで、Reactの更新サイクルに依存しない
-      if (storeApi.getState().syncSource === 'carousel') return
-
-      const containerRect = container.getBoundingClientRect()
-      const detectionLineY = containerRect.top + detectionOffset
-
-      // 全ての日付セクションをチェック
-      for (const [dateKey, element] of dateRefs.current) {
-        const rect = element.getBoundingClientRect()
-        if (rect.top <= detectionLineY && rect.bottom >= detectionLineY) {
-          if (dateKey !== visibleDateRef.current) {
-            visibleDateRef.current = dateKey
-            setVisibleDate(dateKey)
-            onDateChangeRef.current?.(new Date(dateKey))
-          }
-          break
-        }
-      }
-    }
-
-    const handleScroll = () => {
-      // requestAnimationFrameでスロットル
-      if (rafId !== null) return
-      rafId = requestAnimationFrame(() => {
-        detectDateAtLine()
-        rafId = null
-      })
-    }
-
-    // 初期読み込み時に検出
-    requestAnimationFrame(detectDateAtLine)
-
-    // スクロール時に検出
-    container.addEventListener('scroll', handleScroll, { passive: true })
-
-    return () => {
-      container.removeEventListener('scroll', handleScroll)
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId)
-      }
-    }
-  }, [displayedDates])
-
-  // 上端検出: 古い日付を追加読み込み
-  useEffect(() => {
-    const container = containerRef.current
-    const sentinel = topSentinelRef.current
-    if (!container || !sentinel) return
-
-    topObserverRef.current = new IntersectionObserver(
-      async (observerEntries) => {
-        const entry = observerEntries[0]
-        if (entry.isIntersecting && hasMoreOlderDates && !isLoadingMore.current) {
-          isLoadingMore.current = true
-
-          // スクロール位置を保持するため、現在の最上部要素を記録
-          const topElement = displayedDates[0]
-          const topElementRef = dateRefs.current.get(topElement)
-
-          // まず表示日付数を増やす
-          if (displayedDates.length < allDates.length) {
-            setDisplayedDateCount((prev) => prev + DATES_PER_PAGE)
-          } else if (hasNextPage) {
-            // サーバーから追加読み込み
-            await fetchNextPage()
-            setDisplayedDateCount((prev) => prev + DATES_PER_PAGE)
-          }
-
-          // スクロール位置を維持（新しいコンテンツが上に追加された分だけスクロール）
-          requestAnimationFrame(() => {
-            if (topElementRef) {
-              // 追加前の最上部要素の新しい位置にスクロール
-              container.scrollTop = topElementRef.offsetTop
-            }
-            isLoadingMore.current = false
-          })
-        }
-      },
-      {
-        root: container,
-        rootMargin: '100px 0px 0px 0px',
-        threshold: 0,
-      }
-    )
-
-    topObserverRef.current.observe(sentinel)
-
-    return () => {
-      topObserverRef.current?.disconnect()
-    }
-  }, [displayedDates, allDates, hasMoreOlderDates, hasNextPage, fetchNextPage])
-
-  // 下端検出: 最新データを追加読み込み
-  useEffect(() => {
-    const container = containerRef.current
-    const sentinel = bottomSentinelRef.current
-    if (!container || !sentinel || !hasPreviousPage) return
-
-    bottomObserverRef.current = new IntersectionObserver(
-      async (observerEntries) => {
-        const entry = observerEntries[0]
-        if (entry.isIntersecting && !isLoadingMore.current) {
-          isLoadingMore.current = true
-          await fetchPreviousPage()
-          isLoadingMore.current = false
-        }
-      },
-      {
-        root: container,
-        rootMargin: '0px 0px 100px 0px',
-        threshold: 0,
-      }
-    )
-
-    bottomObserverRef.current.observe(sentinel)
-
-    return () => {
-      bottomObserverRef.current?.disconnect()
-    }
-  }, [hasPreviousPage, fetchPreviousPage])
 
   // 日付divのref設定
   const setDateRef = useCallback(
