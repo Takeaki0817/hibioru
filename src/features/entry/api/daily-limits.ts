@@ -1,5 +1,7 @@
 'use server'
 
+import 'server-only'
+
 import { createClient } from '@/lib/supabase/server'
 import type { LimitStatus, LimitError, Result } from '../types'
 

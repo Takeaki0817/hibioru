@@ -34,6 +34,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - **バレルファイル（index.ts）禁止**: ツリーシェーキングを妨げるため直接インポートを使用
 - **interface優先**: 型定義には`type`より`interface`を優先
 - **Server Components優先**: `'use client'`はインタラクティブな部分のみに使用
+- **dynamic export禁止**: `export const dynamic = 'force-dynamic'` は使用しない（Cache Components競合の原因）
 
 ### Supabaseクライアントの使い分け
 
@@ -45,6 +46,18 @@ const supabase = await createClient()
 // Client Components（'use client'）
 import { createClient } from '@/lib/supabase/client'
 const supabase = createClient()
+```
+
+### データフェッチ規約
+
+```typescript
+// select最適化: 必要カラムのみ取得
+.select('id, user_id, content, created_at')  // ✅
+.select('*')                                  // ❌
+
+// TanStack Query: queryKey階層化
+['entries', 'timeline', userId, cursor]       // ✅
+['timeline', userId]                          // ❌
 ```
 
 ### 認証フロー
@@ -60,22 +73,20 @@ const supabase = createClient()
 # 開発サーバー起動
 pnpm dev
 
-# ビルド
+# ビルド・リント
 pnpm build
-
-# リント
 pnpm lint
 
-# テスト
+# ユニットテスト（Jest）
 pnpm test                    # 全テスト実行
 pnpm test:watch              # ウォッチモード
 pnpm test:coverage           # カバレッジ付き
 pnpm test -- path/to/test    # 単一テスト実行
 
-# テスト優先対象（重要なビジネスロジック）
-# - ストリーク計算
-# - ほつれ消費ロジック
-# - 日付処理
+# E2Eテスト（Playwright）
+pnpm exec playwright test           # 全E2Eテスト実行
+pnpm exec playwright test --ui      # UIモードで実行
+pnpm exec playwright test auth      # 特定ファイルのみ実行
 
 # Supabase（Docker）
 pnpm db:start                # 起動
@@ -85,12 +96,6 @@ pnpm db:types                # 型定義生成 → src/lib/types/database.genera
 pnpm db:migration:new <name> # 新規マイグレーション
 pnpm db:push                 # リモートDBへプッシュ
 pnpm db:pull                 # リモートDBからプル
-pnpm db:diff                 # マイグレーション差分確認
-
-# E2Eテスト（Playwright）
-pnpm exec playwright test           # E2Eテスト実行
-pnpm exec playwright test --ui      # UIモードで実行
-pnpm exec playwright test auth      # 特定ファイルのみ実行
 
 # プッシュ通知
 pnpm vapid:generate          # VAPID鍵生成
@@ -135,9 +140,7 @@ supabase secrets set <KEY>=<val>  # シークレット設定
 vercel login                      # 認証
 vercel link                       # プロジェクトリンク
 vercel env pull                   # 環境変数取得
-vercel env add <name>             # 環境変数追加
 vercel --prod                     # 本番デプロイ
-vercel logs                       # ログ確認
 ```
 
 ## アーキテクチャ

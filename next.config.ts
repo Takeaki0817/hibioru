@@ -4,6 +4,10 @@ const nextConfig: NextConfig = {
   // React Compiler（自動メモ化によるパフォーマンス向上）
   reactCompiler: true,
 
+  // Cache Components（'use cache'ディレクティブを有効化）
+  // 有効化には<Suspense>でのラッピングが必要なため、将来のリファクタリングで導入予定
+  // cacheComponents: true,
+
   // リモート画像の許可設定
   images: {
     remotePatterns: [

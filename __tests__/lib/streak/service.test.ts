@@ -115,17 +115,10 @@ describe('StreakService', () => {
         }),
       })
 
-      // 更新処理のモック
+      // 更新処理のモック（upsert→select→singleのチェーン）
       mockSupabaseClient.from.mockReturnValueOnce({
-        upsert: jest.fn().mockResolvedValue({
-          error: null,
-        }),
-      })
-
-      // 更新後の取得のモック
-      mockSupabaseClient.from.mockReturnValueOnce({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
+        upsert: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: {
                 current_streak: 1,
@@ -162,25 +155,7 @@ describe('StreakService', () => {
       const jstDate = new Date(now.getTime() + jstOffset * 60 * 1000)
       const today = jstDate.toISOString().split('T')[0]
 
-      // 既存データ（同日に記録済み）
-      mockSupabaseClient.from.mockReturnValueOnce({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
-            single: jest.fn().mockResolvedValue({
-              data: {
-                current_streak: 5,
-                longest_streak: 10,
-                last_entry_date: today,
-                hotsure_remaining: 1,
-                hotsure_used_dates: [],
-              },
-              error: null,
-            }),
-          }),
-        }),
-      })
-
-      // 同日2回目なので更新後の取得のみ
+      // 既存データ（同日に記録済み）- 更新はスキップされる
       mockSupabaseClient.from.mockReturnValueOnce({
         select: jest.fn().mockReturnValue({
           eq: jest.fn().mockReturnValue({
@@ -232,17 +207,10 @@ describe('StreakService', () => {
         }),
       })
 
-      // 更新処理のモック
+      // 更新処理のモック（upsert→select→singleのチェーン）
       mockSupabaseClient.from.mockReturnValueOnce({
-        upsert: jest.fn().mockResolvedValue({
-          error: null,
-        }),
-      })
-
-      // 更新後の取得（current_streak=11, longest_streak=11）
-      mockSupabaseClient.from.mockReturnValueOnce({
-        select: jest.fn().mockReturnValue({
-          eq: jest.fn().mockReturnValue({
+        upsert: jest.fn().mockReturnValue({
+          select: jest.fn().mockReturnValue({
             single: jest.fn().mockResolvedValue({
               data: {
                 current_streak: 11,

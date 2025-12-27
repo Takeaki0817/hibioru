@@ -1,5 +1,7 @@
 'use server'
 
+import 'server-only'
+
 // 認証アクション（Server Actions）
 
 import { redirect } from 'next/navigation'
