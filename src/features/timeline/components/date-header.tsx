@@ -12,8 +12,6 @@ export interface DateHeaderProps {
   currentDate: Date
   // 投稿がある日付（全期間、スキップ判定用）
   entryDates?: Set<string>
-  // ほつれを使用した日付（YYYY-MM-DD形式）
-  hotsureDates?: Set<string>
   onDateChange?: (date: Date) => void
   // 外部からの日付変更を受け付けるref
   externalDateChangeRef?: React.MutableRefObject<((date: Date) => void) | null>
@@ -22,7 +20,6 @@ export interface DateHeaderProps {
 export function DateHeader({
   currentDate,
   entryDates,
-  hotsureDates,
   onDateChange,
   externalDateChangeRef,
 }: DateHeaderProps) {
@@ -59,7 +56,6 @@ export function DateHeader({
           dates={dates}
           selectedIndex={selectedIndex}
           entryDates={entryDates}
-          hotsureDates={hotsureDates}
           centerIndex={centerIndex}
           setApi={setApi}
           onDateClick={handleDateClick}

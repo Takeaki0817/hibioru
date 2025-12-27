@@ -65,8 +65,8 @@ export function useCalendarData(
     const dateStr = format(day, 'yyyy-MM-dd')
     const hasEntry = data?.entryDates.includes(dateStr) ?? false
     const hasHotsure = data?.hotsureDates.includes(dateStr) ?? false
-    // 記録またはほつれがある日を「アクティブ」とみなす
-    const isActive = hasEntry || hasHotsure
+    // 記録がある日のみを「アクティブ」とみなす（ほつれ使用日は記録なし扱い）
+    const isActive = hasEntry
 
     return {
       date: dateStr,

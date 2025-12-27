@@ -1,25 +1,18 @@
 'use client'
 
-import { useState, useEffect, useMemo, memo, useCallback } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { DayPicker, type DayButtonProps } from 'react-day-picker'
 import { ja } from 'date-fns/locale'
-import { format } from 'date-fns'
-import { Spool, ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { useCalendarData } from '../hooks/use-calendar-data'
 import { useTimelineStore } from '../stores/timeline-store'
 import 'react-day-picker/dist/style.css'
 
-// カスタムDayButtonコンポーネント（メモ化）
-interface CustomDayButtonProps extends DayButtonProps {
-  hotsureDateSet: Set<string>
-}
-
-const CustomDayButton = memo(function CustomDayButton(props: CustomDayButtonProps) {
-  const { day, modifiers, hotsureDateSet, ...buttonProps } = props
-  const dateStr = format(day.date, 'yyyy-MM-dd')
-  const hasHotsure = hotsureDateSet.has(dateStr)
+// カスタムDayButtonコンポーネント
+function CustomDayButton(props: DayButtonProps) {
+  const { day, modifiers, ...buttonProps } = props
 
   // 連続線用のクラスを決定
   let streakClass = ''
@@ -49,14 +42,9 @@ const CustomDayButton = memo(function CustomDayButton(props: CustomDayButtonProp
     >
       {modifiers.today && <span className="today-dot" />}
       <span>{day.date.getDate()}</span>
-      {hasHotsure && (
-        <span className="hotsure-icon" aria-hidden="true">
-          <Spool size={20} strokeWidth={2} className="text-primary" />
-        </span>
-      )}
     </button>
   )
-})
+}
 
 // カスタムChevronコンポーネント
 function CustomChevron({
@@ -84,7 +72,6 @@ export function MonthCalendar({
   // Zustandストアからカレンダー開閉状態を取得
   const isOpen = useTimelineStore((s) => s.isCalendarOpen)
   const closeCalendar = useTimelineStore((s) => s.closeCalendar)
-  const setHotsureDates = useTimelineStore((s) => s.setHotsureDates)
   // 表示中の月を管理（DayPickerの月切り替えに対応）
   const [displayMonth, setDisplayMonth] = useState(selectedDate)
 
@@ -105,10 +92,6 @@ export function MonthCalendar({
     () => days.filter((d) => d.hasEntry).map((d) => new Date(d.date)),
     [days]
   )
-  const hotsureDays = useMemo(
-    () => days.filter((d) => d.hasHotsure).map((d) => new Date(d.date)),
-    [days]
-  )
   const streakStartDays = useMemo(
     () => days.filter((d) => d.isStreakStart).map((d) => new Date(d.date)),
     [days]
@@ -126,9 +109,9 @@ export function MonthCalendar({
     [days]
   )
 
-  // 記録がない日（クリック不可）
+  // 記録がない日（クリック不可）- ほつれ使用日も記録なし扱い
   const noEntryDays = useMemo(
-    () => days.filter((d) => !d.hasEntry && !d.hasHotsure).map((d) => new Date(d.date)),
+    () => days.filter((d) => !d.hasEntry).map((d) => new Date(d.date)),
     [days]
   )
 
@@ -137,25 +120,6 @@ export function MonthCalendar({
     const todayData = days.find((d) => d.isToday)
     return todayData ? new Date(todayData.date) : undefined
   }, [days])
-
-  // ほつれ使用日のセット（高速検索用）
-  const hotsureDateSet = useMemo(
-    () => new Set(days.filter((d) => d.hasHotsure).map((d) => d.date)),
-    [days]
-  )
-
-  // ほつれ日付をストアに設定（DateCarouselで使用）
-  useEffect(() => {
-    if (hotsureDateSet.size > 0) {
-      setHotsureDates(hotsureDateSet)
-    }
-  }, [hotsureDateSet, setHotsureDates])
-
-  // DayButtonコンポーネントをhotsureDateSetでカリー化
-  const DayButtonWithHotsure = useCallback(
-    (props: DayButtonProps) => <CustomDayButton {...props} hotsureDateSet={hotsureDateSet} />,
-    [hotsureDateSet]
-  )
 
   if (!isOpen) return null
 
@@ -192,7 +156,6 @@ export function MonthCalendar({
               fixedWeeks={true}
               modifiers={{
                 entry: entryDays,
-                hotsure: hotsureDays,
                 streakStart: streakStartDays,
                 streakMiddle: streakMiddleDays,
                 streakEnd: streakEndDays,
@@ -200,7 +163,7 @@ export function MonthCalendar({
                 today: today ? [today] : [],
               }}
               components={{
-                DayButton: DayButtonWithHotsure,
+                DayButton: CustomDayButton,
                 Chevron: CustomChevron,
               }}
               classNames={{
@@ -219,10 +182,6 @@ export function MonthCalendar({
           <div className="flex items-center gap-2">
             <span className="inline-block h-1 w-6 rounded-full bg-primary-300"></span>
             <span>記録あり</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Spool size={16} className="text-primary" aria-hidden="true" />
-            <span>ほつれ使用</span>
           </div>
         </div>
       </div>

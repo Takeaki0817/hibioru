@@ -15,7 +15,6 @@ interface DateCarouselProps {
   selectedIndex: number
   // 投稿がある日付（全期間、スキップ判定・視覚表示用）
   entryDates?: Set<string>
-  hotsureDates?: Set<string>
   centerIndex: number
   setApi: (api: CarouselApi) => void
   onDateClick: (index: number) => void
@@ -28,7 +27,6 @@ export function DateCarousel({
   dates,
   selectedIndex,
   entryDates,
-  hotsureDates,
   centerIndex,
   setApi,
   onDateClick,
@@ -61,7 +59,6 @@ export function DateCarousel({
             const isTodayDate = isToday(date)
             const hasRecord = entryDates?.has(dateKey)
             const isActive = isTodayDate || !entryDates || entryDates.size === 0 || hasRecord
-            const hasHotsure = hotsureDates?.has(dateKey)
 
             return (
               <CarouselItem key={dateKey} className="basis-1/5 pl-1">
@@ -79,10 +76,6 @@ export function DateCarousel({
                 >
                   <span className="flex items-center justify-center gap-0.5">
                     {day}
-                    {/* ほつれ使用日の糸マーク（中央の選択中日付のみ） */}
-                    {isCenter && hasHotsure && (
-                      <span className="text-xs" aria-label="ほつれ使用日">🧵</span>
-                    )}
                   </span>
                   {/* 記録ありドットインジケーター */}
                   {!isCenter && hasRecord && (
