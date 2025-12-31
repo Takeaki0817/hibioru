@@ -77,7 +77,7 @@ export const NOTIFICATION_CONFIG = {
   /** デフォルトタイトル */
   defaultTitle: 'ヒビオル',
   /** デフォルト本文 */
-  defaultBody: '今日の記録を残しましょう',
+  defaultBody: '今考えてること、記録しよう！',
   /** デフォルトアイコン */
   defaultIcon: '/icon-192x192.png',
   /** デフォルトバッジ */

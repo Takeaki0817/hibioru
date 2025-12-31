@@ -51,7 +51,7 @@ const DEFAULT_NOTIFICATION_OPTIONS = {
   // @sync NOTIFICATION_CONFIG.defaultTitle
   title: 'ヒビオル',
   // @sync NOTIFICATION_CONFIG.defaultBody
-  body: '今日の記録を残しましょう',
+  body: '今考えてること、記録しよう！',
   // アイコンは存在する場合のみ設定（存在しない場合はブラウザデフォルト）
   icon: null,
   badge: null,

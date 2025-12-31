@@ -43,7 +43,7 @@ export function NotificationPromptBanner() {
                 通知を受け取りますか？
               </p>
               <p className="text-sm text-muted-foreground truncate">
-                毎日のリマインドで継続をサポート
+                忙しくても、書くきっかけを作ります
               </p>
             </div>
 
