@@ -8,13 +8,17 @@
   /* ========================================
    * ヒビオル カラーシステム - Sage Green Theme
    * ADHD向けの落ち着いた色調
+   * OKLch色空間による知覚均等なカラーパレット
    * ======================================== */
 
   /* 背景・前景 */
   --background: oklch(0.98 0.005 145);
   --foreground: oklch(0.20 0.02 145);
 
-  /* サーフェスカラー（背景のバリエーション） */
+  /* サーフェスカラー（階層的な背景） */
+  --surface-base: oklch(0.98 0.005 145);
+  --surface-raised: oklch(1 0.002 145);
+  --surface-overlay: oklch(1 0.002 145 / 0.95);
   --surface-calm: oklch(0.98 0.005 145);
   --surface-warm: oklch(0.97 0.008 80);
 
@@ -26,16 +30,21 @@
   --popover: oklch(1 0.002 145);
   --popover-foreground: oklch(0.20 0.02 145);
 
-  /* プライマリ: Sage Green（達成・成長を象徴） */
-  --primary: oklch(0.55 0.12 145);
-  --primary-foreground: oklch(0.98 0.01 145);
-  --primary-50: oklch(0.97 0.02 145);
-  --primary-100: oklch(0.94 0.04 145);
-  --primary-200: oklch(0.88 0.06 145);
-  --primary-300: oklch(0.80 0.08 145);
-  --primary-400: oklch(0.70 0.10 145);
-  --primary-500: oklch(0.60 0.12 145);
-  --primary-600: oklch(0.50 0.12 145);
+  /* ========================================
+   * プライマリ: Sage Green（達成・成長を象徴）
+   * Hue: 145 | 等間隔Lightnessスケール
+   * Chroma: 中程度の彩度（バランス重視）
+   * ======================================== */
+  --primary: oklch(0.55 0.15 145);
+  --primary-foreground: oklch(0.98 0.015 145);
+  --primary-50: oklch(0.97 0.03 145);
+  --primary-100: oklch(0.93 0.06 145);
+  --primary-200: oklch(0.85 0.09 145);
+  --primary-300: oklch(0.75 0.12 145);
+  --primary-400: oklch(0.65 0.14 145);
+  --primary-500: oklch(0.55 0.15 145);
+  --primary-600: oklch(0.45 0.14 145);
+  --primary-700: oklch(0.35 0.11 145);
 
   /* セカンダリ */
   --secondary: oklch(0.96 0.01 145);
@@ -45,68 +54,159 @@
   --muted: oklch(0.96 0.008 145);
   --muted-foreground: oklch(0.50 0.03 145);
 
-  /* アクセント: Warm Coral（達成感・報酬） */
-  --accent: oklch(0.94 0.03 25);
-  --accent-foreground: oklch(0.30 0.08 25);
-  --accent-50: oklch(0.97 0.02 25);
-  --accent-100: oklch(0.94 0.05 25);
-  --accent-200: oklch(0.88 0.08 25);
-  --accent-300: oklch(0.80 0.12 25);
-  --accent-400: oklch(0.72 0.15 25);
-  --accent-500: oklch(0.62 0.18 25);
+  /* ========================================
+   * アクセント: Warm Coral（達成感・報酬）
+   * Hue: 25 | 等間隔Lightnessスケール
+   * Chroma: 中程度の彩度（バランス重視）
+   * ======================================== */
+  --accent: oklch(0.94 0.045 25);
+  --accent-foreground: oklch(0.30 0.10 25);
+  --accent-50: oklch(0.97 0.03 25);
+  --accent-100: oklch(0.93 0.06 25);
+  --accent-200: oklch(0.85 0.11 25);
+  --accent-300: oklch(0.75 0.16 25);
+  --accent-400: oklch(0.65 0.20 25);
+  --accent-500: oklch(0.55 0.22 25);
+  --accent-600: oklch(0.45 0.21 25);
 
   /* 報酬カラー: Golden（特別な達成） */
-  --reward-300: oklch(0.85 0.12 85);
-  --reward-400: oklch(0.78 0.15 85);
-  --reward-500: oklch(0.70 0.16 85);
+  --reward-300: oklch(0.85 0.14 85);
+  --reward-400: oklch(0.78 0.175 85);
+  --reward-500: oklch(0.70 0.19 85);
 
   /* 警告カラー */
-  --warning-300: oklch(0.85 0.10 55);
-  --warning-400: oklch(0.78 0.12 55);
+  --warning-300: oklch(0.85 0.13 55);
+  --warning-400: oklch(0.78 0.16 55);
 
   /* 破壊的アクション / 危険 */
-  --destructive: oklch(0.60 0.20 25);
-  --destructive-foreground: oklch(0.98 0.02 25);
-  --danger-300: oklch(0.75 0.12 25);
-  --danger-400: oklch(0.65 0.15 25);
+  --destructive: oklch(0.55 0.23 25);
+  --destructive-foreground: oklch(0.98 0.03 25);
+  --danger-300: oklch(0.75 0.16 25);
+  --danger-400: oklch(0.65 0.20 25);
+
+  /* 成功・エラー（セマンティック） */
+  --success: oklch(0.60 0.165 145);
+  --success-subtle: oklch(0.95 0.045 145);
+  --error: oklch(0.55 0.23 25);
+  --error-subtle: oklch(0.95 0.045 25);
 
   /* ボーダー・入力・リング */
-  --border: oklch(0.90 0.02 145);
-  --input: oklch(0.92 0.015 145);
-  --ring: oklch(0.70 0.10 145);
+  --border: oklch(0.90 0.03 145);
+  --input: oklch(0.92 0.022 145);
+  --ring: oklch(0.70 0.13 145);
+
+  /* ========================================
+   * インタラクション状態
+   * ======================================== */
+  --interactive-hover: var(--primary-100);
+  --interactive-active: var(--primary-200);
+  --interactive-focus: var(--primary-300);
+
+  /* ========================================
+   * テキスト階層
+   * ======================================== */
+  --text-primary: var(--foreground);
+  --text-secondary: var(--muted-foreground);
+  --text-tertiary: oklch(0.60 0.02 145);
+  --text-inverse: var(--primary-foreground);
+
+  /* ========================================
+   * シャドウシステム（Sage Green調和）
+   * ======================================== */
+  --shadow-xs: 0 1px 2px 0 oklch(0.20 0.04 145 / 0.05);
+  --shadow-sm: 0 1px 3px 0 oklch(0.20 0.04 145 / 0.08),
+               0 1px 2px -1px oklch(0.20 0.04 145 / 0.08);
+  --shadow-md: 0 4px 6px -1px oklch(0.20 0.04 145 / 0.08),
+               0 2px 4px -2px oklch(0.20 0.04 145 / 0.06);
+  --shadow-lg: 0 10px 15px -3px oklch(0.20 0.04 145 / 0.08),
+               0 4px 6px -4px oklch(0.20 0.04 145 / 0.06);
+  --shadow-xl: 0 20px 25px -5px oklch(0.20 0.04 145 / 0.08),
+               0 8px 10px -6px oklch(0.20 0.04 145 / 0.04);
+  --shadow-focus: 0 0 0 3px oklch(0.70 0.13 145 / 0.40);
+  --shadow-focus-destructive: 0 0 0 3px oklch(0.55 0.23 25 / 0.40);
+
+  /* ========================================
+   * グラデーションシステム
+   * ======================================== */
+  /* 背景グラデーション */
+  --gradient-subtle: linear-gradient(180deg, oklch(0.97 0.02 145) 0%, oklch(0.98 0.012 145) 100%);
+  --gradient-warm: linear-gradient(135deg, oklch(0.97 0.02 145) 0%, oklch(0.96 0.04 80) 100%);
+
+  /* ボタン・アクセント */
+  --gradient-primary: linear-gradient(180deg, oklch(0.58 0.15 145) 0%, oklch(0.52 0.15 145) 100%);
+  --gradient-accent: linear-gradient(180deg, oklch(0.70 0.18 25) 0%, oklch(0.62 0.20 25) 100%);
+
+  /* 報酬・達成 */
+  --gradient-reward: linear-gradient(135deg, oklch(0.85 0.11 25) 0%, oklch(0.82 0.15 60) 50%, oklch(0.80 0.17 85) 100%);
+
+  /* オーバーレイ */
+  --gradient-overlay: linear-gradient(180deg, oklch(0 0 0 / 0) 0%, oklch(0 0 0 / 0.03) 100%);
+
+  /* ========================================
+   * Glassmorphism（軽量版）
+   * ======================================== */
+  --glass-bg: oklch(1 0 0 / 0.85);
+  --glass-border: oklch(1 0 0 / 0.20);
+  --glass-blur: 12px;
+
+  /* ========================================
+   * アニメーション・トランジション
+   * ======================================== */
+  --duration-instant: 0ms;
+  --duration-fast: 100ms;
+  --duration-normal: 200ms;
+  --duration-slow: 300ms;
+  --duration-slower: 500ms;
+
+  --ease-default: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --transition-colors: color var(--duration-normal) var(--ease-default),
+                       background-color var(--duration-normal) var(--ease-default),
+                       border-color var(--duration-normal) var(--ease-default);
+  --transition-transform: transform var(--duration-normal) var(--ease-spring);
+  --transition-opacity: opacity var(--duration-normal) var(--ease-default);
+  --transition-shadow: box-shadow var(--duration-normal) var(--ease-default);
 
   /* チャート用カラー（Sage Greenテーマに調和） */
-  --chart-1: oklch(0.60 0.12 145);
-  --chart-2: oklch(0.72 0.15 25);
-  --chart-3: oklch(0.78 0.15 85);
-  --chart-4: oklch(0.55 0.10 200);
-  --chart-5: oklch(0.65 0.12 320);
+  --chart-1: oklch(0.60 0.15 145);
+  --chart-2: oklch(0.72 0.195 25);
+  --chart-3: oklch(0.78 0.175 85);
+  --chart-4: oklch(0.55 0.13 200);
+  --chart-5: oklch(0.65 0.16 320);
 
   /* 角丸 */
   --radius: 0.625rem;
 
   /* サイドバー（将来用） */
-  --sidebar: oklch(0.97 0.01 145);
-  --sidebar-foreground: oklch(0.20 0.02 145);
-  --sidebar-primary: oklch(0.55 0.12 145);
-  --sidebar-primary-foreground: oklch(0.98 0.01 145);
-  --sidebar-accent: oklch(0.94 0.03 25);
-  --sidebar-accent-foreground: oklch(0.30 0.08 25);
-  --sidebar-border: oklch(0.90 0.02 145);
-  --sidebar-ring: oklch(0.70 0.10 145);
+  --sidebar: oklch(0.97 0.02 145);
+  --sidebar-foreground: oklch(0.20 0.04 145);
+  --sidebar-primary: oklch(0.55 0.15 145);
+  --sidebar-primary-foreground: oklch(0.98 0.015 145);
+  --sidebar-accent: oklch(0.94 0.045 25);
+  --sidebar-accent-foreground: oklch(0.30 0.10 25);
+  --sidebar-border: oklch(0.90 0.03 145);
+  --sidebar-ring: oklch(0.70 0.13 145);
 }
 
 .dark {
   /* ========================================
    * ダークモード - Sage Green Theme
    * ADHD向けの落ち着いたダークテーマ
+   * OKLch色空間による知覚均等なカラーパレット
    * ======================================== */
 
   /* 背景・前景 */
   --background: oklch(0.16 0.015 145);
   --foreground: oklch(0.92 0.02 145);
 
-  /* サーフェスカラー */
+  /* サーフェスカラー（階層的な背景） */
+  --surface-base: oklch(0.12 0.012 145);
+  --surface-raised: oklch(0.16 0.015 145);
+  --surface-overlay: oklch(0.20 0.018 145 / 0.95);
   --surface-calm: oklch(0.16 0.015 145);
   --surface-warm: oklch(0.18 0.012 80);
 
@@ -118,16 +218,21 @@
   --popover: oklch(0.20 0.018 145);
   --popover-foreground: oklch(0.92 0.02 145);
 
-  /* プライマリ: Sage Green（ダーク用に明度調整） */
-  --primary: oklch(0.70 0.10 145);
-  --primary-foreground: oklch(0.16 0.02 145);
-  --primary-50: oklch(0.25 0.03 145);
-  --primary-100: oklch(0.30 0.04 145);
-  --primary-200: oklch(0.38 0.06 145);
-  --primary-300: oklch(0.50 0.08 145);
-  --primary-400: oklch(0.62 0.10 145);
-  --primary-500: oklch(0.70 0.10 145);
-  --primary-600: oklch(0.78 0.08 145);
+  /* ========================================
+   * プライマリ: Sage Green（ダーク用）
+   * Hue: 145 | 等間隔Lightnessスケール（暗→明）
+   * Chroma: 中程度の彩度（バランス重視）
+   * ======================================== */
+  --primary: oklch(0.70 0.13 145);
+  --primary-foreground: oklch(0.16 0.04 145);
+  --primary-50: oklch(0.20 0.03 145);
+  --primary-100: oklch(0.28 0.045 145);
+  --primary-200: oklch(0.38 0.075 145);
+  --primary-300: oklch(0.50 0.105 145);
+  --primary-400: oklch(0.60 0.125 145);
+  --primary-500: oklch(0.70 0.13 145);
+  --primary-600: oklch(0.80 0.10 145);
+  --primary-700: oklch(0.88 0.065 145);
 
   /* セカンダリ */
   --secondary: oklch(0.25 0.02 145);
@@ -137,56 +242,123 @@
   --muted: oklch(0.25 0.015 145);
   --muted-foreground: oklch(0.65 0.03 145);
 
-  /* アクセント: Warm Coral（ダーク用） */
-  --accent: oklch(0.28 0.04 25);
-  --accent-foreground: oklch(0.88 0.06 25);
-  --accent-50: oklch(0.22 0.02 25);
-  --accent-100: oklch(0.28 0.04 25);
-  --accent-200: oklch(0.38 0.08 25);
-  --accent-300: oklch(0.55 0.12 25);
-  --accent-400: oklch(0.68 0.15 25);
-  --accent-500: oklch(0.78 0.16 25);
+  /* ========================================
+   * アクセント: Warm Coral（ダーク用）
+   * Hue: 25 | 等間隔Lightnessスケール（暗→明）
+   * Chroma: 中程度の彩度（バランス重視）
+   * ======================================== */
+  --accent: oklch(0.35 0.08 25);
+  --accent-foreground: oklch(0.88 0.09 25);
+  --accent-50: oklch(0.22 0.045 25);
+  --accent-100: oklch(0.30 0.075 25);
+  --accent-200: oklch(0.42 0.12 25);
+  --accent-300: oklch(0.55 0.17 25);
+  --accent-400: oklch(0.65 0.195 25);
+  --accent-500: oklch(0.75 0.18 25);
+  --accent-600: oklch(0.85 0.12 25);
 
   /* 報酬カラー: Golden（ダーク用） */
-  --reward-300: oklch(0.55 0.12 85);
-  --reward-400: oklch(0.68 0.15 85);
-  --reward-500: oklch(0.78 0.14 85);
+  --reward-300: oklch(0.55 0.15 85);
+  --reward-400: oklch(0.68 0.175 85);
+  --reward-500: oklch(0.78 0.16 85);
 
   /* 警告カラー */
-  --warning-300: oklch(0.55 0.10 55);
-  --warning-400: oklch(0.68 0.12 55);
+  --warning-300: oklch(0.55 0.13 55);
+  --warning-400: oklch(0.68 0.16 55);
 
   /* 破壊的アクション / 危険 */
-  --destructive: oklch(0.55 0.18 25);
-  --destructive-foreground: oklch(0.95 0.03 25);
-  --danger-300: oklch(0.50 0.14 25);
-  --danger-400: oklch(0.60 0.16 25);
+  --destructive: oklch(0.55 0.22 25);
+  --destructive-foreground: oklch(0.95 0.045 25);
+  --danger-300: oklch(0.50 0.18 25);
+  --danger-400: oklch(0.60 0.20 25);
+
+  /* 成功・エラー（セマンティック） */
+  --success: oklch(0.70 0.14 145);
+  --success-subtle: oklch(0.25 0.06 145);
+  --error: oklch(0.55 0.22 25);
+  --error-subtle: oklch(0.25 0.06 25);
 
   /* ボーダー・入力・リング */
-  --border: oklch(0.30 0.02 145);
-  --input: oklch(0.28 0.018 145);
-  --ring: oklch(0.62 0.10 145);
+  --border: oklch(0.30 0.03 145);
+  --input: oklch(0.28 0.03 145);
+  --ring: oklch(0.62 0.13 145);
+
+  /* ========================================
+   * インタラクション状態
+   * ======================================== */
+  --interactive-hover: var(--primary-100);
+  --interactive-active: var(--primary-200);
+  --interactive-focus: var(--primary-300);
+
+  /* ========================================
+   * テキスト階層
+   * ======================================== */
+  --text-primary: var(--foreground);
+  --text-secondary: var(--muted-foreground);
+  --text-tertiary: oklch(0.55 0.02 145);
+  --text-inverse: var(--primary-foreground);
+
+  /* ========================================
+   * シャドウシステム（ダークモード用）
+   * ======================================== */
+  --shadow-xs: 0 1px 2px 0 oklch(0 0 0 / 0.20);
+  --shadow-sm: 0 1px 3px 0 oklch(0 0 0 / 0.25),
+               0 1px 2px -1px oklch(0 0 0 / 0.20);
+  --shadow-md: 0 4px 6px -1px oklch(0 0 0 / 0.25),
+               0 2px 4px -2px oklch(0 0 0 / 0.20);
+  --shadow-lg: 0 10px 15px -3px oklch(0 0 0 / 0.30),
+               0 4px 6px -4px oklch(0 0 0 / 0.25);
+  --shadow-xl: 0 20px 25px -5px oklch(0 0 0 / 0.35),
+               0 8px 10px -6px oklch(0 0 0 / 0.25);
+  --shadow-focus: 0 0 0 3px oklch(0.70 0.13 145 / 0.40);
+  --shadow-focus-destructive: 0 0 0 3px oklch(0.55 0.22 25 / 0.40);
+  --shadow-inner-glow: inset 0 1px 0 0 oklch(1 0 0 / 0.05);
+
+  /* ========================================
+   * グラデーションシステム（ダークモード用）
+   * ======================================== */
+  /* 背景グラデーション */
+  --gradient-subtle: linear-gradient(180deg, oklch(0.18 0.022 145) 0%, oklch(0.16 0.016 145) 100%);
+  --gradient-warm: linear-gradient(135deg, oklch(0.18 0.022 145) 0%, oklch(0.17 0.03 80) 100%);
+
+  /* ボタン・アクセント */
+  --gradient-primary: linear-gradient(180deg, oklch(0.72 0.13 145) 0%, oklch(0.68 0.13 145) 100%);
+  --gradient-accent: linear-gradient(180deg, oklch(0.72 0.18 25) 0%, oklch(0.65 0.195 25) 100%);
+
+  /* 報酬・達成 */
+  --gradient-reward: linear-gradient(135deg, oklch(0.45 0.13 25) 0%, oklch(0.50 0.15 60) 50%, oklch(0.55 0.17 85) 100%);
+
+  /* オーバーレイ */
+  --gradient-overlay: linear-gradient(180deg, oklch(0 0 0 / 0) 0%, oklch(0 0 0 / 0.15) 100%);
+
+  /* ========================================
+   * Glassmorphism（軽量版・ダークモード用）
+   * ======================================== */
+  --glass-bg: oklch(0.16 0.015 145 / 0.90);
+  --glass-border: oklch(1 0 0 / 0.08);
 
   /* チャート用カラー（ダークモード用） */
-  --chart-1: oklch(0.70 0.10 145);
-  --chart-2: oklch(0.68 0.15 25);
-  --chart-3: oklch(0.68 0.15 85);
-  --chart-4: oklch(0.60 0.10 200);
-  --chart-5: oklch(0.65 0.12 320);
+  --chart-1: oklch(0.70 0.13 145);
+  --chart-2: oklch(0.68 0.195 25);
+  --chart-3: oklch(0.68 0.175 85);
+  --chart-4: oklch(0.60 0.13 200);
+  --chart-5: oklch(0.65 0.16 320);
 
   /* サイドバー */
-  --sidebar: oklch(0.18 0.015 145);
-  --sidebar-foreground: oklch(0.92 0.02 145);
-  --sidebar-primary: oklch(0.70 0.10 145);
-  --sidebar-primary-foreground: oklch(0.16 0.02 145);
-  --sidebar-accent: oklch(0.28 0.04 25);
-  --sidebar-accent-foreground: oklch(0.88 0.06 25);
-  --sidebar-border: oklch(0.30 0.02 145);
-  --sidebar-ring: oklch(0.62 0.10 145);
+  --sidebar: oklch(0.18 0.022 145);
+  --sidebar-foreground: oklch(0.92 0.03 145);
+  --sidebar-primary: oklch(0.70 0.13 145);
+  --sidebar-primary-foreground: oklch(0.16 0.04 145);
+  --sidebar-accent: oklch(0.35 0.08 25);
+  --sidebar-accent-foreground: oklch(0.88 0.09 25);
+  --sidebar-border: oklch(0.30 0.03 145);
+  --sidebar-ring: oklch(0.62 0.13 145);
 }
 
 @theme inline {
-  /* shadcn/ui用カラー定義 */
+  /* ========================================
+   * shadcn/ui 基本カラー定義
+   * ======================================== */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -220,9 +392,18 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* ヒビオル拡張カラー */
+  /* ========================================
+   * サーフェスカラー
+   * ======================================== */
+  --color-surface-base: var(--surface-base);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-overlay: var(--surface-overlay);
   --color-surface-calm: var(--surface-calm);
   --color-surface-warm: var(--surface-warm);
+
+  /* ========================================
+   * プライマリカラースケール
+   * ======================================== */
   --color-primary-50: var(--primary-50);
   --color-primary-100: var(--primary-100);
   --color-primary-200: var(--primary-200);
@@ -230,12 +411,22 @@
   --color-primary-400: var(--primary-400);
   --color-primary-500: var(--primary-500);
   --color-primary-600: var(--primary-600);
+  --color-primary-700: var(--primary-700);
+
+  /* ========================================
+   * アクセントカラースケール
+   * ======================================== */
   --color-accent-50: var(--accent-50);
   --color-accent-100: var(--accent-100);
   --color-accent-200: var(--accent-200);
   --color-accent-300: var(--accent-300);
   --color-accent-400: var(--accent-400);
   --color-accent-500: var(--accent-500);
+  --color-accent-600: var(--accent-600);
+
+  /* ========================================
+   * セマンティックカラー
+   * ======================================== */
   --color-reward-300: var(--reward-300);
   --color-reward-400: var(--reward-400);
   --color-reward-500: var(--reward-500);
@@ -243,25 +434,81 @@
   --color-warning-400: var(--warning-400);
   --color-danger-300: var(--danger-300);
   --color-danger-400: var(--danger-400);
+  --color-success: var(--success);
+  --color-success-subtle: var(--success-subtle);
+  --color-error: var(--error);
+  --color-error-subtle: var(--error-subtle);
 
-  /* 角丸 */
+  /* ========================================
+   * インタラクション状態
+   * ======================================== */
+  --color-interactive-hover: var(--interactive-hover);
+  --color-interactive-active: var(--interactive-active);
+  --color-interactive-focus: var(--interactive-focus);
+
+  /* ========================================
+   * テキスト階層
+   * ======================================== */
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+  --color-text-inverse: var(--text-inverse);
+
+  /* ========================================
+   * シャドウシステム
+   * ======================================== */
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-focus: var(--shadow-focus);
+  --shadow-focus-destructive: var(--shadow-focus-destructive);
+
+  /* ========================================
+   * アニメーション
+   * ======================================== */
+  --duration-instant: var(--duration-instant);
+  --duration-fast: var(--duration-fast);
+  --duration-normal: var(--duration-normal);
+  --duration-slow: var(--duration-slow);
+  --duration-slower: var(--duration-slower);
+  --ease-default: var(--ease-default);
+  --ease-in: var(--ease-in);
+  --ease-out: var(--ease-out);
+  --ease-in-out: var(--ease-in-out);
+  --ease-spring: var(--ease-spring);
+
+  /* ========================================
+   * 角丸システム
+   * ======================================== */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-full: 9999px;
 
-  /* フォント */
+  /* ========================================
+   * フォント
+   * ======================================== */
   --font-sans: var(--font-m-plus-1p);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
-  /* カスタムスペーシング */
+  /* ========================================
+   * カスタムスペーシング
+   * ======================================== */
   --spacing-45: 11.25rem;  /* 180px - カレンダー幅 */
   --spacing-70: 17.5rem;   /* 280px - カレンダー最小高さ */
 
-  /* フォーカスリング幅 */
+  /* ========================================
+   * フォーカスリング幅
+   * ======================================== */
   --ring-width-focus: 3px;
 
-  /* カスタムサイズ */
+  /* ========================================
+   * カスタムサイズ
+   * ======================================== */
   --size-streak-line: 3px;
   --size-today-dot: 5px;
 }
