@@ -1,7 +1,7 @@
 # Requirements Document
 
 ## Project Description (Input)
-フォロー/フォロワー機能とお祝い機能: ユーザー間でフォローし合える機能。投稿数や継続記録日数のマイルストーンに達したときに、フォロワーに自動でお祝いを促し、お祝いボタンで相手に通知を送る機能。投稿の公開範囲設定（全体公開/フォロワーのみ/非公開）も含む。
+フォロー/フォロワー機能とお祝い機能: ユーザー間でフォローし合える機能。投稿数や継続記録日数のマイルストーンに達したときに、フォロワーに自動でお祝いを促し、お祝いボタンで相手に通知を送る機能。**投稿内容はすべて非公開（自分のみ表示）とし、マイルストーン達成のみを共有する。**
 
 ## Introduction
 
@@ -12,11 +12,12 @@
 - 比較・競争を煽らない
 - 報酬は「継続」に対してのみ
 - ADHD当事者にストレスを与えない
+- **投稿内容は完全にプライベート**
 
 **目的**:
-- フォローしたユーザーの記録や継続状況を確認できる
+- フォローしたユーザーの継続状況（ストリーク、投稿数）を確認できる
 - マイルストーン達成時に相互にお祝いを送り合う
-- プライバシーを守りながら選択的に記録を共有する
+- 投稿内容は見えず、継続の事実のみを共有する「支援型ソーシャル」
 
 ## Requirements
 
@@ -29,7 +30,7 @@
 1. When ユーザーが他のユーザーのプロフィールでフォローボタンをタップ, the Social Service shall フォロー関係を作成し、相手のフォロワー数を1増やす
 2. When ユーザーがフォロー中のユーザーのフォローボタンをタップ, the Social Service shall フォローを解除し、相手のフォロワー数を1減らす
 3. The Social Service shall ユーザーのフォロー数とフォロワー数をプロフィールに表示する
-4. When ユーザーがフォロー一覧またはフォロワー一覧を開く, the Social Service shall それぞれのリストをユーザー名、アイコン、ストリーク日数と共に表示する
+4. When ユーザーがフォロー一覧またはフォロワー一覧を開く, the Social Service shall それぞれのリストをユーザー名、アイコン、ストリーク日数、総投稿数と共に表示する
 5. The Social Service shall フォロー関係は一方向（相互フォローは双方向のフォローとして扱う）を保証する
 
 #### Non-Functional Requirements
@@ -39,47 +40,7 @@
 
 ---
 
-### Requirement 2: 投稿の公開範囲設定
-
-**Objective:** As a ユーザー, I want 投稿ごとに公開範囲を設定できる, so that プライバシーを守りながら選択的に共有できる
-
-#### Acceptance Criteria
-
-1. When ユーザーが新規投稿を作成, the Entry Service shall 公開範囲選択UI（全体公開/フォロワーのみ/非公開）を表示する
-2. The Entry Service shall デフォルトの公開範囲を「非公開」に設定する
-3. When ユーザーが公開範囲を選択して投稿, the Entry Service shall 投稿に公開範囲メタデータを保存する
-4. When 他のユーザーがタイムラインを閲覧, the Timeline Service shall 自分がフォローしているユーザーの「全体公開」または「フォロワーのみ」投稿のみを表示する
-5. When ユーザーが自分の投稿を閲覧, the Timeline Service shall すべての公開範囲の投稿を表示する
-6. When ユーザーが過去の投稿の公開範囲を変更, the Entry Service shall 公開範囲を更新し、他のユーザーの表示に即座に反映する
-
-#### Non-Functional Requirements
-
-- 公開範囲設定UIは投稿フォームに統合され、2タップ以内で変更可能
-- 非公開投稿は他のユーザーから絶対にアクセス不可能であることを保証
-
----
-
-### Requirement 3: 全体タイムライン
-
-**Objective:** As a ユーザー, I want フォローしているユーザーの投稿を時系列で確認できる, so that 仲間の記録や様子を知ることができる
-
-#### Acceptance Criteria
-
-1. When ユーザーが「みんなのタイムライン」タブを開く, the Timeline Service shall フォロー中のユーザーの公開投稿を新しい順に表示する
-2. The Timeline Service shall 各投稿にユーザー名、アイコン、投稿内容、投稿日時、公開範囲アイコンを含める
-3. While タイムラインをスクロール, the Timeline Service shall 無限スクロールではなくページネーション（もっと見る）を実装する
-4. If フォロー中のユーザーが0人, then the Timeline Service shall 「まだフォローしているユーザーがいません」メッセージとユーザー検索UIを表示する
-5. The Timeline Service shall 自分の投稿は「みんなのタイムライン」に表示しない
-
-#### Non-Functional Requirements
-
-- タイムラインの初期ロードは2秒以内
-- 1ページあたり20件の投稿を表示
-- 無限スクロールを避けることでADHD当事者の過度な閲覧を防ぐ
-
----
-
-### Requirement 4: マイルストーン検出と通知
+### Requirement 2: マイルストーン検出と通知
 
 **Objective:** As a システム, I want ユーザーのマイルストーン達成を自動検出する, so that フォロワーにお祝いを促すことができる
 
@@ -99,7 +60,7 @@
 
 ---
 
-### Requirement 5: お祝い機能
+### Requirement 3: お祝い機能
 
 **Objective:** As a ユーザー, I want フォロワーのマイルストーン達成をお祝いできる, so that 相互に継続を応援し合える
 
@@ -119,14 +80,14 @@
 
 ---
 
-### Requirement 6: ユーザー検索
+### Requirement 4: ユーザー検索
 
 **Objective:** As a ユーザー, I want ユーザー名やIDで他のユーザーを検索できる, so that フォローしたいユーザーを見つけられる
 
 #### Acceptance Criteria
 
 1. When ユーザーが検索画面でキーワードを入力, the Search Service shall ユーザー名、表示名、ユーザーIDに部分一致するユーザーをリアルタイムで表示する
-2. The Search Service shall 検索結果にユーザー名、アイコン、ストリーク日数、自己紹介（最初の50文字）を含める
+2. The Search Service shall 検索結果にユーザー名、アイコン、ストリーク日数、総投稿数、自己紹介（最初の50文字）を含める
 3. When ユーザーが検索結果のユーザーをタップ, the Social Service shall そのユーザーのプロフィール画面を表示する
 4. The Search Service shall 検索結果は最大20件までに制限し、「もっと見る」でページネーションする
 5. If 検索結果が0件, then the Search Service shall 「該当するユーザーが見つかりません」メッセージを表示する
@@ -138,14 +99,14 @@
 
 ---
 
-### Requirement 7: プロフィール公開
+### Requirement 5: プロフィール公開
 
-**Objective:** As a ユーザー, I want 自分のプロフィールを他のユーザーに公開できる, so that フォローしてもらいやすくなる
+**Objective:** As a ユーザー, I want 自分のプロフィール情報を他のユーザーに公開できる, so that フォローしてもらいやすくなる
 
 #### Acceptance Criteria
 
 1. The Profile Service shall ユーザープロフィールにユーザー名、アイコン、自己紹介、ストリーク日数、総投稿数、フォロー数、フォロワー数を表示する
-2. When 他のユーザーがプロフィールを閲覧, the Profile Service shall そのユーザーの公開投稿（全体公開、またはフォロワーの場合はフォロワーのみ投稿も含む）を時系列で表示する
+2. When 他のユーザーがプロフィールを閲覧, the Profile Service shall 基本情報（ユーザー名、アイコン、自己紹介、ストリーク日数、総投稿数、フォロー数、フォロワー数）のみを表示し、投稿内容は表示しない
 3. When ユーザーがプロフィール編集画面を開く, the Profile Service shall ユーザー名、アイコン、自己紹介の編集UIを提供する
 4. When ユーザーがプロフィールを更新, the Profile Service shall 変更を保存し、即座に他のユーザーに反映する
 5. The Profile Service shall ユーザー名は一意であることを保証する
@@ -157,7 +118,7 @@
 
 ---
 
-### Requirement 8: 通知設定
+### Requirement 6: 通知設定
 
 **Objective:** As a ユーザー, I want ソーシャル機能の通知を個別に制御できる, so that 自分のペースで使える
 
@@ -170,36 +131,38 @@
 
 ---
 
-### Requirement 9: プライバシーとセキュリティ
+### Requirement 7: プライバシーとセキュリティ
 
 **Objective:** As a システム, I want ユーザーのプライバシーとデータ安全性を保証する, so that 安心して使える
 
 #### Acceptance Criteria
 
-1. The Social Service shall 非公開投稿は投稿者以外からアクセス不可能であることをAPI・DB層で保証する
+1. The Social Service shall すべての投稿は投稿者以外からアクセス不可能であることをAPI・DB層で保証する
 2. The Social Service shall フォロー関係、お祝い履歴はユーザー自身のみが削除可能とする
 3. When ユーザーがアカウント削除, the Social Service shall フォロー関係、お祝い履歴、マイルストーン記録をすべて削除する
 4. The Social Service shall 他のユーザーの非公開情報（メールアドレス、通知設定等）を公開しない
-5. If 不正なAPIアクセスを検出（他人の非公開投稿取得等）, then the API Gateway shall リクエストを拒否しログに記録する
+5. If 不正なAPIアクセスを検出（他人の投稿取得等）, then the API Gateway shall リクエストを拒否しログに記録する
 
 ---
 
-### Requirement 10: パフォーマンスとスケーラビリティ
+### Requirement 8: パフォーマンスとスケーラビリティ
 
 **Objective:** As a システム, I want ソーシャル機能が効率的に動作する, so that ユーザー数が増えても快適に使える
 
 #### Acceptance Criteria
 
-1. The Timeline Service shall フォロー中のユーザー投稿取得にDBインデックス（user_id, created_at, visibility）を使用する
-2. The Milestone Service shall マイルストーン判定を投稿作成・ストリーク更新のイベント駆動で実行する
-3. The Notification Service shall プッシュ通知送信をバックグラウンドジョブ（Supabase Edge Functions等）で非同期実行する
-4. The Social Service shall フォロー数・フォロワー数は非正規化してユーザーテーブルに保持する
-5. While ユーザー数が10,000人を超える, the Social Service shall タイムライン取得のレスポンスタイムを2秒以内に維持する
+1. The Milestone Service shall マイルストーン判定を投稿作成・ストリーク更新のイベント駆動で実行する
+2. The Notification Service shall プッシュ通知送信をバックグラウンドジョブ（Supabase Edge Functions等）で非同期実行する
+3. The Social Service shall フォロー数・フォロワー数は非正規化してユーザーテーブルに保持する
+4. The Social Service shall プロフィール取得にDBインデックス（user_id）を使用する
+5. While ユーザー数が10,000人を超える, the Social Service shall プロフィール・フォローリスト取得のレスポンスタイムを2秒以内に維持する
 
 ---
 
 ## Out of Scope (Phase 3では実装しない)
 
+- 投稿内容の共有機能（全投稿が非公開）
+- 全体タイムライン機能（投稿を見せないため不要）
 - ダイレクトメッセージ機能
 - グループ機能
 - 投稿へのコメント・リアクション（いいね）機能
@@ -213,5 +176,5 @@
 
 - フォロー機能の利用率: アクティブユーザーの30%以上が1人以上フォロー
 - お祝い送信率: マイルストーン通知の20%以上でお祝いが送信される
-- 公開投稿率: 全投稿の10%以上が「全体公開」または「フォロワーのみ」
 - ソーシャル機能による継続率向上: フォロワーがいるユーザーの継続率が10%以上向上
+- マイルストーン通知の開封率: 50%以上
