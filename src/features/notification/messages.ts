@@ -2,7 +2,8 @@
  * 通知文言生成サービス (NotificationMessageService)
  *
  * 通知タイプに応じた文言のバリエーションを管理・生成します。
- * ADHD当事者にストレスを与えない文言設計を採用しています。
+ * 「今考えていること」「残しておきたいこと」を言葉にして残す
+ * というヒビオルの思想に基づいた文言設計を採用しています。
  *
  * Requirements: 3.2, 4.2, 4.3
  * - メインリマインド用の文言バリエーション
@@ -30,60 +31,81 @@ const NOTIFICATION_TITLE = APP_CONFIG.shortName;
  * メインリマインド用の文言バリエーション
  *
  * Requirements 3.2:
- * - 「今日はどんな一日だった？」
- * - 「一言だけでも残しておこう」
+ * 今考えていることを記録するよう促すメッセージ
  */
 export const MAIN_MESSAGES: NotificationMessage[] = [
-  { title: NOTIFICATION_TITLE, body: '今日はどんな一日だった？' },
-  { title: NOTIFICATION_TITLE, body: '一言だけでも残しておこう' },
+  { title: NOTIFICATION_TITLE, body: '今考えてること、記録しよう！' },
+  { title: NOTIFICATION_TITLE, body: '残しておきたいこと、ある？' },
+  { title: NOTIFICATION_TITLE, body: '今の頭の中、書いておこう' },
+  { title: NOTIFICATION_TITLE, body: 'ふと思ったこと、メモしておく？' },
+  { title: NOTIFICATION_TITLE, body: '今日のひとこと、残しておこう' },
 ];
 
 /**
  * 追いリマインド1回目用の文言バリエーション
  *
  * Requirements 4.2:
- * - 「まだ間に合うよ」
- * - 「30秒で終わる」
+ * 気軽にメモを促すメッセージ
  */
 export const FOLLOW_UP_1_MESSAGES: NotificationMessage[] = [
-  { title: NOTIFICATION_TITLE, body: 'まだ間に合うよ' },
-  { title: NOTIFICATION_TITLE, body: '30秒で終わる' },
+  { title: NOTIFICATION_TITLE, body: '今日のこと、メモしておく？' },
+  { title: NOTIFICATION_TITLE, body: 'ひとこと残しておこう' },
+  { title: NOTIFICATION_TITLE, body: 'さっき考えてたこと、書いておく？' },
+  { title: NOTIFICATION_TITLE, body: '頭の中にあること、残しておこう' },
+  { title: NOTIFICATION_TITLE, body: '今のうちにメモしておく？' },
 ];
 
 /**
  * 追いリマインド2回目用の文言バリエーション
  *
  * Requirements 4.3:
- * - 「今日の最後のチャンス」
- * - 「ほつれ使う？」
+ * 振り返りの価値を伝えるメッセージ
  */
 export const FOLLOW_UP_2_MESSAGES: NotificationMessage[] = [
-  { title: NOTIFICATION_TITLE, body: '今日の最後のチャンス' },
-  { title: NOTIFICATION_TITLE, body: 'ほつれ使う？' },
+  { title: NOTIFICATION_TITLE, body: '後で振り返れるように、書いておく？' },
+  { title: NOTIFICATION_TITLE, body: '今日あったこと、なんでもいいよ' },
+  { title: NOTIFICATION_TITLE, body: '思い出せるうちに、書いておこう' },
+  { title: NOTIFICATION_TITLE, body: '今日感じたこと、ひとことでも' },
+  { title: NOTIFICATION_TITLE, body: 'あとで見返せるように残しておこう' },
 ];
 
 /**
  * 追いリマインド3回目用の文言バリエーション
+ *
+ * 気軽さを強調するメッセージ
  */
 export const FOLLOW_UP_3_MESSAGES: NotificationMessage[] = [
-  { title: NOTIFICATION_TITLE, body: 'まだ大丈夫' },
-  { title: NOTIFICATION_TITLE, body: '一言だけでOK' },
+  { title: NOTIFICATION_TITLE, body: '今の気持ちを残しておこう' },
+  { title: NOTIFICATION_TITLE, body: '絵文字ひとつでもOK' },
+  { title: NOTIFICATION_TITLE, body: '今の自分の状態、書いておく？' },
+  { title: NOTIFICATION_TITLE, body: 'ひとことだけでも残せるよ' },
+  { title: NOTIFICATION_TITLE, body: '今感じてること、なんでもいいよ' },
 ];
 
 /**
  * 追いリマインド4回目用の文言バリエーション
+ *
+ * 未来への価値を伝えるメッセージ
  */
 export const FOLLOW_UP_4_MESSAGES: NotificationMessage[] = [
-  { title: NOTIFICATION_TITLE, body: 'あと少しで1日終わるよ' },
-  { title: NOTIFICATION_TITLE, body: '絵文字ひとつでいいよ' },
+  { title: NOTIFICATION_TITLE, body: '今の自分の気持ち、あとから見れるようにしよう！' },
+  { title: NOTIFICATION_TITLE, body: '後で見返すと面白いよ' },
+  { title: NOTIFICATION_TITLE, body: '未来の自分へのメモ、残しておこう' },
+  { title: NOTIFICATION_TITLE, body: 'あとで読み返すと発見があるよ' },
+  { title: NOTIFICATION_TITLE, body: '今の考え、忘れないうちに' },
 ];
 
 /**
  * 追いリマインド5回目用の文言バリエーション（最終）
+ *
+ * 一日の締めくくりメッセージ
  */
 export const FOLLOW_UP_5_MESSAGES: NotificationMessage[] = [
-  { title: NOTIFICATION_TITLE, body: '今日最後のお知らせ' },
-  { title: NOTIFICATION_TITLE, body: 'ほつれ使う？最後のチャンス' },
+  { title: NOTIFICATION_TITLE, body: '今日もおつかれさま' },
+  { title: NOTIFICATION_TITLE, body: '寝る前に考えてることも書いておこう' },
+  { title: NOTIFICATION_TITLE, body: '今日の自分、ひとことで残しておこう' },
+  { title: NOTIFICATION_TITLE, body: '眠る前の頭の中、書いておく？' },
+  { title: NOTIFICATION_TITLE, body: '今日のあなた、記録しておこう' },
 ];
 
 /**

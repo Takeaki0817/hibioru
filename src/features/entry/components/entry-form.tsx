@@ -258,7 +258,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
       <div className="mb-4">
         <h1 className="text-lg font-medium text-muted-foreground flex items-center gap-2">
           <span>💭</span>
-          <span>今日はどんな日？</span>
+          <span>今、何を考えてる？</span>
         </h1>
       </div>
 
@@ -271,7 +271,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           onFocus={handleFocus}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
-          placeholder="絵文字1つでもOK 🌟"
+          placeholder="残しておきたいこと、なんでも"
           aria-label="記録内容"
           aria-busy={isSubmitting}
           className={cn(

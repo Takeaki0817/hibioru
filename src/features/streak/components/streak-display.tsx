@@ -58,8 +58,8 @@ export function StreakDisplay({
             <span className="text-5xl block mb-3" aria-hidden="true">
               🌱
             </span>
-            <p className="text-muted-foreground mb-1">まだ記録がありません</p>
-            <p className="text-sm text-primary-500 font-medium">今日から始めましょう！</p>
+            <p className="text-muted-foreground mb-1">まだ何も書いてないよ</p>
+            <p className="text-sm text-primary-500 font-medium">今日から始めてみよう！</p>
           </motion.div>
         </div>
       ) : (
