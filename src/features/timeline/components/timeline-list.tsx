@@ -372,12 +372,12 @@ export function TimelineList({
             initialScrollDone.current = true
           }
         } else {
-          // 最新の日付セクションにスクロール（検出ラインに入るようにblock: 'start'）
+          // 一番下（最新の投稿が見える位置）にスクロール
           const latestDate = displayedDates[displayedDates.length - 1]
           if (latestDate) {
             const element = dateRefs.current.get(latestDate)
             if (element) {
-              element.scrollIntoView({ behavior: 'instant', block: 'start' })
+              element.scrollIntoView({ behavior: 'instant', block: 'end' })
             }
           }
           initialScrollDone.current = true
