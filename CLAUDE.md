@@ -16,18 +16,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 技術スタック
 
-- **フレームワーク**: Next.js 16 (App Router, Turbopack, React Compiler)
-- **言語**: TypeScript（strictモード、any禁止）
-- **スタイリング**: Tailwind CSS v4
-- **UIコンポーネント**: shadcn/ui, Radix UI, Lucide Icons
-- **アニメーション**: framer-motion
-- **状態管理**: Zustand（フィーチャー内の stores/ ディレクトリ）
-- **データフェッチ**: TanStack Query (React Query)
-- **日付処理**: date-fns（ストリーク計算等で使用）
-- **バックエンド/DB**: Supabase (PostgreSQL, Auth, Storage, Edge Functions)
-- **認証**: Google OAuth (Supabase Auth)
-- **ホスティング**: Vercel
-- **PWA**: Web Push API、Service Worker
+| カテゴリ | 技術 |
+|---------|------|
+| フレームワーク | Next.js 16 (App Router, Turbopack, React Compiler) |
+| 言語 | TypeScript（strictモード、any禁止） |
+| スタイリング | Tailwind CSS v4 |
+| UI | shadcn/ui, Radix UI, Lucide Icons |
+| アニメーション | framer-motion |
+| 状態管理 | Zustand（フィーチャー内 stores/） |
+| データフェッチ | TanStack Query |
+| 日付処理 | date-fns |
+| バックエンド | Supabase (PostgreSQL, Auth, Storage, Edge Functions) |
+| 認証 | Google OAuth (Supabase Auth) |
+| ホスティング | Vercel |
+| PWA | Web Push API, Service Worker |
 
 ### 重要な設計原則
 
@@ -207,7 +209,7 @@ src/features/{feature}/
 └── types.ts                 # 型定義
 ```
 
-**機能一覧**: entry, timeline, streak, hotsure, notification, auth, mypage
+**機能一覧**: auth, entry, hotsure, mypage, notification, streak, timeline
 
 ### PWA/Service Worker
 
