@@ -61,9 +61,9 @@ const tapAnimation = {
 }
 
 // ホバーアニメーション設定
-const hoverAnimation = {
-  scale: 1.02,
-}
+// サイズ変化は避ける（触れる領域が変化するため）
+// 色変化はCSSのhover:クラスで適用
+const hoverAnimation = undefined
 
 type MotionButtonProps = Omit<HTMLMotionProps<'button'>, 'ref'> &
   VariantProps<typeof motionButtonVariants> & {

@@ -17,22 +17,23 @@ export const springs = {
 } as const
 
 // === ボタン系バリアント ===
+// ホバー時のscaleは避ける（触れる領域が変化するため）
 export const buttonVariants: Variants = {
   tap: { scale: 0.97 },
-  hover: { scale: 1.02 },
+  // hover: サイズ変化なし、CSSで色変化を適用
 }
 
 // 強めのボタンタップ
 export const strongButtonVariants: Variants = {
-  tap: { scale: 0.92 },
-  hover: { scale: 1.08, y: -2 },
+  tap: { scale: 0.95 },
+  // hover: サイズ変化なし
 }
 
 // === カード系バリアント ===
 export const cardVariants: Variants = {
   initial: { opacity: 0, y: 8 },
   animate: { opacity: 1, y: 0 },
-  hover: { y: -2, boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)' },
+  hover: { boxShadow: '0 4px 12px rgba(0, 0, 0, 0.08)' },
   tap: { scale: 0.99 },
 }
 
