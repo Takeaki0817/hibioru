@@ -7,6 +7,7 @@ import { classifyAuthError, parseErrorParam } from '@/features/auth/errors'
 import type { AuthError } from '@/lib/types/auth'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/brand/logo'
 
 function LoginContent() {
   const [isLoading, setIsLoading] = useState(false)
@@ -48,8 +49,11 @@ function LoginContent() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="max-w-md w-full space-y-8 p-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-foreground">ヒビオル</h1>
-          <p className="mt-2 text-muted-foreground">日々を織る</p>
+          <h1 className="flex justify-center">
+            <Logo size="xl" />
+            <span className="sr-only">ヒビオル</span>
+          </h1>
+          <p className="mt-3 text-muted-foreground">日々を織る</p>
           <p className="mt-4 text-sm text-muted-foreground/80">
             ADHD当事者のための瞬間記録アプリ
           </p>

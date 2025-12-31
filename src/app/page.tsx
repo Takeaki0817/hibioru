@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/brand/logo'
 
 export default function Home() {
   return (
@@ -7,8 +8,11 @@ export default function Home() {
       <div className="max-w-md w-full space-y-8 p-8">
         {/* ヘッダー */}
         <div className="text-center">
-          <h1 className="text-5xl font-bold text-foreground">ヒビオル</h1>
-          <p className="mt-2 text-xl text-muted-foreground">日々を織る</p>
+          <h1 className="flex justify-center">
+            <Logo size="2xl" />
+            <span className="sr-only">ヒビオル</span>
+          </h1>
+          <p className="mt-3 text-xl text-muted-foreground">日々を織る</p>
         </div>
 
         {/* サービス紹介 */}

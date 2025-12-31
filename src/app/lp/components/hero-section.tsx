@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
+import { Logo } from '@/components/brand/logo'
 
 export function HeroSection() {
   return (
@@ -7,8 +8,9 @@ export function HeroSection() {
       <div className="mx-auto max-w-4xl text-center">
         {/* ロゴ・タイトル */}
         <div className="mb-8">
-          <h1 className="mb-4 text-5xl font-bold tracking-tight text-foreground sm:text-6xl md:text-7xl">
-            ヒビオル
+          <h1 className="mb-4 flex justify-center">
+            <Logo className="h-16 sm:h-20 md:h-24" />
+            <span className="sr-only">ヒビオル</span>
           </h1>
           <p className="text-xl text-muted-foreground sm:text-2xl">
             日々を織る。思考記録アプリ
