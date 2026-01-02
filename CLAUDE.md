@@ -215,11 +215,14 @@ Kiro-style Spec Driven Development を採用。
 Phase 1（仕様策定）:
   /kiro:spec-init "description"
   /kiro:spec-requirements {feature}
+  /kiro:validate-gap {feature}（任意: 既存コードベースとの整合性確認）
   /kiro:spec-design {feature} [-y]
+  /kiro:validate-design {feature}（任意: 設計レビュー）
   /kiro:spec-tasks {feature} [-y]
 
 Phase 2（実装）:
   /kiro:spec-impl {feature} [tasks]
+  /kiro:validate-impl {feature}（任意: 実装後の検証）
 ```
 
 進捗確認: `/kiro:spec-status [feature-name]`
