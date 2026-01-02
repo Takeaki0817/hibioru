@@ -265,14 +265,18 @@ Phase 0（任意）: /kiro:steering, /kiro:steering-custom
 Phase 1（仕様策定）:
   /kiro:spec-init "description"
   /kiro:spec-requirements {feature}
+  /kiro:validate-gap {feature}（任意: 既存コードベースとの整合性確認）
   /kiro:spec-design {feature} [-y]
+  /kiro:validate-design {feature}（任意: 設計レビュー）
   /kiro:spec-tasks {feature} [-y]
 
 Phase 2（実装）:
   /kiro:spec-impl {feature} [tasks]
+  /kiro:validate-impl {feature}（任意: 実装後の検証）
 ```
 
 ### ルール
 - **3フェーズ承認**: Requirements → Design → Tasks → Implementation
 - **レビュー必須**: 各フェーズで人間のレビューが必要（`-y`で省略可能）
 - **日本語出力**: プロジェクトファイルのMarkdownは日本語で記述
+- **Steering設定**: `.kiro/steering/` 配下の `product.md`, `tech.md`, `structure.md` をプロジェクトメモリとして読み込み
