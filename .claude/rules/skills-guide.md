@@ -138,20 +138,32 @@ mcp__serena__insert_after_symbol --name_path "MyClass" --relative_path "..." --b
 
 ---
 
-## その他
+### accessibility-auditor
 
-### mcp-integration
-
-**用途**: MCPサーバー統合ガイド
+**用途**: WCAGコンプライアンス・アクセシビリティ監査
 
 **内容**:
-- `.mcp.json` 設定方法
-- SSE/stdio/HTTP各タイプの設定例
-- プラグイン開発でのMCP活用
+- WCAG 2.1 Level AA/AAA準拠の監査
+- ARIA実装パターン
+- キーボードナビゲーション
+- スクリーンリーダー対応
+- ADA/Section 508コンプライアンス
 
-**使用場面**: 新規MCPサーバー追加・設定時
+**主なチェック項目**:
+- 画像のalt属性
+- カラーコントラスト（4.5:1以上）
+- セマンティックHTML
+- フォームラベル
+- キーボードアクセシビリティ
+- ARIAランドマーク
+- モーダル/ダイアログのフォーカス管理
+- スキップリンク
+
+**使用場面**: UI実装時のアクセシビリティ確認、監査対応
 
 ---
+
+## その他
 
 ### rule-identifier
 
@@ -179,19 +191,6 @@ mcp__serena__insert_after_symbol --name_path "MyClass" --relative_path "..." --b
 
 ---
 
-### claude-opus-4-5-migration
-
-**用途**: Opus 4.5への移行支援
-
-**内容**:
-- モデル文字列更新
-- プロンプト調整
-- 動作差異対応
-
-**使用場面**: モデルアップグレード時
-
----
-
 ## スキル選択フローチャート
 
 ```
@@ -205,10 +204,11 @@ mcp__serena__insert_after_symbol --name_path "MyClass" --relative_path "..." --b
     │   ├─ ユニットテスト → javascript-testing-patterns
     │   └─ E2Eテスト → e2e-testing-patterns, /e2e:generate
     │
-    ├─ UIを作りたい → frontend-design
+    ├─ UIを作りたい
+    │   ├─ デザイン・実装 → frontend-design
+    │   └─ アクセシビリティ確認 → accessibility-auditor
     │
     └─ その他
-        ├─ MCP追加 → mcp-integration
         ├─ 規約追加 → rule-identifier
         └─ セキュリティ設計 → security-requirement-extraction
 ```
