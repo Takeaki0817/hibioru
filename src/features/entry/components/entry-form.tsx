@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cva } from 'class-variance-authority'
 import { Trash2, Users } from 'lucide-react'
@@ -19,6 +20,7 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { queryKeys } from '@/lib/constants/query-keys'
 import { useEntryFormStore, selectCanSubmit, selectCanAddImage } from '../stores/entry-form-store'
 
 // CVAバリアント定義 - フォームコンテナ
@@ -105,6 +107,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const formRef = useRef<HTMLFormElement>(null)
   const router = useRouter()
+  const queryClient = useQueryClient()
 
   // 外部から送信を呼び出せるようにする
   useImperativeHandle(ref, () => ({
@@ -214,6 +217,12 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
       // 成功アニメーション表示
       submitSuccess()
+
+      // キャッシュ無効化（共有状態の変更を反映）
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.entries.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.social.all }),
+      ])
 
       // 少し待ってから遷移
       setTimeout(() => {

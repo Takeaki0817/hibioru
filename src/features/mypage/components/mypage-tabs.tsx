@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { User, Users, Bell } from 'lucide-react'
 
@@ -22,6 +22,24 @@ export function MypageTabs({
   unreadCount = 0,
 }: MypageTabsProps) {
   const [activeTab, setActiveTab] = useState('profile')
+  const [mounted, setMounted] = useState(false)
+
+  // Hydration mismatch回避: クライアント側でマウント後にTabsをレンダリング
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // マウント前は初期コンテンツのみ表示（Tabsなし）
+  if (!mounted) {
+    return (
+      <div className="w-full">
+        {/* タブリストのスケルトン */}
+        <div className="w-full grid grid-cols-3 mb-4 h-10 bg-muted rounded-lg" />
+        {/* 初期タブのコンテンツ */}
+        {profileContent}
+      </div>
+    )
+  }
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
