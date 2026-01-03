@@ -1,13 +1,20 @@
+import { Pencil, Trophy, Flame, type LucideIcon } from 'lucide-react'
 import type { AchievementType } from './types'
 
 // 達成閾値（固定）
 export const ACHIEVEMENT_THRESHOLDS: Record<Exclude<AchievementType, 'shared_entry'>, readonly number[]> = {
-  // 1日の投稿数
-  daily_posts: [5, 10, 15, 20],
-  // 総投稿数
-  total_posts: [10, 50, 100, 250, 500, 1000],
-  // 継続日数（ストリーク）
-  streak_days: [3, 7, 14, 30, 60, 100, 365],
+  // 1日の投稿数: 20から50まで10刻み
+  daily_posts: [20, 30, 40, 50],
+  // 総投稿数: 10, 30, 50, 100, 150, 200, 250, 300, 400, 500, 以降100刻みで10000まで
+  total_posts: [
+    10, 30, 50, 100, 150, 200, 250, 300, 400, 500,
+    ...Array.from({ length: 95 }, (_, i) => 600 + i * 100),
+  ],
+  // 継続日数: 3, 7, 14, 30, 60, 90, 120, 150, 180, 240, 365, 以降60刻みで3650日まで
+  streak_days: [
+    3, 7, 14, 30, 60, 90, 120, 150, 180, 240, 365,
+    ...Array.from({ length: 55 }, (_, i) => 425 + i * 60),
+  ],
 } as const
 
 // 達成タイプの表示名
@@ -34,13 +41,15 @@ export function getAchievementMessage(type: AchievementType, threshold: number):
   }
 }
 
-// 達成アイコン
-export const ACHIEVEMENT_ICONS: Record<AchievementType, string> = {
-  daily_posts: '📝',
-  total_posts: '🏆',
-  streak_days: '🔥',
-  shared_entry: '📤',
-} as const
+// 達成アイコン設定
+export const ACHIEVEMENT_ICONS: Record<
+  Exclude<AchievementType, 'shared_entry'>,
+  { icon: LucideIcon; color: string }
+> = {
+  daily_posts: { icon: Pencil, color: 'text-lime-600' },
+  total_posts: { icon: Trophy, color: 'text-orange-400' },
+  streak_days: { icon: Flame, color: 'text-red-600' },
+}
 
 // ページネーション設定
 export const SOCIAL_PAGINATION = {

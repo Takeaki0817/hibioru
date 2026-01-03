@@ -147,12 +147,17 @@ function NotificationItem({ notification }: NotificationItemProps) {
             <span className="font-medium truncate">{notification.fromUser.displayName}</span>
           </div>
 
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1 flex-wrap">
             {notification.type === 'celebration' && notification.achievement ? (
               <>
-                あなたの「{ACHIEVEMENT_TYPE_LABELS[notification.achievement.type]}
-                {notification.achievement.threshold}」達成をお祝いしました{' '}
-                {ACHIEVEMENT_ICONS[notification.achievement.type]}
+                <span>
+                  あなたの「{ACHIEVEMENT_TYPE_LABELS[notification.achievement.type]}
+                  {notification.achievement.threshold}」達成をお祝いしました
+                </span>
+                {(() => {
+                  const { icon: Icon, color } = ACHIEVEMENT_ICONS[notification.achievement.type]
+                  return <Icon className={`size-4 inline-block ${color}`} />
+                })()}
               </>
             ) : (
               'あなたをフォローしました'

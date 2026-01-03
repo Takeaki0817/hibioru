@@ -261,7 +261,10 @@ function FeedItem({ item }: FeedItemProps) {
           {/* コンテンツ */}
           {item.type === 'achievement' && item.achievement && (
             <div className="flex items-center gap-2 p-2 rounded-lg bg-primary-50/50 dark:bg-primary-950/30">
-              <span className="text-2xl">{ACHIEVEMENT_ICONS[item.achievement.type]}</span>
+              {(() => {
+                const { icon: Icon, color } = ACHIEVEMENT_ICONS[item.achievement.type]
+                return <Icon className={`size-6 ${color}`} />
+              })()}
               <span className="font-medium text-primary-600 dark:text-primary-400">
                 {getAchievementMessage(item.achievement.type, item.achievement.threshold)}
               </span>
