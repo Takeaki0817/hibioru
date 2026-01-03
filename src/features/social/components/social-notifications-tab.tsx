@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
-import { Bell, PartyPopper, UserPlus } from 'lucide-react'
+import { Bell, UserPlus } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useSocialNotifications } from '../hooks/use-social-notifications'
 import { useSocialRealtime } from '../hooks/use-social-realtime'
@@ -164,14 +164,6 @@ function NotificationItem({ notification }: NotificationItemProps) {
           </div>
         </div>
 
-        {/* 右側: 通知タイプアイコン */}
-        <div className="shrink-0 flex items-center justify-center size-12 rounded-xl">
-          {notification.type === 'celebration' ? (
-            <PartyPopper className="size-6 text-celebrate-400" />
-          ) : (
-            <UserPlus className="size-6 text-primary-400" />
-          )}
-        </div>
       </div>
     </motion.div>
   )
