@@ -1,18 +1,36 @@
 {
   "mcpServers": {
-    "playwright-test": {
-      "command": "npx",
+    "gcloud": {
+      "type": "stdio",
+      "command": "node",
       "args": [
-        "playwright",
-        "run-test-mcp-server"
-      ]
+        "/Users/takeaki0817/WorkSpace/01_Private/apps/gcloud-mcp/packages/gcloud-mcp/dist/bundle.js"
+      ],
+      "env": {
+        "GOOGLE_CLOUD_PROJECT": "claude-mcp-467500"
+      }
+    },
+    "supabase": {
+      "type": "http",
+      "url": "https://mcp.supabase.com/mcp?project_ref=ywfotxkfnsqzybndymsw&features=docs%2Caccount%2Cdatabase%2Cdebugging%2Cdevelopment%2Cfunctions%2Cbranching%2Cstorage"
+    },
+    "vercel-awesome-ai": {
+      "type": "http",
+      "url": "https://mcp.vercel.com/my-team/my-awesome-project"
     },
     "next-devtools": {
       "command": "npx",
-      "args": [
-        "-y",
-        "next-devtools-mcp@latest"
-      ]
+      "args": ["-y", "next-devtools-mcp@latest"]
+    },
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["@playwright/mcp@latest"],
+      "env": {}
+    },
+    "playwright-test": {
+      "command": "npx",
+      "args": ["playwright", "run-test-mcp-server"]
     },
     "serena": {
       "type": "stdio",
@@ -31,10 +49,7 @@
     },
     "shadcn": {
       "command": "npx",
-      "args": [
-        "shadcn@latest",
-        "mcp"
-      ]
+      "args": ["shadcn@latest", "mcp"]
     }
   }
 }
