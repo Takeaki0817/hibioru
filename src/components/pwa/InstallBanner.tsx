@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Download, X, Share, Plus } from 'lucide-react'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
@@ -17,9 +17,15 @@ import { APP_CONFIG } from '@/lib/constants/app-config'
 export function InstallBanner() {
   const { shouldShowBanner, canInstall, isIOS, install, dismiss } = usePwaInstall()
   const [showIOSGuide, setShowIOSGuide] = useState(false)
+  // ハイドレーション不整合を防ぐため、マウント後にのみ表示
+  const [mounted, setMounted] = useState(false)
 
-  // バナーを表示しない場合は何もレンダリングしない
-  if (!shouldShowBanner) {
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // マウント前またはバナー非表示条件では何もレンダリングしない
+  if (!mounted || !shouldShowBanner) {
     return null
   }
 
