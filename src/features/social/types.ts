@@ -108,6 +108,7 @@ export interface SocialError {
     | 'DB_ERROR'
     | 'NOT_FOUND'
     | 'UNAUTHORIZED'
+    | 'FORBIDDEN'
     | 'ALREADY_FOLLOWING'
     | 'NOT_FOLLOWING'
     | 'SELF_FOLLOW'

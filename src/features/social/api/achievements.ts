@@ -136,6 +136,24 @@ export async function checkAndCreateAchievements(
   isShared: boolean = false
 ): Promise<SocialResult<Achievement[]>> {
   try {
+    // 認証チェック: 渡されたuserIdが認証ユーザーと一致することを確認
+    const supabase = await createClient()
+    const { data: userData } = await supabase.auth.getUser()
+
+    if (!userData.user) {
+      return {
+        ok: false,
+        error: { code: 'UNAUTHORIZED', message: '未認証です' },
+      }
+    }
+
+    if (userData.user.id !== userId) {
+      return {
+        ok: false,
+        error: { code: 'FORBIDDEN', message: '他のユーザーの達成を作成する権限がありません' },
+      }
+    }
+
     const adminClient = createAdminClient()
     const newAchievements: Achievement[] = []
 
