@@ -13,7 +13,6 @@ import { DEFAULT_REMINDERS } from '@/features/notification/types'
 // プロフィールタブで使用するコンポーネント（app層での統合）
 import { ProfileSection } from '@/features/mypage/components/profile-section'
 import { ProfileEditForm } from '@/features/social/components/profile-edit-form'
-import { FollowStatsSection } from '@/features/social/components/follow-stats-section'
 import { StreakDisplay } from '@/features/streak/components/streak-display'
 import { HotsureDisplay } from '@/features/hotsure/components/hotsure-display'
 import { NotificationSettings } from '@/features/notification/components/notification-settings'
@@ -80,9 +79,6 @@ export default async function MypagePage() {
         initialUsername={username}
         initialDisplayName={displayName}
       />
-
-      {/* フォロー統計セクション */}
-      <FollowStatsSection />
 
       {/* 統計情報セクション */}
       <div className="space-y-4">

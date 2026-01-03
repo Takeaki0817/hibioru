@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { Users } from 'lucide-react'
 import { UserSearch } from './user-search'
+import { FollowStatsSection } from './follow-stats-section'
 import { CelebrateButton } from './celebrate-button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { getSocialFeed } from '../api/timeline'
@@ -107,12 +108,20 @@ export function SocialFeedTab() {
 
   return (
     <div className="space-y-6">
+      {/* フォロー統計セクション */}
+      <FollowStatsSection />
+
       {/* ユーザー検索セクション */}
       <UserSearch />
 
       {/* フィードセクション */}
       <div className="space-y-4">
-        <h3 className="font-semibold text-lg">みんなの記録</h3>
+        <div>
+          <h3 className="font-semibold text-lg">みんなの記録</h3>
+          <p className="text-sm text-muted-foreground">
+            みんなの達成や共有をお祝いしましょう。
+          </p>
+        </div>
 
         {isLoading && feedItems.length === 0 ? (
           <div className="text-center py-8 text-muted-foreground">
@@ -162,55 +171,56 @@ function FeedItem({ item, onCelebrationToggle }: FeedItemProps) {
   const timeAgo = getTimeAgo(item.createdAt)
 
   return (
-    <div className="p-4 rounded-lg border bg-card">
-      {/* ヘッダー */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
-          <Avatar className="size-10">
+    <div className="p-4 rounded-lg border bg-card flex items-center gap-4">
+      {/* 左側: ヘッダー + コンテンツ */}
+      <div className="flex-1 min-w-0">
+        {/* ヘッダー */}
+        <div className="flex items-center gap-3 mb-2">
+          <Avatar className="size-10 shrink-0">
             <AvatarImage src={item.user.avatarUrl ?? undefined} alt={item.user.displayName} />
             <AvatarFallback>
               {item.user.displayName?.charAt(0) ?? item.user.username.charAt(0)}
             </AvatarFallback>
           </Avatar>
-          <div>
-            <p className="font-medium">{item.user.displayName}</p>
-            <p className="text-xs text-muted-foreground">@{item.user.username} · {timeAgo}</p>
+          <div className="min-w-0">
+            <p className="font-medium truncate">{item.user.displayName}</p>
+            <p className="text-xs text-muted-foreground truncate">@{item.user.username} · {timeAgo}</p>
           </div>
         </div>
+
+        {/* コンテンツ */}
+        {item.type === 'achievement' && item.achievement && (
+          <div className="flex items-center gap-2">
+            <span className="text-2xl">
+              {ACHIEVEMENT_ICONS[item.achievement.type]}
+            </span>
+            <span className="font-medium">
+              {getAchievementMessage(item.achievement.type, item.achievement.threshold)}
+            </span>
+          </div>
+        )}
+
+        {item.type === 'shared_entry' && item.entry && (
+          <div>
+            <p className="text-sm whitespace-pre-wrap line-clamp-2">{item.entry.content}</p>
+            {item.entry.imageUrls && item.entry.imageUrls.length > 0 && (
+              <div className="mt-2 flex gap-2 flex-wrap">
+                {item.entry.imageUrls.slice(0, 4).map((url, index) => (
+                  <img
+                    key={index}
+                    src={url}
+                    alt=""
+                    className="w-16 h-16 object-cover rounded-md"
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* コンテンツ */}
-      {item.type === 'achievement' && item.achievement && (
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-2xl">
-            {ACHIEVEMENT_ICONS[item.achievement.type]}
-          </span>
-          <span className="font-medium">
-            {getAchievementMessage(item.achievement.type, item.achievement.threshold)}
-          </span>
-        </div>
-      )}
-
-      {item.type === 'shared_entry' && item.entry && (
-        <div className="mb-3">
-          <p className="text-sm whitespace-pre-wrap">{item.entry.content}</p>
-          {item.entry.imageUrls && item.entry.imageUrls.length > 0 && (
-            <div className="mt-2 flex gap-2 flex-wrap">
-              {item.entry.imageUrls.slice(0, 4).map((url, index) => (
-                <img
-                  key={index}
-                  src={url}
-                  alt=""
-                  className="w-20 h-20 object-cover rounded-md"
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* フッター */}
-      <div className="flex items-center justify-between pt-2 border-t">
+      {/* 右側: お祝いボタン */}
+      <div className="shrink-0">
         <CelebrateButton
           achievementId={item.id}
           initialIsCelebrated={item.isCelebrated}

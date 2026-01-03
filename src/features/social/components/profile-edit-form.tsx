@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Pencil, Check, X, Loader2 } from 'lucide-react'
+import { Pencil, Check, X, Loader2, Copy } from 'lucide-react'
 import { updateProfile, checkUsernameAvailability } from '../api/profile'
 import { USERNAME_RULES } from '../constants'
 import { useDebouncedCallback } from 'use-debounce'
@@ -30,6 +30,19 @@ export function ProfileEditForm({
   const [isCheckingUsername, setIsCheckingUsername] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  const [isCopied, setIsCopied] = useState(false)
+
+  // ユーザーIDをクリップボードにコピー
+  const handleCopyUserId = useCallback(async () => {
+    if (!initialUsername) return
+    try {
+      await navigator.clipboard.writeText(`@${initialUsername}`)
+      setIsCopied(true)
+      setTimeout(() => setIsCopied(false), 2000)
+    } catch {
+      // コピー失敗時は何もしない
+    }
+  }, [initialUsername])
 
   // ユーザー名のバリデーション
   const validateUsernameLocal = useCallback((value: string): string | null => {
@@ -145,9 +158,26 @@ export function ProfileEditForm({
           </div>
           <div>
             <span className="text-sm text-muted-foreground">ユーザーID</span>
-            <p className="font-medium">
-              {initialUsername ? `@${initialUsername}` : '未設定'}
-            </p>
+            <div className="flex items-center gap-1">
+              <p className="font-medium">
+                {initialUsername ? `@${initialUsername}` : '未設定'}
+              </p>
+              {initialUsername && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopyUserId}
+                  className="h-6 w-6 p-0"
+                  aria-label="ユーザーIDをコピー"
+                >
+                  {isCopied ? (
+                    <Check className="size-3.5 text-primary" />
+                  ) : (
+                    <Copy className="size-3.5 text-muted-foreground" />
+                  )}
+                </Button>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

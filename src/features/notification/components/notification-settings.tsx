@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Users } from 'lucide-react'
 import type { NotificationSettings as NotificationSettingsType, Reminder } from '../types'
 import { DEFAULT_REMINDERS } from '../types'
 import { FeatureCard } from '@/components/ui/feature-card'
@@ -172,7 +171,7 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
           <div className="space-y-1">
             <Label htmlFor="notification-toggle">通知を受け取る</Label>
             <p className="text-sm text-muted-foreground">
-              毎日決まった時刻にリマインド通知を送ります
+              リマインドやソーシャルの通知を受け取ります
             </p>
           </div>
           <Switch
@@ -222,14 +221,11 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
           {/* ソーシャル通知設定 */}
           <div className="pt-4 border-t">
             <div className="flex items-center justify-between">
-              <div className="flex items-start gap-3">
-                <Users className="size-5 text-muted-foreground mt-0.5" />
-                <div className="space-y-1">
-                  <Label htmlFor="social-notification-toggle">ソーシャル通知</Label>
-                  <p className="text-sm text-muted-foreground">
-                    お祝いやフォローをブラウザ通知で受け取る
-                  </p>
-                </div>
+              <div className="space-y-1">
+                <Label htmlFor="social-notification-toggle">ソーシャル通知</Label>
+                <p className="text-sm text-muted-foreground">
+                  お祝いやフォローをブラウザ通知で受け取る
+                </p>
               </div>
               <Switch
                 id="social-notification-toggle"

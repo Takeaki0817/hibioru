@@ -36,7 +36,7 @@ export function FooterNav({ centerButton }: FooterNavProps) {
     },
     {
       href: '/mypage',
-      label: 'マイページ',
+      label: 'ソーシャル',
       icon: User,
     },
   ]
