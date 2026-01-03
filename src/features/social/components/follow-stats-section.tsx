@@ -1,7 +1,6 @@
 'use client'
 
 import { motion } from 'framer-motion'
-import { Users, UserPlus } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
 import { queryKeys } from '@/lib/constants/query-keys'
@@ -49,11 +48,10 @@ export function FollowStatsSection() {
           <motion.button
             whileTap={{ scale: 0.95 }}
             transition={springTransition}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
+            className="flex items-center gap-1.5 px-1 md:px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
           >
-            <Users className="size-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">フォロー</span>
-            <span className="text-sm font-semibold text-primary-600 dark:text-primary-400">
+            <span className="text-xs md:text-sm text-muted-foreground">フォロー</span>
+            <span className="text-xs md:text-sm font-semibold text-primary-600 dark:text-primary-400">
               {counts.followingCount}
             </span>
           </motion.button>
@@ -73,11 +71,10 @@ export function FollowStatsSection() {
           <motion.button
             whileTap={{ scale: 0.95 }}
             transition={springTransition}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
+            className="flex items-center gap-1.5 px-1 md:px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
           >
-            <UserPlus className="size-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">フォロワー</span>
-            <span className="text-sm font-semibold text-primary-600 dark:text-primary-400">
+            <span className="text-xs md:text-sm text-muted-foreground">フォロワー</span>
+            <span className="text-xs md:text-sm font-semibold text-primary-600 dark:text-primary-400">
               {counts.followerCount}
             </span>
           </motion.button>
