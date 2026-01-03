@@ -49,7 +49,8 @@ export default async function SocialPage() {
     hotsureRemaining: streakResult.ok ? streakResult.value.hotsureRemaining : 2,
     hotsureMax: 2,
   }
-  const weeklyRecords = weeklyResult.ok ? weeklyResult.value : undefined
+  const weeklyRecords = weeklyResult.ok ? weeklyResult.value.entries : undefined
+  const hotsureRecords = weeklyResult.ok ? weeklyResult.value.hotsures : undefined
   const notificationSettings = notificationResult.ok
     ? notificationResult.value
     : {
@@ -83,6 +84,7 @@ export default async function SocialPage() {
           currentStreak={stats.currentStreak}
           longestStreak={stats.longestStreak}
           weeklyRecords={weeklyRecords}
+          hotsureRecords={hotsureRecords}
         />
         <HotsureDisplay
           remaining={stats.hotsureRemaining}
