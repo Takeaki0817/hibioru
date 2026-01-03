@@ -3,13 +3,25 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PageLayout } from '@/components/layouts/page-layout'
 import { MypageTabs } from '@/features/mypage/components/mypage-tabs'
-import { ProfileTabContent } from '@/features/mypage/components/profile-tab-content'
 import { SocialFeedTab } from '@/features/social/components/social-feed-tab'
 import { SocialNotificationsTab } from '@/features/social/components/social-notifications-tab'
 import { getStreakInfo, getWeeklyRecords } from '@/features/streak/api/service'
 import { getNotificationSettings } from '@/features/notification/api/service'
 import { getUnreadCount } from '@/features/social/api/notifications'
 import { DEFAULT_REMINDERS } from '@/features/notification/types'
+
+// プロフィールタブで使用するコンポーネント（app層での統合）
+import { ProfileSection } from '@/features/mypage/components/profile-section'
+import { ProfileEditForm } from '@/features/social/components/profile-edit-form'
+import { FollowStatsSection } from '@/features/social/components/follow-stats-section'
+import { StreakDisplay } from '@/features/streak/components/streak-display'
+import { HotsureDisplay } from '@/features/hotsure/components/hotsure-display'
+import { NotificationSettings } from '@/features/notification/components/notification-settings'
+import { AppearanceSection } from '@/features/mypage/components/appearance-section'
+import { ExportSection } from '@/features/mypage/components/export-section'
+import { FeedbackSection } from '@/features/mypage/components/feedback-section'
+import { LogoutButton } from '@/features/mypage/components/logout-button'
+import { DeleteAccountSection } from '@/features/mypage/components/delete-account-section'
 
 export const metadata: Metadata = {
   title: 'マイページ - ヒビオル',
@@ -50,11 +62,62 @@ export default async function MypagePage() {
         chase_reminder_enabled: true,
         chase_reminder_delay_minutes: 60,
         follow_up_max_count: 2,
+        social_notifications_enabled: true,
       }
   const unreadCount = unreadResult.ok ? unreadResult.value : 0
   const profileData = profileResult.data
   const username = profileData?.username ?? null
   const displayName = profileData?.display_name ?? user.user_metadata?.full_name ?? null
+
+  // プロフィールタブのコンテンツ（app層での統合）
+  const profileTabContent = (
+    <div className="space-y-6">
+      {/* プロフィールセクション */}
+      <ProfileSection user={user} />
+
+      {/* プロフィール編集 */}
+      <ProfileEditForm
+        initialUsername={username}
+        initialDisplayName={displayName}
+      />
+
+      {/* フォロー統計セクション */}
+      <FollowStatsSection />
+
+      {/* 統計情報セクション */}
+      <div className="space-y-4">
+        <StreakDisplay
+          currentStreak={stats.currentStreak}
+          longestStreak={stats.longestStreak}
+          weeklyRecords={weeklyRecords}
+        />
+        <HotsureDisplay
+          remaining={stats.hotsureRemaining}
+          max={stats.hotsureMax}
+        />
+      </div>
+
+      {/* 通知設定セクション */}
+      <NotificationSettings initialSettings={notificationSettings} />
+
+      {/* 外観設定セクション */}
+      <AppearanceSection />
+
+      {/* データエクスポートセクション */}
+      <ExportSection />
+
+      {/* フィードバックセクション */}
+      <FeedbackSection />
+
+      {/* ログアウトボタン */}
+      <div className="pt-2">
+        <LogoutButton />
+      </div>
+
+      {/* アカウント削除セクション */}
+      <DeleteAccountSection />
+    </div>
+  )
 
   return (
     <PageLayout>
@@ -63,16 +126,7 @@ export default async function MypagePage() {
         <h2 className="text-2xl font-bold mb-6">マイページ</h2>
 
         <MypageTabs
-          profileContent={
-            <ProfileTabContent
-              user={user}
-              stats={stats}
-              weeklyRecords={weeklyRecords}
-              notificationSettings={notificationSettings}
-              username={username}
-              displayName={displayName}
-            />
-          }
+          profileContent={profileTabContent}
           socialFeedContent={<SocialFeedTab />}
           notificationsContent={<SocialNotificationsTab />}
           unreadCount={unreadCount}
