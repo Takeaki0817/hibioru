@@ -11,6 +11,7 @@ const initialState = {
   images: [] as CompressedImage[], // 新規追加する画像（最大2枚）
   existingImageUrls: [] as string[], // 編集時の既存画像URL
   removedImageUrls: [] as string[], // 削除予定としてマークされた既存画像URL
+  isShared: false, // ソーシャルタイムラインに共有するか
 
   // UI状態
   isSubmitting: false,
@@ -29,6 +30,7 @@ interface EntryFormState {
   images: CompressedImage[]
   existingImageUrls: string[]
   removedImageUrls: string[]
+  isShared: boolean
 
   // UI状態
   isSubmitting: boolean
@@ -44,6 +46,7 @@ interface EntryFormState {
 interface EntryFormActions {
   // フォーム操作
   setContent: (content: string) => void
+  setIsShared: (isShared: boolean) => void
   addImage: (image: CompressedImage) => void
   removeImage: (index: number) => void
   toggleExistingImageRemoval: (url: string) => void
@@ -64,7 +67,7 @@ interface EntryFormActions {
   deleteError: (msg: string) => void
 
   // 初期化/リセット
-  initialize: (initialContent?: string, existingImageUrls?: string[] | null) => void
+  initialize: (initialContent?: string, existingImageUrls?: string[] | null, initialIsShared?: boolean) => void
   reset: () => void
 }
 
@@ -92,6 +95,7 @@ export const useEntryFormStore = create<EntryFormStore>((set) => ({
 
   // フォーム操作
   setContent: (content) => set({ content }),
+  setIsShared: (isShared) => set({ isShared }),
   addImage: (image) =>
     set((state) => {
       // 最大数チェック
@@ -137,11 +141,12 @@ export const useEntryFormStore = create<EntryFormStore>((set) => ({
   deleteError: (msg) => set({ isDeleting: false, error: msg, showDeleteConfirm: false }),
 
   // 初期化（ページ遷移時に呼び出し）
-  initialize: (initialContent = '', existingImageUrls = null) =>
+  initialize: (initialContent = '', existingImageUrls = null, initialIsShared = false) =>
     set({
       ...initialState,
       content: initialContent,
       existingImageUrls: existingImageUrls ?? [],
+      isShared: initialIsShared,
     }),
 
   // リセット（アンマウント時に呼び出し）

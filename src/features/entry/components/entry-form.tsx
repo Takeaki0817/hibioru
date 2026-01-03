@@ -4,7 +4,7 @@ import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cva } from 'class-variance-authority'
-import { Trash2 } from 'lucide-react'
+import { Trash2, Users } from 'lucide-react'
 import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
 import { SuccessOverlay } from './success-overlay'
@@ -16,6 +16,8 @@ import { MotionButton } from '@/components/ui/motion-button'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { useEntryFormStore, selectCanSubmit, selectCanAddImage } from '../stores/entry-form-store'
 
@@ -75,6 +77,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   const images = useEntryFormStore((s) => s.images)
   const existingImageUrls = useEntryFormStore((s) => s.existingImageUrls)
   const removedImageUrls = useEntryFormStore((s) => s.removedImageUrls)
+  const isShared = useEntryFormStore((s) => s.isShared)
   const isSubmitting = useEntryFormStore((s) => s.isSubmitting)
   const isDeleting = useEntryFormStore((s) => s.isDeleting)
   const showDeleteConfirm = useEntryFormStore((s) => s.showDeleteConfirm)
@@ -85,6 +88,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   const canAddImage = useEntryFormStore(selectCanAddImage)
 
   const setContent = useEntryFormStore((s) => s.setContent)
+  const setIsShared = useEntryFormStore((s) => s.setIsShared)
   const addImage = useEntryFormStore((s) => s.addImage)
   const removeImage = useEntryFormStore((s) => s.removeImage)
   const toggleExistingImageRemoval = useEntryFormStore((s) => s.toggleExistingImageRemoval)
@@ -116,17 +120,17 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
     if (mode === 'create') {
       // 下書き復元
       const draft = loadDraft()
-      initialize(draft?.content || '')
+      initialize(draft?.content || '', null, false)
     } else {
-      // 編集モード：既存コンテンツと画像URLで初期化
-      initialize(initialEntry?.content || '', initialEntry?.image_urls || null)
+      // 編集モード：既存コンテンツ、画像URL、共有状態で初期化
+      initialize(initialEntry?.content || '', initialEntry?.image_urls || null, initialEntry?.is_shared ?? false)
     }
 
     // アンマウント時にリセット
     return () => {
       reset()
     }
-  }, [mode, initialEntry?.content, initialEntry?.image_urls, initialize, reset])
+  }, [mode, initialEntry?.content, initialEntry?.image_urls, initialEntry?.is_shared, initialize, reset])
 
   // 下書き自動保存（300msデバウンス、新規作成時のみ）
   useEffect(() => {
@@ -195,8 +199,8 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
       // エントリ作成/更新
       const result =
         mode === 'create'
-          ? await createEntry({ content, imageUrls: imageUrls.length > 0 ? imageUrls : null })
-          : await updateEntry(initialEntry!.id, { content, imageUrls: imageUrls.length > 0 ? imageUrls : null })
+          ? await createEntry({ content, imageUrls: imageUrls.length > 0 ? imageUrls : null, isShared })
+          : await updateEntry(initialEntry!.id, { content, imageUrls: imageUrls.length > 0 ? imageUrls : null, isShared })
 
       if (!result.ok) {
         submitError(result.error.message)
@@ -318,6 +322,22 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
             <Trash2 size={24} className="text-red-500" />
           </Button>
         )}
+      </div>
+
+      {/* ソーシャル共有トグル */}
+      <div className="mt-4 flex items-center justify-between p-3 rounded-lg border bg-card">
+        <div className="flex items-center gap-2">
+          <Users className="size-4 text-muted-foreground" />
+          <Label htmlFor="share-toggle" className="text-sm cursor-pointer">
+            フォロワーに共有
+          </Label>
+        </div>
+        <Switch
+          id="share-toggle"
+          checked={isShared}
+          onCheckedChange={setIsShared}
+          disabled={isSubmitting || isSuccess}
+        />
       </div>
 
       {/* エラー表示 */}

@@ -8,6 +8,7 @@ import type { Entry, CreateEntryInput, UpdateEntryInput, EntryError, Result } fr
 import { isEditable } from '../utils'
 import { handleEntryCreated } from '@/features/notification/api/entry-integration'
 import { updateStreakOnEntry } from '@/features/streak/api/service'
+import { checkAndCreateAchievements } from '@/features/social/api/achievements'
 
 /**
  * 新規エントリを作成
@@ -42,6 +43,7 @@ export async function createEntry(
       user_id: userData.user.id,
       content: input.content,
       image_urls: input.imageUrls ?? null,
+      is_shared: input.isShared ?? false,
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
@@ -59,7 +61,7 @@ export async function createEntry(
 
     const entry = data as Entry
 
-    // ストリーク更新と通知連携を並列実行（パフォーマンス最適化）
+    // ストリーク更新、通知連携、達成チェックを並列実行（パフォーマンス最適化）
     // これらの処理の失敗はエントリー作成結果に影響しない（ログのみ）
     await Promise.allSettled([
       updateStreakOnEntry(userData.user.id),
@@ -68,6 +70,7 @@ export async function createEntry(
         entryId: entry.id,
         createdAt: new Date(entry.created_at),
       }),
+      checkAndCreateAchievements(userData.user.id, entry.id, input.isShared ?? false),
     ]).then((results) => {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
@@ -120,6 +123,7 @@ export async function updateEntry(
     const updateData: EntryUpdate = {
       content: input.content,
       image_urls: input.imageUrls ?? null,
+      is_shared: input.isShared,
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
