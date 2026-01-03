@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { motion } from 'framer-motion'
 import { Bell, PartyPopper, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -10,6 +11,29 @@ import type { SocialNotificationItem } from '../types'
 import { ACHIEVEMENT_ICONS, ACHIEVEMENT_TYPE_LABELS } from '../constants'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { createClient } from '@/lib/supabase/client'
+import { cn } from '@/lib/utils'
+
+// アニメーション設定
+const springTransition = {
+  type: 'spring' as const,
+  stiffness: 300,
+  damping: 25,
+}
+
+const containerVariants = {
+  animate: {
+    transition: { staggerChildren: 0.03 },
+  },
+}
+
+const notificationVariants = {
+  initial: { opacity: 0, x: -10 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: springTransition,
+  },
+}
 
 /**
  * ソーシャル通知タブ
@@ -51,7 +75,9 @@ export function SocialNotificationsTab() {
 
     // 現在のユーザーIDを取得してサブスクライブ
     const setupRealtime = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
       if (!user) return
 
       channel = supabase
@@ -118,34 +144,31 @@ export function SocialNotificationsTab() {
 
       {/* 通知リスト */}
       {isLoading && notifications.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          読み込み中...
-        </div>
+        <NotificationsSkeleton />
       ) : notifications.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <Bell className="size-12 mx-auto mb-4 opacity-50" />
-          <p className="text-lg font-medium mb-2">通知はありません</p>
-          <p className="text-sm">
-            フォロワーからのお祝いや<br />
-            新しいフォロワーの通知がここに表示されます
-          </p>
-        </div>
+        <EmptyNotificationsState />
       ) : (
-        <div className="space-y-2">
+        <motion.div
+          className="space-y-2"
+          variants={containerVariants}
+          initial="initial"
+          animate="animate"
+        >
           {notifications.map((notification) => (
             <NotificationItem key={notification.id} notification={notification} />
           ))}
 
           {hasNextPage && (
-            <button
+            <motion.button
               onClick={() => fetchNextPage()}
               disabled={isFetchingNextPage}
-              className="w-full py-2 text-sm text-muted-foreground hover:text-foreground"
+              className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-primary-50 dark:hover:bg-primary-950"
+              whileTap={{ scale: 0.98 }}
             >
               {isFetchingNextPage ? '読み込み中...' : 'もっと見る'}
-            </button>
+            </motion.button>
           )}
-        </div>
+        </motion.div>
       )}
     </div>
   )
@@ -159,21 +182,25 @@ function NotificationItem({ notification }: NotificationItemProps) {
   const timeAgo = getTimeAgo(notification.createdAt)
 
   return (
-    <div
-      className={`p-4 rounded-lg border ${
-        notification.isRead ? 'bg-card' : 'bg-accent/50'
-      }`}
+    <motion.div
+      variants={notificationVariants}
+      className={cn(
+        'p-4 rounded-xl border transition-all',
+        notification.isRead
+          ? 'bg-card border-border'
+          : 'bg-primary-50/50 border-primary-200/50 dark:bg-primary-950/50 dark:border-primary-800/50'
+      )}
     >
       <div className="flex items-start gap-3">
         {/* アイコン */}
         <div className="flex-shrink-0 mt-0.5">
           {notification.type === 'celebration' ? (
-            <div className="size-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <PartyPopper className="size-4 text-amber-600" />
+            <div className="size-8 rounded-full bg-accent-50 dark:bg-accent-900/30 flex items-center justify-center">
+              <PartyPopper className="size-4 text-accent-500" />
             </div>
           ) : (
-            <div className="size-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <UserPlus className="size-4 text-blue-600" />
+            <div className="size-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
+              <UserPlus className="size-4 text-primary-500" />
             </div>
           )}
         </div>
@@ -181,28 +208,25 @@ function NotificationItem({ notification }: NotificationItemProps) {
         {/* コンテンツ */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <Avatar className="size-6">
+            <Avatar className="size-6 ring-1 ring-primary-100 dark:ring-primary-900">
               <AvatarImage
                 src={notification.fromUser.avatarUrl ?? undefined}
                 alt={notification.fromUser.displayName}
               />
-              <AvatarFallback className="text-xs">
+              <AvatarFallback className="text-xs bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400">
                 {notification.fromUser.displayName?.charAt(0) ??
                   notification.fromUser.username.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <span className="font-medium truncate">
-              {notification.fromUser.displayName}
-            </span>
+            <span className="font-medium truncate">{notification.fromUser.displayName}</span>
           </div>
 
           <p className="text-sm text-muted-foreground mt-1">
             {notification.type === 'celebration' && notification.achievement ? (
               <>
-                あなたの「
-                {ACHIEVEMENT_TYPE_LABELS[notification.achievement.type]}
-                {notification.achievement.threshold}
-                」達成をお祝いしました {ACHIEVEMENT_ICONS[notification.achievement.type]}
+                あなたの「{ACHIEVEMENT_TYPE_LABELS[notification.achievement.type]}
+                {notification.achievement.threshold}」達成をお祝いしました{' '}
+                {ACHIEVEMENT_ICONS[notification.achievement.type]}
               </>
             ) : (
               'あなたをフォローしました'
@@ -212,6 +236,48 @@ function NotificationItem({ notification }: NotificationItemProps) {
           <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
         </div>
       </div>
+    </motion.div>
+  )
+}
+
+// 空状態
+function EmptyNotificationsState() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="text-center py-12"
+    >
+      <div className="size-16 mx-auto mb-4 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+        <Bell className="size-8 text-primary-400" />
+      </div>
+      <h3 className="font-medium text-lg mb-2">通知はありません</h3>
+      <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+        フォロワーからのお祝いや新しいフォロワーの通知がここに表示されます
+      </p>
+    </motion.div>
+  )
+}
+
+// スケルトンローディング
+function NotificationsSkeleton() {
+  return (
+    <div className="space-y-2">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="p-4 rounded-xl border border-border bg-card">
+          <div className="flex items-start gap-3">
+            <div className="size-8 rounded-full bg-muted animate-pulse" />
+            <div className="flex-1 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="size-6 rounded-full bg-muted animate-pulse" />
+                <div className="h-4 w-20 bg-muted rounded animate-pulse" />
+              </div>
+              <div className="h-3 w-48 bg-muted rounded animate-pulse" />
+              <div className="h-3 w-16 bg-muted rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   )
 }
