@@ -81,9 +81,9 @@
 **Objective:** As a ユーザー, I want ストリークとほつれの状態を確認できる, so that 継続のモチベーションを維持し、セーフティネットの残数を把握できる
 
 #### Acceptance Criteria
-1. The マイページ shall 現在のストリーク数（current_streak）を表示する
-2. The マイページ shall 最長ストリーク数（longest_streak）を表示する
-3. The マイページ shall ほつれ残数（hotsure_remaining）を表示する
+1. The ソーシャルページ shall 現在のストリーク数（current_streak）を表示する
+2. The ソーシャルページ shall 最長ストリーク数（longest_streak）を表示する
+3. The ソーシャルページ shall ほつれ残数（hotsure_remaining）を表示する
 4. The タイムラインヘッダー shall 記録のある日付を識別可能な形で表示する（ストリーク数自体は表示しない）
 5. The 月カレンダー shall 記録のある日付を識別可能な形で表示する（ストリーク数自体は表示しない）
 6. The 月カレンダー shall ほつれを使用した日付を🧵マークで表示する

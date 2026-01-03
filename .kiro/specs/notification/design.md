@@ -742,7 +742,7 @@ SELECT cron.schedule(
 - Concurrency strategy: オプティミスティック更新 with ロールバック
 
 **Implementation Notes**
-- Integration: マイページ（/mypage）に統合、通知設定セクションとして配置
+- Integration: ソーシャルページ（/social）に統合、通知設定セクションとして配置
 - Validation: フォーム入力時のリアルタイムバリデーション
 - Risks: ブラウザ非対応時のUI degradation
 
@@ -930,7 +930,7 @@ CREATE INDEX idx_notification_logs_cleanup ON notification_logs(created_at);
 
 ### E2E Tests
 - 通知許可フロー: ブラウザ許可ダイアログからの購読完了
-- 設定変更フロー: マイページでの設定変更と保存
+- 設定変更フロー: ソーシャルページでの設定変更と保存
 - 通知クリック: Service Workerからのアプリ遷移
 
 ### Performance

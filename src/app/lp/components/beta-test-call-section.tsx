@@ -130,7 +130,7 @@ export function BetaTestCallSection() {
             <Link href="/login">今すぐβテストに参加する</Link>
           </Button>
           <p className="mt-4 text-xs text-muted-foreground">
-            マイページの「フィードバックを送る」ボタンからご意見をお寄せください
+            ソーシャルページの「フィードバックを送る」ボタンからご意見をお寄せください
           </p>
         </div>
       </div>

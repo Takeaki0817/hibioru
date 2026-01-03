@@ -17,7 +17,7 @@
 |--------------|---------|------|
 | Service Worker | `public/sw.js` | プッシュ通知の受信・表示・クリック処理 |
 | SW登録 | `components/ServiceWorkerRegistration.tsx` | Service Workerの登録 |
-| 通知設定UI | `components/mypage/NotificationSettings.tsx` | 通知ON/OFF、リマインド時刻設定 |
+| 通知設定UI | `features/notification/components/notification-settings.tsx` | 通知ON/OFF、リマインド時刻設定 |
 | 購読API | `app/api/notifications/subscribe/route.ts` | Push購読の登録・解除 |
 | 設定API | `app/api/notification/settings/route.ts` | 通知設定の取得・更新 |
 | Edge Function | `supabase/functions/send-notification/` | 通知送信処理 |
@@ -110,7 +110,7 @@ npx tsx scripts/test-hotsure.ts reset   # 状態リセット
 | 機能 | ファイル | 説明 |
 |-----|---------|------|
 | サービス紹介ページ | `app/page.tsx` | 未ログインユーザー向けランディング |
-| フッターナビ | `components/navigation/FooterNav.tsx` | タイムライン/マイページ切り替え |
+| フッターナビ | `components/layouts/footer-nav.tsx` | タイムライン/ソーシャル切り替え |
 | 投稿FAB | `app/timeline/TimelineClient.tsx` | 右下の「+」ボタンで新規投稿 |
 
 ### ルーティング
@@ -121,7 +121,7 @@ npx tsx scripts/test-hotsure.ts reset   # 状態リセット
 | `/login` | 不要 | ログインページ |
 | `/timeline` | 必要 | タイムライン |
 | `/new` | 必要 | 新規投稿 |
-| `/mypage` | 必要 | マイページ（通知設定含む） |
+| `/social` | 必要 | ソーシャル（プロフィール・設定・通知設定含む） |
 
 ---
 
@@ -135,7 +135,7 @@ npx tsx scripts/test-hotsure.ts reset   # 状態リセット
 | entry-input | ✅ 完了 | 記録の作成・編集・削除 |
 | timeline | ✅ 完了 | タイムライン・カレンダー表示 |
 | streak | ✅ 完了 | ストリーク計算・ほつれ機能 |
-| mypage | ✅ 完了 | プロフィール・設定・エクスポート |
+| social | ✅ 完了 | プロフィール・設定・エクスポート・ソーシャル機能 |
 | notification | ✅ 完了 | プッシュ通知 |
 
 ### 確認コマンド
@@ -146,7 +146,7 @@ npx tsx scripts/test-hotsure.ts reset   # 状態リセット
 /kiro:spec-status entry-input
 /kiro:spec-status timeline
 /kiro:spec-status streak
-/kiro:spec-status mypage
+/kiro:spec-status social
 /kiro:spec-status notification
 ```
 

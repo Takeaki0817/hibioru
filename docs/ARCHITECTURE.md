@@ -60,7 +60,7 @@ bulletproof-reactと同様に、ソースコードは`src/`ディレクトリ配
 │   │   ├── new/
 │   │   ├── edit/[id]/
 │   │   ├── timeline/
-│   │   ├── mypage/
+│   │   ├── social/
 │   │   ├── layout.tsx
 │   │   └── globals.css
 │   │
@@ -129,11 +129,16 @@ bulletproof-reactと同様に、ソースコードは`src/`ディレクトリ配
 │   │   │   │   └── actions.ts
 │   │   │   └── errors.ts
 │   │   │
-│   │   └── mypage/               # マイページ機能
-│   │       └── components/
-│   │           ├── profile-section.tsx
-│   │           ├── export-section.tsx
-│   │           └── logout-button.tsx
+│   │   └── social/               # ソーシャル機能（プロフィール・設定・フォロー）
+│   │       ├── api/
+│   │       │   └── service.ts
+│   │       ├── components/
+│   │       │   ├── profile-section.tsx
+│   │       │   ├── export-section.tsx
+│   │       │   ├── logout-button.tsx
+│   │       │   ├── follow-button.tsx
+│   │       │   └── social-feed-tab.tsx
+│   │       └── types.ts
 │   │
 │   ├── components/               # 共有UIコンポーネント
 │   │   ├── layouts/              # レイアウト系
