@@ -38,9 +38,11 @@ export interface NotificationPayload {
     /** クリック時の遷移先URL */
     url: string;
     /** 通知種別 */
-    type: NotificationType | 'main' | 'follow_up_1' | 'follow_up_2';
+    type: NotificationType | 'main' | 'follow_up_1' | 'follow_up_2' | 'celebration' | 'follow';
     /** 通知ID */
     notificationId: string;
+    /** タイムスタンプ（ソーシャル通知用） */
+    timestamp?: number;
   };
 }
 

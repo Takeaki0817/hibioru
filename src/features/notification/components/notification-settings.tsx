@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { Users } from 'lucide-react'
 import type { NotificationSettings as NotificationSettingsType, Reminder } from '../types'
 import { DEFAULT_REMINDERS } from '../types'
 import { FeatureCard } from '@/components/ui/feature-card'
@@ -22,6 +23,9 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
   const [enabled, setEnabled] = useState(initialSettings.enabled)
   const [reminders, setReminders] = useState<Reminder[]>(
     initialSettings.reminders?.length > 0 ? initialSettings.reminders : DEFAULT_REMINDERS
+  )
+  const [socialNotificationsEnabled, setSocialNotificationsEnabled] = useState(
+    initialSettings.social_notifications_enabled ?? true
   )
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -123,6 +127,18 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
     }
   }
 
+  // ソーシャル通知のトグル変更
+  const handleSocialNotificationsToggle = async (newEnabled: boolean) => {
+    const previousEnabled = socialNotificationsEnabled
+    setSocialNotificationsEnabled(newEnabled)
+
+    try {
+      await updateSettings({ social_notifications_enabled: newEnabled })
+    } catch {
+      setSocialNotificationsEnabled(previousEnabled)
+    }
+  }
+
   if (!isSupported) {
     return (
       <FeatureCard title="通知設定" titleSize="xl">
@@ -200,6 +216,27 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
                   />
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* ソーシャル通知設定 */}
+          <div className="pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div className="flex items-start gap-3">
+                <Users className="size-5 text-muted-foreground mt-0.5" />
+                <div className="space-y-1">
+                  <Label htmlFor="social-notification-toggle">ソーシャル通知</Label>
+                  <p className="text-sm text-muted-foreground">
+                    お祝いやフォローをブラウザ通知で受け取る
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="social-notification-toggle"
+                checked={socialNotificationsEnabled}
+                onCheckedChange={handleSocialNotificationsToggle}
+                disabled={isLoading}
+              />
             </div>
           </div>
 

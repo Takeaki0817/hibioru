@@ -61,6 +61,8 @@ export interface NotificationSettings {
   chase_reminder_delay_minutes: number;
   /** 追いリマインドの最大回数（1-5回） */
   follow_up_max_count: number;
+  /** ソーシャル通知の有効/無効（お祝い・フォロー通知） */
+  social_notifications_enabled: boolean;
 }
 
 /**
@@ -72,6 +74,7 @@ export const DEFAULT_NOTIFICATION_SETTINGS: Omit<NotificationSettings, 'user_id'
   chase_reminder_enabled: true,
   chase_reminder_delay_minutes: 60,
   follow_up_max_count: 2,
+  social_notifications_enabled: true,
 };
 
 /**

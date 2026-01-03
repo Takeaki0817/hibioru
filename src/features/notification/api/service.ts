@@ -50,7 +50,7 @@ export async function getNotificationSettings(
     }
 
     // remindersがない古いデータの場合はデフォルト値を付与
-    const settings = data as NotificationSettings
+    const settings = data as unknown as NotificationSettings
     if (!settings.reminders || !Array.isArray(settings.reminders)) {
       settings.reminders = DEFAULT_REMINDERS
     } else {
