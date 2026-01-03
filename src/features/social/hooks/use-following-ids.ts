@@ -4,6 +4,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { queryKeys } from '@/lib/constants/query-keys'
 
+// 再レンダリング時の不要な配列生成を防ぐ
+const EMPTY_ARRAY: string[] = []
+
 interface UseFollowingIdsReturn {
   followingIds: string[]
   isLoading: boolean
@@ -21,7 +24,7 @@ interface UseFollowingIdsReturn {
 export function useFollowingIds(): UseFollowingIdsReturn {
   const queryClient = useQueryClient()
 
-  const { data: followingIds = [], isLoading } = useQuery({
+  const { data: followingIds = EMPTY_ARRAY, isLoading } = useQuery({
     queryKey: queryKeys.social.followingIds(),
     queryFn: async () => {
       const supabase = createClient()

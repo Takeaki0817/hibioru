@@ -103,13 +103,12 @@ export function useCelebration({
       return newState
     },
     onMutate: async (newState: boolean) => {
-      // 進行中のクエリをキャンセル
-      await queryClient.cancelQueries({ queryKey: queryKeys.social.feed() })
-
       // 楽観的更新のための前の状態を保存
+      // 注: cancelQueries は使わず、setQueryData のみで個別アイテムを更新
+      // これによりフィード全体への影響を最小化
       const previousState = getCurrentState()
 
-      // 楽観的更新
+      // 楽観的更新（個別アイテムのみ）
       const newCount = newState
         ? previousState.count + 1
         : Math.max(0, previousState.count - 1)
