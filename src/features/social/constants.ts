@@ -1,4 +1,4 @@
-import { Pencil, Trophy, Flame, type LucideIcon } from 'lucide-react'
+import { Pencil, Trophy, Flame, Share2, type LucideIcon } from 'lucide-react'
 import type { AchievementType } from './types'
 
 // 達成閾値（固定）
@@ -41,14 +41,16 @@ export function getAchievementMessage(type: AchievementType, threshold: number):
   }
 }
 
+
 // 達成アイコン設定
 export const ACHIEVEMENT_ICONS: Record<
-  Exclude<AchievementType, 'shared_entry'>,
+  AchievementType,
   { icon: LucideIcon; color: string }
 > = {
   daily_posts: { icon: Pencil, color: 'text-lime-600' },
   total_posts: { icon: Trophy, color: 'text-orange-400' },
   streak_days: { icon: Flame, color: 'text-red-600' },
+  shared_entry: { icon: Share2, color: 'text-sky-500' },
 }
 
 // ページネーション設定

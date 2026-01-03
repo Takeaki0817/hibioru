@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Users, PartyPopper, Loader2 } from 'lucide-react'
+import { Users, PartyPopper, Loader2, Share2, Quote } from 'lucide-react'
 import { UserSearch } from './user-search'
 import { FollowStatsSection } from './follow-stats-section'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -204,6 +204,8 @@ function FeedItem({ item }: FeedItemProps) {
     { id: number; angle: number; distance: number; color: string; size: string; delay: number }[]
   >([])
 
+  const isSharedEntry = item.type === 'shared_entry'
+
   // 成功時のコールバック（パーティクルエフェクト）
   const handleSuccess = useCallback((newState: boolean) => {
     if (newState) {
@@ -258,34 +260,84 @@ function FeedItem({ item }: FeedItemProps) {
             </div>
           </div>
 
-          {/* コンテンツ */}
+          {/* コンテンツ: 達成 */}
           {item.type === 'achievement' && item.achievement && (
             <div className="flex items-center gap-2 p-2 rounded-lg bg-primary-50/50 dark:bg-primary-950/30">
               {(() => {
                 const { icon: Icon, color } = ACHIEVEMENT_ICONS[item.achievement.type]
-                return <Icon className={`size-6 ${color}`} />
+                return <Icon className={`size-5 shrink-0 ${color}`} />
               })()}
-              <span className="font-medium text-primary-600 dark:text-primary-400">
+              <span className="text-sm text-primary-600 dark:text-primary-400">
                 {getAchievementMessage(item.achievement.type, item.achievement.threshold)}
               </span>
             </div>
           )}
 
-          {item.type === 'shared_entry' && item.entry && (
-            <div>
-              <p className="text-sm whitespace-pre-wrap line-clamp-2">{item.entry.content}</p>
-              {item.entry.imageUrls && item.entry.imageUrls.length > 0 && (
-                <div className="mt-2 flex gap-2 flex-wrap">
-                  {item.entry.imageUrls.slice(0, 4).map((url, index) => (
-                    <img
-                      key={index}
-                      src={url}
-                      alt=""
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                  ))}
-                </div>
-              )}
+          {/* コンテンツ: 共有投稿 */}
+          {isSharedEntry && item.entry && (
+            <div className="space-y-2">
+              {/* 共有ラベル（通知タブと統一） */}
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-sky-50/50 dark:bg-sky-950/30">
+                <Share2 className="size-5 shrink-0 text-sky-500" />
+                <span className="text-sm text-sky-600 dark:text-sky-400">
+                  投稿を共有しました
+                </span>
+              </div>
+
+              {/* 投稿内容カード */}
+              <div className="relative rounded-lg bg-card p-3 border border-border">
+                {/* 引用マーク */}
+                <Quote className="absolute top-2 right-2 size-4 text-muted-foreground/20" />
+
+                {/* テキストコンテンツ */}
+                <p className="text-sm leading-relaxed whitespace-pre-wrap line-clamp-3 pr-5">
+                  {item.entry.content}
+                </p>
+
+                {/* 画像プレビュー */}
+                {item.entry.imageUrls && item.entry.imageUrls.length > 0 && (
+                  <div className="mt-3">
+                    {item.entry.imageUrls.length === 1 ? (
+                      /* 画像1枚: 大きく表示 */
+                      <div className="relative overflow-hidden rounded-md">
+                        <img
+                          src={item.entry.imageUrls[0]}
+                          alt=""
+                          className="w-full max-h-40 object-cover"
+                        />
+                      </div>
+                    ) : (
+                      /* 画像2枚以上: グリッド表示 */
+                      <div
+                        className={cn(
+                          'grid gap-1.5',
+                          item.entry.imageUrls.length === 2 && 'grid-cols-2',
+                          item.entry.imageUrls.length >= 3 && 'grid-cols-3'
+                        )}
+                      >
+                        {item.entry.imageUrls.slice(0, 3).map((url, index) => (
+                          <div
+                            key={index}
+                            className="relative aspect-square overflow-hidden rounded-md"
+                          >
+                            <img
+                              src={url}
+                              alt=""
+                              className="size-full object-cover"
+                            />
+                            {/* 残り枚数表示 */}
+                            {index === 2 && item.entry!.imageUrls!.length > 3 && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/50 text-white text-sm font-medium">
+                                +{item.entry!.imageUrls!.length - 3}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
