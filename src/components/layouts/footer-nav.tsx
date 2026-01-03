@@ -35,7 +35,7 @@ export function FooterNav({ centerButton }: FooterNavProps) {
       isCenter: true,
     },
     {
-      href: '/mypage',
+      href: '/social',
       label: 'ソーシャル',
       icon: User,
     },

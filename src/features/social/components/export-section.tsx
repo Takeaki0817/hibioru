@@ -7,7 +7,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { DatePickerWithInput } from '@/components/ui/date-picker-with-input'
-import { useExport } from '@/features/mypage/hooks/use-export'
+import { useExport } from '../hooks/use-export'
 
 type ExportFormat = 'json' | 'markdown'
 

@@ -1,36 +1,26 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { User, Users, Bell } from 'lucide-react'
 
-// 通知タブに渡すProps型
-interface NotificationsTabProps {
-  isActive?: boolean
-  onUnreadCountChange?: (count: number) => void
-}
-
-interface MypageTabsProps {
+interface SocialTabsProps {
   profileContent: React.ReactNode
   socialFeedContent: React.ReactNode
   notificationsContent: React.ReactNode
-  unreadCount?: number
 }
 
 /**
- * マイページのタブコンポーネント
+ * ソーシャルページのタブコンポーネント
  * 「プロフィール」「みんな」「通知」の3タブを提供
  */
-export function MypageTabs({
+export function SocialTabs({
   profileContent,
   socialFeedContent,
   notificationsContent,
-  unreadCount = 0,
-}: MypageTabsProps) {
+}: SocialTabsProps) {
   const [activeTab, setActiveTab] = useState('profile')
   const [mounted, setMounted] = useState(false)
-  // バッジ表示用のローカル状態（子コンポーネントから更新可能）
-  const [badgeCount, setBadgeCount] = useState(unreadCount)
 
   // Hydration mismatch回避: クライアント側でマウント後にTabsをレンダリング
   useEffect(() => {
@@ -60,14 +50,9 @@ export function MypageTabs({
           <Users className="size-4" />
           <span>みんな</span>
         </TabsTrigger>
-        <TabsTrigger value="notifications" className="relative flex items-center gap-1.5">
+        <TabsTrigger value="notifications" className="flex items-center gap-1.5">
           <Bell className="size-4" />
           <span>通知</span>
-          {badgeCount > 0 && (
-            <span className="absolute -top-1 -right-1 size-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-              {badgeCount > 9 ? '9+' : badgeCount}
-            </span>
-          )}
         </TabsTrigger>
       </TabsList>
 
@@ -82,13 +67,7 @@ export function MypageTabs({
       </TabsContent>
 
       <TabsContent value="notifications" className="mt-0 data-[state=inactive]:hidden" forceMount>
-        {React.cloneElement(
-          notificationsContent as React.ReactElement<NotificationsTabProps>,
-          {
-            isActive: activeTab === 'notifications',
-            onUnreadCountChange: setBadgeCount,
-          }
-        )}
+        {notificationsContent}
       </TabsContent>
     </Tabs>
   )

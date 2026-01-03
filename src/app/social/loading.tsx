@@ -1,10 +1,10 @@
 import { Skeleton } from '@/components/ui/skeleton'
 
 /**
- * マイページのローディングUI
+ * ソーシャルページのローディングUI
  * Suspenseバウンダリのフォールバックとして使用
  */
-export default function MypageLoading() {
+export default function SocialLoading() {
   return (
     <div className="container mx-auto p-4 max-w-2xl pb-6">
       <div className="space-y-6">
