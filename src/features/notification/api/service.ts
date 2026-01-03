@@ -39,6 +39,7 @@ export async function getNotificationSettings(
             chase_reminder_enabled: true,
             chase_reminder_delay_minutes: 60,
             follow_up_max_count: 2,
+            social_notifications_enabled: true,
           }
         }
       }

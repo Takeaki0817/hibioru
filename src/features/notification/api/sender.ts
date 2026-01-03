@@ -10,274 +10,49 @@
  * - 5.3: 無効購読（410 Gone）の検出
  */
 
-import webpush from 'web-push';
-import { createClient } from '@/lib/supabase/server';
-import {
+import { createClient } from '@/lib/supabase/server'
+import { logNotification } from './log'
+import type { NotificationType } from '../types'
+
+// 共有ライブラリから再export（後方互換性のため）
+export {
+  sendNotification,
+  sendToAllDevices,
+} from '@/lib/push/sender'
+
+export type {
+  PushNotificationPayload as NotificationPayload,
+  SendResult,
+  DispatchError,
+} from '@/lib/push/types'
+
+// 購読管理も再export（後方互換性のため）
+export {
+  subscribe,
+  unsubscribe,
   getSubscriptions,
   removeInvalidSubscription,
   type PushSubscription,
-} from './subscription';
-import { logNotification } from './log';
-import { getVapidConfig, validateVapidConfig } from '../config';
-import type { NotificationType } from '../types';
-
-/**
- * 通知ペイロード
- */
-export interface NotificationPayload {
-  /** 通知タイトル */
-  title: string;
-  /** 通知本文 */
-  body: string;
-  /** アイコンURL */
-  icon?: string;
-  /** バッジURL */
-  badge?: string;
-  /** 追加データ */
-  data?: {
-    /** クリック時の遷移先URL */
-    url: string;
-    /** 通知種別 */
-    type: NotificationType | 'main' | 'follow_up_1' | 'follow_up_2' | 'celebration' | 'follow';
-    /** 通知ID */
-    notificationId: string;
-    /** タイムスタンプ（ソーシャル通知用） */
-    timestamp?: number;
-  };
-}
-
-/**
- * 送信結果
- */
-export interface SendResult {
-  /** 購読ID */
-  subscriptionId: string;
-  /** 送信成功フラグ */
-  success: boolean;
-  /** HTTPステータスコード */
-  statusCode?: number;
-  /** エラーメッセージ */
-  error?: string;
-  /** 購読を削除すべきか（410 Gone等） */
-  shouldRemove?: boolean;
-}
-
-/**
- * 配信エラーの型
- */
-export type DispatchError =
-  | { type: 'NO_SUBSCRIPTIONS' }
-  | { type: 'ALL_FAILED'; results: SendResult[] }
-  | { type: 'VAPID_ERROR'; message: string };
-
-/**
- * Result型
- */
-export type Result<T, E> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
+  type PushSubscriptionInput,
+  type SubscriptionError,
+} from '@/lib/push/subscription'
 
 /**
  * タイムゾーン判定用の設定
  */
 interface NotificationTimeSettings {
   /** 配信時刻（HH:mm形式） */
-  primaryTime: string;
+  primaryTime: string
   /** タイムゾーン（IANA形式） */
-  timezone: string;
+  timezone: string
   /** 有効な曜日（0:日曜〜6:土曜） */
-  activeDays: number[];
-}
-
-// VAPID詳細の設定（初回のみ）
-let vapidConfigured = false;
-
-/**
- * VAPID設定を初期化する
- */
-function ensureVapidConfigured(): Result<void, DispatchError> {
-  if (vapidConfigured) {
-    return { ok: true, value: undefined };
-  }
-
-  const config = getVapidConfig();
-  const validation = validateVapidConfig(config);
-
-  if (!validation.isValid) {
-    return {
-      ok: false,
-      error: {
-        type: 'VAPID_ERROR',
-        message: validation.errors.join(', '),
-      },
-    };
-  }
-
-  webpush.setVapidDetails(
-    'mailto:support@hibioru.app',
-    config.publicKey!,
-    config.privateKey!
-  );
-
-  vapidConfigured = true;
-  return { ok: true, value: undefined };
+  activeDays: number[]
 }
 
 /**
- * 単一デバイスへ通知を送信する
- *
- * @param subscription - 購読情報
- * @param payload - 通知ペイロード
- * @returns 送信結果
+ * Result型（notification固有）
  */
-export async function sendNotification(
-  subscription: PushSubscription,
-  payload: NotificationPayload
-): Promise<Result<SendResult, DispatchError>> {
-  // VAPID設定の確認
-  const vapidResult = ensureVapidConfigured();
-  if (!vapidResult.ok) {
-    return vapidResult;
-  }
-
-  // web-push用の購読オブジェクトを構築
-  const pushSubscription = {
-    endpoint: subscription.endpoint,
-    keys: {
-      p256dh: subscription.p256dhKey,
-      auth: subscription.authKey,
-    },
-  };
-
-  try {
-    const response = await webpush.sendNotification(
-      pushSubscription,
-      JSON.stringify(payload)
-    );
-
-    return {
-      ok: true,
-      value: {
-        subscriptionId: subscription.id,
-        success: true,
-        statusCode: response.statusCode,
-      },
-    };
-  } catch (error: unknown) {
-    // エラーオブジェクトの型を確認
-    const webPushError = error as { statusCode?: number; body?: string; message?: string };
-    const statusCode = webPushError.statusCode;
-
-    // 410 Gone: 購読が無効（削除が必要）
-    if (statusCode === 410) {
-      return {
-        ok: true,
-        value: {
-          subscriptionId: subscription.id,
-          success: false,
-          statusCode: 410,
-          error: 'Subscription has expired or is no longer valid',
-          shouldRemove: true,
-        },
-      };
-    }
-
-    // その他のエラー
-    const errorMessage =
-      webPushError.message ||
-      webPushError.body ||
-      'Unknown error';
-
-    return {
-      ok: true,
-      value: {
-        subscriptionId: subscription.id,
-        success: false,
-        statusCode,
-        error: errorMessage,
-      },
-    };
-  }
-}
-
-/**
- * ユーザーの全登録デバイスへ通知を送信する
- *
- * @param userId - ユーザーID
- * @param payload - 通知ペイロード
- * @returns 全デバイスへの送信結果
- */
-export async function sendToAllDevices(
-  userId: string,
-  payload: NotificationPayload
-): Promise<Result<SendResult[], DispatchError>> {
-  // 購読情報を取得
-  const subscriptionsResult = await getSubscriptions(userId);
-  if (!subscriptionsResult.ok) {
-    return {
-      ok: false,
-      error: {
-        type: 'VAPID_ERROR',
-        message: 'Failed to get subscriptions',
-      },
-    };
-  }
-
-  const subscriptions = subscriptionsResult.value;
-
-  // 購読情報がない場合
-  if (subscriptions.length === 0) {
-    return {
-      ok: false,
-      error: { type: 'NO_SUBSCRIPTIONS' },
-    };
-  }
-
-  // 全デバイスへ送信
-  const results: SendResult[] = [];
-  const removePromises: Promise<unknown>[] = [];
-
-  for (const subscription of subscriptions) {
-    const sendResult = await sendNotification(subscription, payload);
-
-    if (sendResult.ok) {
-      results.push(sendResult.value);
-
-      // 無効な購読は削除
-      if (sendResult.value.shouldRemove) {
-        removePromises.push(
-          removeInvalidSubscription(subscription.id, '410 Gone')
-        );
-      }
-    } else {
-      // VAPID設定エラーなどの場合
-      results.push({
-        subscriptionId: subscription.id,
-        success: false,
-        error: 'VAPID configuration error',
-      });
-    }
-  }
-
-  // 無効な購読の削除を待機
-  if (removePromises.length > 0) {
-    await Promise.all(removePromises);
-  }
-
-  // 全て失敗した場合
-  const hasSuccess = results.some((r) => r.success);
-  if (!hasSuccess) {
-    return {
-      ok: false,
-      error: {
-        type: 'ALL_FAILED',
-        results,
-      },
-    };
-  }
-
-  return { ok: true, value: results };
-}
+type Result<T, E> = { ok: true; value: T } | { ok: false; error: E }
 
 /**
  * タイムゾーンを考慮して現在の曜日を取得する
@@ -286,16 +61,13 @@ export async function sendToAllDevices(
  * @param currentTime - 現在時刻（UTC）
  * @returns 曜日（0:日曜〜6:土曜）
  */
-export function getCurrentDayOfWeek(
-  timezone: string,
-  currentTime: Date
-): number {
+export function getCurrentDayOfWeek(timezone: string, currentTime: Date): number {
   // タイムゾーンを考慮した日付文字列を取得
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     weekday: 'short',
-  });
-  const weekdayStr = formatter.format(currentTime);
+  })
+  const weekdayStr = formatter.format(currentTime)
 
   // 曜日を数値に変換
   const weekdayMap: Record<string, number> = {
@@ -306,9 +78,9 @@ export function getCurrentDayOfWeek(
     Thu: 4,
     Fri: 5,
     Sat: 6,
-  };
+  }
 
-  return weekdayMap[weekdayStr] ?? 0;
+  return weekdayMap[weekdayStr] ?? 0
 }
 
 /**
@@ -328,31 +100,31 @@ export function isTimeToSendNotification(
     hour: '2-digit',
     minute: '2-digit',
     hour12: false,
-  });
-  const parts = formatter.formatToParts(currentTime);
+  })
+  const parts = formatter.formatToParts(currentTime)
 
-  const hourPart = parts.find((p) => p.type === 'hour');
-  const minutePart = parts.find((p) => p.type === 'minute');
+  const hourPart = parts.find((p) => p.type === 'hour')
+  const minutePart = parts.find((p) => p.type === 'minute')
 
   if (!hourPart || !minutePart) {
-    return false;
+    return false
   }
 
   // 現在時刻（HH:mm形式）
-  const currentTimeStr = `${hourPart.value.padStart(2, '0')}:${minutePart.value.padStart(2, '0')}`;
+  const currentTimeStr = `${hourPart.value.padStart(2, '0')}:${minutePart.value.padStart(2, '0')}`
 
   // 時刻が一致しない場合
   if (currentTimeStr !== settings.primaryTime) {
-    return false;
+    return false
   }
 
   // 曜日チェック
-  const dayOfWeek = getCurrentDayOfWeek(settings.timezone, currentTime);
+  const dayOfWeek = getCurrentDayOfWeek(settings.timezone, currentTime)
   if (!settings.activeDays.includes(dayOfWeek)) {
-    return false;
+    return false
   }
 
-  return true;
+  return true
 }
 
 /**
@@ -372,37 +144,37 @@ function getDayBoundaries(
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
-  });
-  const dateStr = formatter.format(currentTime);
+  })
+  const dateStr = formatter.format(currentTime)
 
   // その日の開始時刻（タイムゾーンの00:00）をUTCに変換
-  const startOfDayLocal = new Date(`${dateStr}T00:00:00`);
-  const endOfDayLocal = new Date(`${dateStr}T23:59:59.999`);
+  const startOfDayLocal = new Date(`${dateStr}T00:00:00`)
+  const endOfDayLocal = new Date(`${dateStr}T23:59:59.999`)
 
   // Intlを使ってオフセットを計算
   const offsetFormatter = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     timeZoneName: 'shortOffset',
-  });
-  const offsetParts = offsetFormatter.formatToParts(currentTime);
-  const offsetPart = offsetParts.find((p) => p.type === 'timeZoneName');
-  const offsetStr = offsetPart?.value || '+00:00';
+  })
+  const offsetParts = offsetFormatter.formatToParts(currentTime)
+  const offsetPart = offsetParts.find((p) => p.type === 'timeZoneName')
+  const offsetStr = offsetPart?.value || '+00:00'
 
   // オフセットをパース（例: "GMT+9" -> 9時間）
-  const offsetMatch = offsetStr.match(/GMT([+-])(\d+)(?::(\d+))?/);
-  let offsetMinutes = 0;
+  const offsetMatch = offsetStr.match(/GMT([+-])(\d+)(?::(\d+))?/)
+  let offsetMinutes = 0
   if (offsetMatch) {
-    const sign = offsetMatch[1] === '+' ? -1 : 1;
-    const hours = parseInt(offsetMatch[2], 10);
-    const minutes = parseInt(offsetMatch[3] || '0', 10);
-    offsetMinutes = sign * (hours * 60 + minutes);
+    const sign = offsetMatch[1] === '+' ? -1 : 1
+    const hours = parseInt(offsetMatch[2], 10)
+    const minutes = parseInt(offsetMatch[3] || '0', 10)
+    offsetMinutes = sign * (hours * 60 + minutes)
   }
 
   // UTCに変換
-  const startOfDay = new Date(startOfDayLocal.getTime() + offsetMinutes * 60 * 1000);
-  const endOfDay = new Date(endOfDayLocal.getTime() + offsetMinutes * 60 * 1000);
+  const startOfDay = new Date(startOfDayLocal.getTime() + offsetMinutes * 60 * 1000)
+  const endOfDay = new Date(endOfDayLocal.getTime() + offsetMinutes * 60 * 1000)
 
-  return { startOfDay, endOfDay };
+  return { startOfDay, endOfDay }
 }
 
 /**
@@ -419,10 +191,10 @@ export async function shouldSkipNotification(
   timezone: string
 ): Promise<Result<boolean, { type: 'DATABASE_ERROR'; message: string }>> {
   try {
-    const supabase = await createClient();
+    const supabase = await createClient()
 
     // タイムゾーンを考慮した当日の範囲を計算
-    const { startOfDay, endOfDay } = getDayBoundaries(timezone, currentTime);
+    const { startOfDay, endOfDay } = getDayBoundaries(timezone, currentTime)
 
     // 当日のエントリーが存在するかチェック
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -433,18 +205,18 @@ export async function shouldSkipNotification(
       .eq('is_deleted', false)
       .gte('created_at', startOfDay.toISOString())
       .lt('created_at', endOfDay.toISOString())
-      .limit(1);
+      .limit(1)
 
     if (error) {
       return {
         ok: false,
         error: { type: 'DATABASE_ERROR', message: error.message },
-      };
+      }
     }
 
     // エントリーが存在すればスキップ
-    const hasEntry = data && data.length > 0;
-    return { ok: true, value: hasEntry };
+    const hasEntry = data && data.length > 0
+    return { ok: true, value: hasEntry }
   } catch (error) {
     return {
       ok: false,
@@ -452,7 +224,7 @@ export async function shouldSkipNotification(
         type: 'DATABASE_ERROR',
         message: error instanceof Error ? error.message : '不明なエラー',
       },
-    };
+    }
   }
 }
 
@@ -468,22 +240,22 @@ export async function shouldSkipNotification(
  */
 export async function dispatchMainNotification(
   userId: string,
-  payload: NotificationPayload,
+  payload: { title: string; body: string; icon?: string; badge?: string; data?: { url: string; type: NotificationType | 'main' | 'follow_up_1' | 'follow_up_2' | 'celebration' | 'follow'; notificationId: string; timestamp?: number } },
   _timezone: string
-): Promise<Result<SendResult[], DispatchError | { type: 'DATABASE_ERROR'; message: string }>> {
+): Promise<Result<import('@/lib/push/types').SendResult[], import('@/lib/push/types').DispatchError | { type: 'DATABASE_ERROR'; message: string }>> {
+  const { sendToAllDevices } = await import('@/lib/push/sender')
+
   // 通知を送信（投稿の有無に関わらず送信）
-  const sendResult = await sendToAllDevices(userId, payload);
+  const sendResult = await sendToAllDevices(userId, payload)
 
   // ログを記録
-  const logResult = sendResult.ok ? 'success' : 'failed';
+  const logResult = sendResult.ok ? 'success' : 'failed'
   await logNotification({
     userId,
     type: 'main_reminder',
     result: logResult,
-    errorMessage: sendResult.ok
-      ? undefined
-      : sendResult.error.type,
-  });
+    errorMessage: sendResult.ok ? undefined : sendResult.error.type,
+  })
 
-  return sendResult;
+  return sendResult
 }

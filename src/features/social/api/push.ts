@@ -3,7 +3,7 @@
 import 'server-only'
 
 import { createAdminClient } from '@/lib/supabase/admin'
-import { sendToAllDevices } from '@/features/notification/api/sender'
+import { sendToAllDevices } from '@/lib/push/sender'
 import type { AchievementType } from '../types'
 import { getAchievementMessage } from '../constants'
 
