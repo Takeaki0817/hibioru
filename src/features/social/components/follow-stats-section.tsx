@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Users, UserPlus } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
+import { queryKeys } from '@/lib/constants/query-keys'
 import { getFollowCounts } from '../api/follows'
 import { FollowListContent } from './follow-list-content'
-import type { FollowCounts } from '../types'
 
 // スプリングアニメーション設定
 const springTransition = {
@@ -18,24 +18,20 @@ const springTransition = {
 /**
  * フォロー統計（コンパクト版）
  * フォロー数・フォロワー数を横並びで表示
+ * TanStack Query でキャッシュ管理し、楽観的更新に対応
  */
 export function FollowStatsSection() {
-  const [counts, setCounts] = useState<FollowCounts | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    async function loadCounts() {
-      setIsLoading(true)
+  const { data: counts, isLoading } = useQuery({
+    queryKey: queryKeys.social.myFollowCounts(),
+    queryFn: async () => {
       const result = await getFollowCounts()
-      setIsLoading(false)
-
-      if (result.ok) {
-        setCounts(result.value)
+      if (!result.ok) {
+        throw new Error(result.error?.message ?? 'フォロー数の取得に失敗しました')
       }
-    }
-
-    loadCounts()
-  }, [])
+      return result.value
+    },
+    staleTime: 5 * 60 * 1000, // 5分
+  })
 
   if (isLoading) {
     return <StatsSkeleton />

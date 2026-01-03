@@ -33,6 +33,8 @@ export const queryKeys = {
       [...queryKeys.social.all, 'followStatus', userId] as const,
     followCounts: (userId: string) =>
       [...queryKeys.social.all, 'followCounts', userId] as const,
+    myFollowCounts: () =>
+      [...queryKeys.social.all, 'myFollowCounts'] as const,
     userSearch: (query: string) =>
       [...queryKeys.social.all, 'userSearch', query] as const,
     profile: (username: string) =>
