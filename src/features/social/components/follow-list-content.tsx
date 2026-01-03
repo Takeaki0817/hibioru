@@ -3,8 +3,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Users, UserPlus } from 'lucide-react'
 import {
-  Sheet,
-  SheetContent,
   SheetHeader,
   SheetTitle,
   SheetDescription,
@@ -16,69 +14,51 @@ import { getFollowingList, getFollowerList } from '../api/follows'
 import { FollowButton } from './follow-button'
 import type { PublicUserInfo } from '../types'
 
-interface FollowListSheetProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  initialTab?: 'following' | 'followers'
+interface FollowListContentProps {
+  defaultTab: 'following' | 'followers'
   followingCount: number
   followerCount: number
 }
 
 /**
- * フォロー/フォロワーリストSheet
+ * フォロー/フォロワーリストのコンテンツ
+ * SheetContent 内で使用
  */
-export function FollowListSheet({
-  open,
-  onOpenChange,
-  initialTab = 'following',
+export function FollowListContent({
+  defaultTab,
   followingCount,
   followerCount,
-}: FollowListSheetProps) {
-  const [activeTab, setActiveTab] = useState<'following' | 'followers'>(initialTab)
-
-  // タブが変更されたらinitialTabを更新
-  useEffect(() => {
-    if (open) {
-      setActiveTab(initialTab)
-    }
-  }, [open, initialTab])
-
+}: FollowListContentProps) {
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[80vh] rounded-t-2xl">
-        <SheetHeader className="pb-4">
-          <SheetTitle>フォロー</SheetTitle>
-          <SheetDescription className="sr-only">
-            フォロー中のユーザーとフォロワーを確認できます
-          </SheetDescription>
-        </SheetHeader>
+    <div className="max-w-2xl mx-auto w-full">
+      <SheetHeader className="pb-4">
+        <SheetTitle>フォロー</SheetTitle>
+        <SheetDescription className="sr-only">
+          フォロー中のユーザーとフォロワーを確認できます
+        </SheetDescription>
+      </SheetHeader>
 
-        <Tabs
-          value={activeTab}
-          onValueChange={(v) => setActiveTab(v as 'following' | 'followers')}
-          className="h-full"
-        >
-          <TabsList className="w-full">
-            <TabsTrigger value="following" className="flex-1">
-              <Users className="size-4 mr-1" />
-              フォロー中 ({followingCount})
-            </TabsTrigger>
-            <TabsTrigger value="followers" className="flex-1">
-              <UserPlus className="size-4 mr-1" />
-              フォロワー ({followerCount})
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue={defaultTab} className="h-full">
+        <TabsList className="w-full">
+          <TabsTrigger value="following" className="flex-1">
+            <Users className="size-4 mr-1" />
+            フォロー中 ({followingCount})
+          </TabsTrigger>
+          <TabsTrigger value="followers" className="flex-1">
+            <UserPlus className="size-4 mr-1" />
+            フォロワー ({followerCount})
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="following" className="mt-4 h-[calc(100%-80px)] overflow-y-auto">
-            <FollowingList />
-          </TabsContent>
+        <TabsContent value="following" className="mt-4 h-[calc(100%-80px)] overflow-y-auto">
+          <FollowingList />
+        </TabsContent>
 
-          <TabsContent value="followers" className="mt-4 h-[calc(100%-80px)] overflow-y-auto">
-            <FollowerList />
-          </TabsContent>
-        </Tabs>
-      </SheetContent>
-    </Sheet>
+        <TabsContent value="followers" className="mt-4 h-[calc(100%-80px)] overflow-y-auto">
+          <FollowerList />
+        </TabsContent>
+      </Tabs>
+    </div>
   )
 }
 
@@ -134,7 +114,7 @@ function FollowingList() {
   return (
     <div className="space-y-2">
       {users.map((user) => (
-        <UserListItem key={user.id} user={user} showFollowButton={false} />
+        <UserListItem key={user.id} user={user} showFollowButton={true} />
       ))}
 
       {hasMore && (
