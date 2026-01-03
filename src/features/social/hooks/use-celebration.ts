@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback, useTransition } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useCallback } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { celebrateAchievement, uncelebrateAchievement } from '../api/achievements'
 import { queryKeys } from '@/lib/constants/query-keys'
 import type { SocialFeedResult } from '../types'
@@ -28,12 +28,11 @@ export interface UseCelebrationReturn {
 }
 
 /**
- * お祝い操作の楽観的更新を提供
+ * お祝い操作の楽観的更新を提供（useMutationベース）
  *
  * 責務:
- * - 楽観的更新によるUI即時反映
+ * - useMutationによる楽観的更新とロールバック
  * - API呼び出しとエラーハンドリング
- * - ロールバック処理
  * - フィードキャッシュの同期
  */
 export function useCelebration({
@@ -44,13 +43,30 @@ export function useCelebration({
   onError,
 }: UseCelebrationOptions): UseCelebrationReturn {
   const queryClient = useQueryClient()
-  const [isCelebrated, setIsCelebrated] = useState(initialIsCelebrated)
-  const [count, setCount] = useState(initialCount)
-  const [isPending, startTransition] = useTransition()
+
+  // フィードキャッシュから現在のお祝い状態を取得
+  const getCurrentState = useCallback((): { isCelebrated: boolean; count: number } => {
+    const queryKey = queryKeys.social.feed()
+    const data = queryClient.getQueryData<FeedQueryData>(queryKey)
+
+    if (!data) {
+      return { isCelebrated: initialIsCelebrated, count: initialCount }
+    }
+
+    for (const page of data.pages) {
+      for (const item of page.items) {
+        if (item.id === achievementId) {
+          return { isCelebrated: item.isCelebrated, count: item.celebrationCount }
+        }
+      }
+    }
+
+    return { isCelebrated: initialIsCelebrated, count: initialCount }
+  }, [queryClient, achievementId, initialIsCelebrated, initialCount])
 
   // フィードキャッシュを更新
   const updateFeedCache = useCallback(
-    (newIsCelebrated: boolean) => {
+    (newIsCelebrated: boolean, newCount: number) => {
       const queryKey = queryKeys.social.feed()
       queryClient.setQueryData<FeedQueryData>(queryKey, (oldData) => {
         if (!oldData) return oldData
@@ -63,7 +79,7 @@ export function useCelebration({
                 ? {
                     ...item,
                     isCelebrated: newIsCelebrated,
-                    celebrationCount: item.celebrationCount + (newIsCelebrated ? 1 : -1),
+                    celebrationCount: newCount,
                   }
                 : item
             ),
@@ -74,54 +90,59 @@ export function useCelebration({
     [queryClient, achievementId]
   )
 
-  const toggle = useCallback(() => {
-    const previousState = isCelebrated
-    const previousCount = count
-    const newState = !isCelebrated
-    const newCount = newState ? count + 1 : Math.max(0, count - 1)
+  const mutation = useMutation({
+    mutationFn: async (newState: boolean) => {
+      const result = newState
+        ? await celebrateAchievement(achievementId)
+        : await uncelebrateAchievement(achievementId)
 
-    // 楽観的更新: ローカルstate
-    setIsCelebrated(newState)
-    setCount(newCount)
-
-    // 楽観的更新: フィードキャッシュ
-    updateFeedCache(newState)
-
-    startTransition(async () => {
-      try {
-        const result = newState
-          ? await celebrateAchievement(achievementId)
-          : await uncelebrateAchievement(achievementId)
-
-        if (!result.ok) {
-          // ロールバック: ローカルstate
-          setIsCelebrated(previousState)
-          setCount(previousCount)
-
-          // ロールバック: フィードキャッシュ
-          updateFeedCache(previousState)
-
-          onError?.(new Error(result.error.message))
-          return
-        }
-
-        // 成功時: コールバック呼び出し（refetchQueriesは不要、既に楽観的更新済み）
-        onSuccess?.(newState)
-      } catch (error) {
-        // 予期せぬエラー時のロールバック
-        setIsCelebrated(previousState)
-        setCount(previousCount)
-        updateFeedCache(previousState)
-
-        onError?.(error instanceof Error ? error : new Error('お祝いの処理に失敗しました'))
+      if (!result.ok) {
+        throw new Error(result.error.message)
       }
-    })
-  }, [achievementId, isCelebrated, count, updateFeedCache, onSuccess, onError])
+
+      return newState
+    },
+    onMutate: async (newState: boolean) => {
+      // 進行中のクエリをキャンセル
+      await queryClient.cancelQueries({ queryKey: queryKeys.social.feed() })
+
+      // 楽観的更新のための前の状態を保存
+      const previousState = getCurrentState()
+
+      // 楽観的更新
+      const newCount = newState
+        ? previousState.count + 1
+        : Math.max(0, previousState.count - 1)
+      updateFeedCache(newState, newCount)
+
+      // ロールバック用のコンテキストを返す
+      return { previousState }
+    },
+    onError: (error, _newState, context) => {
+      // エラー時はロールバック
+      if (context?.previousState) {
+        updateFeedCache(context.previousState.isCelebrated, context.previousState.count)
+      }
+      onError?.(error instanceof Error ? error : new Error('お祝いの処理に失敗しました'))
+    },
+    onSuccess: (newState) => {
+      onSuccess?.(newState)
+    },
+    // 再試行は行わない（楽観的更新が即座にロールバックされるため）
+    retry: false,
+  })
+
+  const currentState = getCurrentState()
+
+  const toggle = useCallback(() => {
+    const newState = !currentState.isCelebrated
+    mutation.mutate(newState)
+  }, [mutation, currentState.isCelebrated])
 
   return {
-    isCelebrated,
-    count,
-    isPending,
+    isCelebrated: currentState.isCelebrated,
+    count: currentState.count,
+    isPending: mutation.isPending,
     toggle,
   }
 }

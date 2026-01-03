@@ -46,5 +46,7 @@ export const queryKeys = {
       [...queryKeys.social.all, 'profile', username] as const,
     userAchievements: (userId: string, cursor?: string) =>
       [...queryKeys.social.all, 'userAchievements', userId, cursor] as const,
+    followingIds: () =>
+      [...queryKeys.social.all, 'followingIds'] as const,
   },
 } as const

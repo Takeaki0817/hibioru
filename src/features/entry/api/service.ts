@@ -2,6 +2,7 @@
 
 import 'server-only'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { EntryInsert, EntryUpdate } from '@/lib/types/database'
 import type { Entry, CreateEntryInput, UpdateEntryInput, EntryError, Result } from '../types'
@@ -85,6 +86,10 @@ export async function createEntry(
         }
       })
     })
+
+    // タイムラインとソーシャルページのSSRキャッシュを無効化
+    revalidatePath('/timeline')
+    revalidatePath('/social')
 
     return { ok: true, value: entry }
   } catch (error) {
@@ -175,6 +180,10 @@ export async function updateEntry(
       })
     }
 
+    // タイムラインとソーシャルページのSSRキャッシュを無効化
+    revalidatePath('/timeline')
+    revalidatePath('/social')
+
     return { ok: true, value: entry }
   } catch (error) {
     return {
@@ -222,6 +231,10 @@ export async function deleteEntry(id: string): Promise<Result<void, EntryError>>
         console.error('達成削除失敗:', err instanceof Error ? err.message : err)
       })
     }
+
+    // タイムラインとソーシャルページのSSRキャッシュを無効化
+    revalidatePath('/timeline')
+    revalidatePath('/social')
 
     return { ok: true, value: undefined }
   } catch (error) {

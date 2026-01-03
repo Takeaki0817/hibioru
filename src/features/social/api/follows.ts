@@ -2,6 +2,7 @@
 
 import 'server-only'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { FollowCounts, PublicUserInfo, SocialResult, PaginatedResult } from '../types'
@@ -74,6 +75,9 @@ export async function followUser(targetUserId: string): Promise<SocialResult<voi
       })
     }
 
+    // ソーシャルページのSSRキャッシュを無効化
+    revalidatePath('/social')
+
     return { ok: true, value: undefined }
   } catch (error) {
     return {
@@ -121,6 +125,9 @@ export async function unfollowUser(targetUserId: string): Promise<SocialResult<v
         error: { code: 'NOT_FOLLOWING', message: 'フォローしていません' },
       }
     }
+
+    // ソーシャルページのSSRキャッシュを無効化
+    revalidatePath('/social')
 
     return { ok: true, value: undefined }
   } catch (error) {
