@@ -1,17 +1,17 @@
 'use client'
 
-import { useEffect, useState, useTransition, useCallback } from 'react'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, PartyPopper, Loader2 } from 'lucide-react'
 import { UserSearch } from './user-search'
 import { FollowStatsSection } from './follow-stats-section'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { getSocialFeed } from '../api/timeline'
-import { celebrateAchievement, uncelebrateAchievement } from '../api/achievements'
+import { useSocialFeed } from '../hooks/use-social-feed'
+import { useSocialRealtime } from '../hooks/use-social-realtime'
+import { useFollowingIds } from '../hooks/use-following-ids'
+import { useCelebration } from '../hooks/use-celebration'
 import type { SocialFeedItem } from '../types'
 import { ACHIEVEMENT_ICONS, getAchievementMessage } from '../constants'
-import { queryKeys } from '@/lib/constants/query-keys'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -22,18 +22,17 @@ const springTransition = {
   damping: 25,
 }
 
-const containerVariants = {
-  animate: {
-    transition: { staggerChildren: 0.05 },
-  },
-}
-
 const feedItemVariants = {
   initial: { opacity: 0, y: 10 },
   animate: {
     opacity: 1,
     y: 0,
     transition: springTransition,
+  },
+  exit: {
+    opacity: 0,
+    y: -10,
+    transition: { duration: 0.2 },
   },
 }
 
@@ -43,16 +42,16 @@ const PARTICLE_COLORS = [
   'bg-celebrate-300',
   'bg-celebrate-400',
   'bg-celebrate-500',
-  'bg-accent-400', // 赤の差し色
+  'bg-accent-400',
 ]
 const generateParticles = () =>
   Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
     id: i,
     angle: (360 / PARTICLE_COUNT) * i + Math.random() * 30 - 15,
-    distance: 40 + Math.random() * 10, // 40-50px のランダム距離
+    distance: 40 + Math.random() * 10,
     color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
-    size: Math.random() > 0.5 ? 'size-2.5' : 'size-2', // ランダムサイズ
-    delay: Math.random() * 0.1, // 少しずらして発射
+    size: Math.random() > 0.5 ? 'size-2.5' : 'size-2',
+    delay: Math.random() * 0.1,
   }))
 
 const particleVariants = {
@@ -77,91 +76,74 @@ const particleVariants = {
  * Supabase Realtimeでフォロー中ユーザーの達成をリアルタイム受信
  */
 export function SocialFeedTab() {
-  const queryClient = useQueryClient()
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>()
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: [...queryKeys.social.all, 'feed'],
-    queryFn: async ({ pageParam }) => {
-      const result = await getSocialFeed(pageParam)
-      if (!result.ok) {
-        throw new Error('Failed to fetch social feed')
-      }
-      return result.value
-    },
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    initialPageParam: undefined as string | undefined,
-  })
-
-  // Supabase Realtimeでachievementsテーブルの変更をサブスクライブ
+  // 現在のユーザーIDを取得
   useEffect(() => {
     const supabase = createClient()
-    let channel: ReturnType<typeof supabase.channel> | null = null
-
-    const setupRealtime = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) return
-
-      // achievementsテーブルの新規追加を監視
-      // フォロー中ユーザーのフィルタリングはサーバー側で行うため、全INSERTを監視
-      channel = supabase
-        .channel('achievements_realtime')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'achievements',
-          },
-          () => {
-            // 新しい達成が来たらrefetch
-            refetch()
-          }
-        )
-        .subscribe()
-    }
-
-    setupRealtime()
-
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
-    }
-  }, [refetch])
-
-  // ページをフラット化してフィードアイテムを取得
-  const feedItems = data?.pages.flatMap((page) => page.items) ?? []
-
-  const handleCelebrationToggle = (itemId: string, isCelebrated: boolean) => {
-    // 楽観的更新：キャッシュを直接更新
-    queryClient.setQueryData([...queryKeys.social.all, 'feed'], (oldData: typeof data) => {
-      if (!oldData) return oldData
-      return {
-        ...oldData,
-        pages: oldData.pages.map((page) => ({
-          ...page,
-          items: page.items.map((item) =>
-            item.id === itemId
-              ? {
-                  ...item,
-                  isCelebrated,
-                  celebrationCount: item.celebrationCount + (isCelebrated ? 1 : -1),
-                }
-              : item
-          ),
-        })),
-      }
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id)
     })
-  }
+  }, [])
+
+  // フォロー中ユーザーIDリストを取得（Realtime用）
+  const { followingIds } = useFollowingIds()
+
+  // フィード取得
+  const {
+    feedItems,
+    isLoading,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    removeFeedItem,
+    invalidateFeed,
+  } = useSocialFeed()
+
+  // 削除予定のアイテムID（exitアニメーション用）
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set())
+
+  // Realtime購読: 他ユーザーの達成を検知
+  const handleAchievementChange = useCallback(
+    (event: { eventType: string; old: unknown; new: unknown }) => {
+      if (event.eventType === 'DELETE') {
+        const oldRecord = event.old as { id?: string } | null
+        if (oldRecord?.id) {
+          const idToDelete = oldRecord.id
+          // 削除予定としてマーク → exitアニメーションがトリガーされる
+          setDeletingIds((prev) => new Set(prev).add(idToDelete))
+          // exitアニメーション完了後（0.3秒）にキャッシュから削除
+          setTimeout(() => {
+            removeFeedItem(idToDelete)
+            setDeletingIds((prev) => {
+              const next = new Set(prev)
+              next.delete(idToDelete)
+              return next
+            })
+          }, 300)
+        } else {
+          invalidateFeed()
+        }
+      } else {
+        // INSERT/UPDATE: フィードを再取得
+        invalidateFeed()
+      }
+    },
+    [removeFeedItem, invalidateFeed]
+  )
+
+  // 削除予定のアイテムを除外した表示用リスト
+  const visibleFeedItems = useMemo(
+    () => feedItems.filter((item) => !deletingIds.has(item.id)),
+    [feedItems, deletingIds]
+  )
+
+  useSocialRealtime({
+    isFeedActive: true,
+    currentUserId,
+    followingUserIds: followingIds,
+    onAchievementChange: handleAchievementChange,
+  })
 
   return (
     <div className="space-y-6">
@@ -184,26 +166,19 @@ export function SocialFeedTab() {
 
         {isLoading && feedItems.length === 0 ? (
           <FeedSkeleton />
-        ) : feedItems.length === 0 ? (
+        ) : visibleFeedItems.length === 0 ? (
           <EmptyFeedState />
         ) : (
-          <motion.div
-            className="space-y-4"
-            variants={containerVariants}
-            initial="initial"
-            animate="animate"
-          >
-            {feedItems.map((item) => (
-              <FeedItem
-                key={item.id}
-                item={item}
-                onCelebrationToggle={handleCelebrationToggle}
-              />
-            ))}
+          <div className="space-y-4">
+            <AnimatePresence mode="popLayout">
+              {visibleFeedItems.map((item) => (
+                <FeedItem key={item.id} item={item} />
+              ))}
+            </AnimatePresence>
 
             {hasNextPage && (
               <motion.button
-                onClick={() => fetchNextPage()}
+                onClick={fetchNextPage}
                 disabled={isFetchingNextPage}
                 className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-primary-50 dark:hover:bg-primary-950"
                 whileTap={{ scale: 0.98 }}
@@ -211,7 +186,7 @@ export function SocialFeedTab() {
                 {isFetchingNextPage ? '読み込み中...' : 'もっと見る'}
               </motion.button>
             )}
-          </motion.div>
+          </div>
         )}
       </div>
     </div>
@@ -220,65 +195,47 @@ export function SocialFeedTab() {
 
 interface FeedItemProps {
   item: SocialFeedItem
-  onCelebrationToggle: (itemId: string, isCelebrated: boolean) => void
 }
 
-function FeedItem({ item, onCelebrationToggle }: FeedItemProps) {
-  const queryClient = useQueryClient()
+function FeedItem({ item }: FeedItemProps) {
   const timeAgo = getTimeAgo(item.createdAt)
-  const [isCelebrated, setIsCelebrated] = useState(item.isCelebrated)
-  const [isPending, startTransition] = useTransition()
   const [showParticles, setShowParticles] = useState(false)
   const [particles, setParticles] = useState<
     { id: number; angle: number; distance: number; color: string; size: string; delay: number }[]
   >([])
 
-  const handleClick = useCallback(() => {
-    startTransition(async () => {
-      if (isCelebrated) {
-        const result = await uncelebrateAchievement(item.id)
-        if (result.ok) {
-          setIsCelebrated(false)
-          onCelebrationToggle(item.id, false)
-          await Promise.all([
-            queryClient.refetchQueries({ queryKey: [...queryKeys.social.all, 'feed'] }),
-            queryClient.refetchQueries({ queryKey: [...queryKeys.social.all, 'notifications'] }),
-          ])
-        }
-      } else {
-        const result = await celebrateAchievement(item.id)
-        if (result.ok) {
-          setIsCelebrated(true)
-          onCelebrationToggle(item.id, true)
-          // パーティクルエフェクト
-          setParticles(generateParticles())
-          setShowParticles(true)
-          setTimeout(() => setShowParticles(false), 600)
-          await Promise.all([
-            queryClient.refetchQueries({ queryKey: [...queryKeys.social.all, 'feed'] }),
-            queryClient.refetchQueries({ queryKey: [...queryKeys.social.all, 'notifications'] }),
-          ])
-        }
-      }
-    })
-  }, [item.id, isCelebrated, onCelebrationToggle, queryClient])
+  // 成功時のコールバック（パーティクルエフェクト）
+  const handleSuccess = useCallback((newState: boolean) => {
+    if (newState) {
+      setParticles(generateParticles())
+      setShowParticles(true)
+      setTimeout(() => setShowParticles(false), 600)
+    }
+  }, [])
+
+  const { isCelebrated, isPending, toggle } = useCelebration({
+    achievementId: item.id,
+    initialIsCelebrated: item.isCelebrated,
+    initialCount: item.celebrationCount,
+    onSuccess: handleSuccess,
+  })
 
   return (
     <motion.button
       type="button"
-      onClick={handleClick}
+      onClick={toggle}
       disabled={isPending}
       variants={feedItemVariants}
+      initial="initial"
+      animate="animate"
+      exit="exit"
       whileTap={{ scale: 0.98 }}
-      transition={springTransition}
       className={cn(
         'relative w-full text-left rounded-xl transition-all',
         'disabled:pointer-events-none disabled:opacity-70',
         isCelebrated
-          ? // お祝い済み: 落ち着いたゴールド背景
-            'border border-celebrate-200 bg-celebrate-50/50 dark:border-celebrate-300/30 dark:bg-celebrate-100/20'
-          : // 未お祝い: 点線ボーダーで押下可能感を強調
-            'border-2 border-dashed border-muted-foreground/30 bg-card hover:border-celebrate-300 hover:bg-celebrate-50/30 dark:hover:bg-celebrate-100/10 hover:shadow-md cursor-pointer'
+          ? 'border border-celebrate-200 bg-celebrate-50/50 dark:border-celebrate-300/30 dark:bg-celebrate-100/20'
+          : 'border-2 border-dashed border-muted-foreground/30 bg-card hover:border-celebrate-300 hover:bg-celebrate-50/30 dark:hover:bg-celebrate-100/10 hover:shadow-md cursor-pointer'
       )}
     >
       {/* 内側div: ボーダー太さの差をpaddingで吸収 */}
@@ -357,7 +314,11 @@ function FeedItem({ item, onCelebrationToggle }: FeedItemProps) {
                 {particles.map((particle) => (
                   <motion.div
                     key={particle.id}
-                    custom={{ angle: particle.angle, distance: particle.distance, delay: particle.delay }}
+                    custom={{
+                      angle: particle.angle,
+                      distance: particle.distance,
+                      delay: particle.delay,
+                    }}
                     variants={particleVariants}
                     initial="initial"
                     animate="animate"
@@ -371,7 +332,6 @@ function FeedItem({ item, onCelebrationToggle }: FeedItemProps) {
           </AnimatePresence>
         </div>
       </div>
-
     </motion.button>
   )
 }
