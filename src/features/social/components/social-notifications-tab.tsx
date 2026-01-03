@@ -78,7 +78,7 @@ export function SocialNotificationsTab() {
         <EmptyNotificationsState />
       ) : (
         <motion.div
-          className="space-y-2"
+          className="space-y-4"
           variants={containerVariants}
           initial="initial"
           animate="animate"
@@ -117,54 +117,60 @@ function NotificationItem({ notification }: NotificationItemProps) {
       animate="animate"
       className="p-4 rounded-xl border transition-all bg-card border-border"
     >
-      <div className="flex items-start gap-3">
-        {/* アイコン */}
-        <div className="flex-shrink-0 mt-0.5">
-          {notification.type === 'celebration' ? (
-            <div className="size-8 rounded-full bg-accent-50 dark:bg-accent-900/30 flex items-center justify-center">
-              <PartyPopper className="size-4 text-accent-500" />
-            </div>
-          ) : (
-            <div className="size-8 rounded-full bg-primary-100 dark:bg-primary-900/30 flex items-center justify-center">
-              <UserPlus className="size-4 text-primary-500" />
-            </div>
-          )}
-        </div>
-
-        {/* コンテンツ */}
+      <div className="flex items-start gap-4">
+        {/* 左側: ヘッダー + コンテンツ */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <Avatar className="size-6 ring-1 ring-primary-100 dark:ring-primary-900">
+          {/* ヘッダー: アバター + 名前・時間 */}
+          <div className="flex items-center gap-3 mb-2">
+            <Avatar className="size-10 shrink-0 ring-2 ring-primary-100 dark:ring-primary-900">
               <AvatarImage
                 src={notification.fromUser.avatarUrl ?? undefined}
                 alt={notification.fromUser.displayName}
               />
-              <AvatarFallback className="text-xs bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400">
+              <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400">
                 {notification.fromUser.displayName?.charAt(0) ??
                   notification.fromUser.username.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <span className="font-medium truncate">{notification.fromUser.displayName}</span>
+            <div className="min-w-0">
+              <p className="font-medium truncate">{notification.fromUser.displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                @{notification.fromUser.username} · {timeAgo}
+              </p>
+            </div>
           </div>
 
-          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1 flex-wrap">
+          {/* コンテンツ: 通知メッセージ */}
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-primary-50/50 dark:bg-primary-950/30">
             {notification.type === 'celebration' && notification.achievement ? (
               <>
-                <span>
-                  あなたの「{ACHIEVEMENT_TYPE_LABELS[notification.achievement.type]}
-                  {notification.achievement.threshold}」達成をお祝いしました
-                </span>
                 {(() => {
                   const { icon: Icon, color } = ACHIEVEMENT_ICONS[notification.achievement.type]
-                  return <Icon className={`size-4 inline-block ${color}`} />
+                  return <Icon className={`size-5 shrink-0 ${color}`} />
                 })()}
+                <span className="text-sm text-primary-600 dark:text-primary-400">
+                  「{ACHIEVEMENT_TYPE_LABELS[notification.achievement.type]}
+                  {notification.achievement.threshold}」達成をお祝いしました
+                </span>
               </>
             ) : (
-              'あなたをフォローしました'
+              <>
+                <UserPlus className="size-5 shrink-0 text-primary-500" />
+                <span className="text-sm text-primary-600 dark:text-primary-400">
+                  あなたをフォローしました
+                </span>
+              </>
             )}
-          </p>
+          </div>
+        </div>
 
-          <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
+        {/* 右側: 通知タイプアイコン */}
+        <div className="shrink-0 flex items-center justify-center size-12 rounded-xl">
+          {notification.type === 'celebration' ? (
+            <PartyPopper className="size-6 text-celebrate-400" />
+          ) : (
+            <UserPlus className="size-6 text-primary-400" />
+          )}
         </div>
       </div>
     </motion.div>
@@ -193,20 +199,17 @@ function EmptyNotificationsState() {
 // スケルトンローディング
 function NotificationsSkeleton() {
   return (
-    <div className="space-y-2">
-      {[...Array(4)].map((_, i) => (
+    <div className="space-y-4">
+      {[...Array(3)].map((_, i) => (
         <div key={i} className="p-4 rounded-xl border border-border bg-card">
-          <div className="flex items-start gap-3">
-            <div className="size-8 rounded-full bg-muted animate-pulse" />
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="size-6 rounded-full bg-muted animate-pulse" />
-                <div className="h-4 w-20 bg-muted rounded animate-pulse" />
-              </div>
-              <div className="h-3 w-48 bg-muted rounded animate-pulse" />
-              <div className="h-3 w-16 bg-muted rounded animate-pulse" />
+          <div className="flex items-center gap-3 mb-3">
+            <div className="size-10 rounded-full bg-muted animate-pulse" />
+            <div className="space-y-2 flex-1">
+              <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+              <div className="h-3 w-32 bg-muted rounded animate-pulse" />
             </div>
           </div>
+          <div className="h-10 bg-muted rounded-lg animate-pulse" />
         </div>
       ))}
     </div>
