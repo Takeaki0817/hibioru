@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
 import { Users, UserPlus } from 'lucide-react'
 import {
   SheetHeader,
@@ -12,7 +13,24 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
 import { getFollowingList, getFollowerList } from '../api/follows'
 import { FollowButton } from './follow-button'
+import { ANIMATION_CONFIG, ERROR_MESSAGES } from '../constants'
 import type { PublicUserInfo } from '../types'
+import { AlertCircle, RefreshCw } from 'lucide-react'
+
+const containerVariants = {
+  animate: {
+    transition: { staggerChildren: 0.03 },
+  },
+}
+
+const itemVariants = {
+  initial: { opacity: 0, x: -10 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: ANIMATION_CONFIG.springDefault,
+  },
+}
 
 interface FollowListContentProps {
   defaultTab: 'following' | 'followers'
@@ -40,12 +58,12 @@ export function FollowListContent({
 
       <Tabs defaultValue={defaultTab} className="h-full">
         <TabsList className="w-full">
-          <TabsTrigger value="following" className="flex-1">
-            <Users className="size-4 mr-1" />
+          <TabsTrigger value="following" className="flex-1 gap-1.5">
+            <Users className="size-4" />
             フォロー中 ({followingCount})
           </TabsTrigger>
-          <TabsTrigger value="followers" className="flex-1">
-            <UserPlus className="size-4 mr-1" />
+          <TabsTrigger value="followers" className="flex-1 gap-1.5">
+            <UserPlus className="size-4" />
             フォロワー ({followerCount})
           </TabsTrigger>
         </TabsList>
@@ -70,9 +88,11 @@ function FollowingList() {
   const [isLoading, setIsLoading] = useState(true)
   const [hasMore, setHasMore] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const loadUsers = useCallback(async (cursor?: string) => {
     setIsLoading(true)
+    setError(null)
     const result = await getFollowingList(cursor)
     setIsLoading(false)
 
@@ -84,6 +104,8 @@ function FollowingList() {
       }
       setNextCursor(result.value.nextCursor)
       setHasMore(!!result.value.nextCursor)
+    } else {
+      setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
     }
   }, [])
 
@@ -92,27 +114,35 @@ function FollowingList() {
   }, [loadUsers])
 
   if (isLoading && users.length === 0) {
+    return <ListSkeleton />
+  }
+
+  if (error && users.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        読み込み中...
-      </div>
+      <ErrorState
+        message={error}
+        onRetry={() => loadUsers()}
+      />
     )
   }
 
   if (users.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <Users className="size-12 mx-auto mb-4 opacity-50" />
-        <p className="text-lg font-medium mb-2">まだ誰もフォローしていません</p>
-        <p className="text-sm">
-          ユーザーを検索してフォローしてみましょう
-        </p>
-      </div>
+      <EmptyListState
+        icon={Users}
+        title="まだ誰もフォローしていません"
+        description="ユーザーを検索してフォローしてみましょう"
+      />
     )
   }
 
   return (
-    <div className="space-y-2">
+    <motion.div
+      className="space-y-2"
+      variants={containerVariants}
+      initial="initial"
+      animate="animate"
+    >
       {users.map((user) => (
         <UserListItem key={user.id} user={user} showFollowButton={true} />
       ))}
@@ -127,7 +157,7 @@ function FollowingList() {
           {isLoading ? '読み込み中...' : 'もっと見る'}
         </Button>
       )}
-    </div>
+    </motion.div>
   )
 }
 
@@ -139,9 +169,11 @@ function FollowerList() {
   const [isLoading, setIsLoading] = useState(true)
   const [hasMore, setHasMore] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   const loadUsers = useCallback(async (cursor?: string) => {
     setIsLoading(true)
+    setError(null)
     const result = await getFollowerList(cursor)
     setIsLoading(false)
 
@@ -153,6 +185,8 @@ function FollowerList() {
       }
       setNextCursor(result.value.nextCursor)
       setHasMore(!!result.value.nextCursor)
+    } else {
+      setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
     }
   }, [])
 
@@ -161,27 +195,35 @@ function FollowerList() {
   }, [loadUsers])
 
   if (isLoading && users.length === 0) {
+    return <ListSkeleton />
+  }
+
+  if (error && users.length === 0) {
     return (
-      <div className="text-center py-8 text-muted-foreground">
-        読み込み中...
-      </div>
+      <ErrorState
+        message={error}
+        onRetry={() => loadUsers()}
+      />
     )
   }
 
   if (users.length === 0) {
     return (
-      <div className="text-center py-12 text-muted-foreground">
-        <UserPlus className="size-12 mx-auto mb-4 opacity-50" />
-        <p className="text-lg font-medium mb-2">まだフォロワーはいません</p>
-        <p className="text-sm">
-          記録を続けてフォロワーを増やしましょう
-        </p>
-      </div>
+      <EmptyListState
+        icon={UserPlus}
+        title="まだフォロワーはいません"
+        description="記録を続けてフォロワーを増やしましょう"
+      />
     )
   }
 
   return (
-    <div className="space-y-2">
+    <motion.div
+      className="space-y-2"
+      variants={containerVariants}
+      initial="initial"
+      animate="animate"
+    >
       {users.map((user) => (
         <UserListItem key={user.id} user={user} showFollowButton={true} />
       ))}
@@ -196,7 +238,7 @@ function FollowerList() {
           {isLoading ? '読み込み中...' : 'もっと見る'}
         </Button>
       )}
-    </div>
+    </motion.div>
   )
 }
 
@@ -210,10 +252,13 @@ interface UserListItemProps {
  */
 function UserListItem({ user, showFollowButton }: UserListItemProps) {
   return (
-    <div className="flex items-center gap-3 p-3 rounded-lg border bg-card">
-      <Avatar className="size-10">
+    <motion.div
+      variants={itemVariants}
+      className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card shadow-sm transition-colors hover:bg-primary-50/50 dark:hover:bg-primary-950/50"
+    >
+      <Avatar className="size-10 ring-2 ring-primary-100 dark:ring-primary-900">
         <AvatarImage src={user.avatarUrl ?? undefined} alt={user.displayName} />
-        <AvatarFallback>
+        <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400">
           {user.displayName?.charAt(0) ?? user.username.charAt(0)}
         </AvatarFallback>
       </Avatar>
@@ -224,6 +269,78 @@ function UserListItem({ user, showFollowButton }: UserListItemProps) {
       </div>
 
       {showFollowButton && <FollowButton userId={user.id} />}
+    </motion.div>
+  )
+}
+
+// スケルトンローディング
+function ListSkeleton() {
+  return (
+    <div className="space-y-2">
+      {[...Array(5)].map((_, i) => (
+        <div key={i} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card">
+          <div className="size-10 rounded-full bg-muted animate-pulse" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+            <div className="h-3 w-16 bg-muted rounded animate-pulse" />
+          </div>
+          <div className="h-8 w-24 bg-muted rounded-md animate-pulse" />
+        </div>
+      ))}
     </div>
+  )
+}
+
+// 空状態
+interface EmptyListStateProps {
+  icon: typeof Users
+  title: string
+  description: string
+}
+
+function EmptyListState({ icon: Icon, title, description }: EmptyListStateProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="text-center py-12"
+    >
+      <div className="size-16 mx-auto mb-4 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+        <Icon className="size-8 text-primary-400" />
+      </div>
+      <h3 className="font-medium text-lg mb-2">{title}</h3>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </motion.div>
+  )
+}
+
+// エラー状態
+interface ErrorStateProps {
+  message: string
+  onRetry: () => void
+}
+
+function ErrorState({ message, onRetry }: ErrorStateProps) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="text-center py-12"
+    >
+      <div className="size-16 mx-auto mb-4 rounded-full bg-destructive/10 flex items-center justify-center">
+        <AlertCircle className="size-8 text-destructive" />
+      </div>
+      <h3 className="font-medium text-lg mb-2">{ERROR_MESSAGES.LOAD_FAILED}</h3>
+      <p className="text-sm text-muted-foreground mb-4">{message}</p>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onRetry}
+        className="gap-2"
+      >
+        <RefreshCw className="size-4" />
+        {ERROR_MESSAGES.RETRY}
+      </Button>
+    </motion.div>
   )
 }

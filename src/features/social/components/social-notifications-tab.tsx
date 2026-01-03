@@ -1,15 +1,30 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
-import { Bell, PartyPopper, UserPlus } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { useState, useEffect, useCallback } from 'react'
+import { motion } from 'framer-motion'
+import { Bell, UserPlus } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { getSocialNotifications, markAllAsRead } from '../api/notifications'
+import { useSocialNotifications } from '../hooks/use-social-notifications'
+import { useSocialRealtime } from '../hooks/use-social-realtime'
 import type { SocialNotificationItem } from '../types'
-import { ACHIEVEMENT_ICONS, ACHIEVEMENT_TYPE_LABELS } from '../constants'
-import { queryKeys } from '@/lib/constants/query-keys'
+import { ACHIEVEMENT_ICONS, ACHIEVEMENT_TYPE_LABELS, ANIMATION_CONFIG } from '../constants'
 import { createClient } from '@/lib/supabase/client'
+import { getTimeAgo } from '@/lib/date-utils'
+
+const containerVariants = {
+  animate: {
+    transition: { staggerChildren: 0.03 },
+  },
+}
+
+const notificationVariants = {
+  initial: { opacity: 0, x: -10 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: ANIMATION_CONFIG.springDefault,
+  },
+}
 
 /**
  * ソーシャル通知タブ
@@ -17,135 +32,66 @@ import { createClient } from '@/lib/supabase/client'
  * Supabase Realtimeで新着通知をリアルタイム受信
  */
 export function SocialNotificationsTab() {
-  const queryClient = useQueryClient()
-  const [unreadCount, setUnreadCount] = useState(0)
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>()
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: [...queryKeys.social.all, 'notifications'],
-    queryFn: async ({ pageParam }) => {
-      const result = await getSocialNotifications(pageParam)
-      if (!result.ok) {
-        throw new Error('Failed to fetch notifications')
-      }
-      // 初回ロード時のみunreadCountを設定
-      if (!pageParam) {
-        setUnreadCount(result.value.unreadCount)
-      }
-      return result.value
-    },
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    initialPageParam: undefined as string | undefined,
-  })
-
-  // Supabase Realtimeで新着通知をサブスクライブ
+  // 現在のユーザーIDを取得
   useEffect(() => {
     const supabase = createClient()
-    let channel: ReturnType<typeof supabase.channel> | null = null
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id)
+    })
+  }, [])
 
-    // 現在のユーザーIDを取得してサブスクライブ
-    const setupRealtime = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+  // 通知取得
+  const {
+    notifications,
+    isLoading,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    invalidateNotifications,
+  } = useSocialNotifications()
 
-      channel = supabase
-        .channel('social_notifications_realtime')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'social_notifications',
-            filter: `user_id=eq.${user.id}`,
-          },
-          () => {
-            // 新しい通知が来たらrefetch
-            refetch()
-          }
-        )
-        .subscribe()
-    }
+  // Realtime購読: 新着通知を検知
+  const handleNotificationInsert = useCallback(() => {
+    invalidateNotifications()
+  }, [invalidateNotifications])
 
-    setupRealtime()
-
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
-    }
-  }, [refetch])
-
-  // ページをフラット化して通知リストを取得
-  const notifications = data?.pages.flatMap((page) => page.items) ?? []
-
-  const handleMarkAllAsRead = async () => {
-    const result = await markAllAsRead()
-    if (result.ok) {
-      // キャッシュを更新
-      queryClient.setQueryData(
-        [...queryKeys.social.all, 'notifications'],
-        (oldData: typeof data) => {
-          if (!oldData) return oldData
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              items: page.items.map((n) => ({ ...n, isRead: true })),
-            })),
-          }
-        }
-      )
-      setUnreadCount(0)
-    }
-  }
+  useSocialRealtime({
+    isNotificationsActive: true,
+    currentUserId,
+    onNotificationInsert: handleNotificationInsert,
+  })
 
   return (
     <div className="space-y-4">
-      {/* ヘッダー */}
-      {unreadCount > 0 && (
-        <div className="flex justify-end">
-          <Button variant="ghost" size="sm" onClick={handleMarkAllAsRead}>
-            すべて既読にする
-          </Button>
-        </div>
-      )}
-
       {/* 通知リスト */}
       {isLoading && notifications.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          読み込み中...
-        </div>
+        <NotificationsSkeleton />
       ) : notifications.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <Bell className="size-12 mx-auto mb-4 opacity-50" />
-          <p className="text-lg font-medium mb-2">通知はありません</p>
-          <p className="text-sm">
-            フォロワーからのお祝いや<br />
-            新しいフォロワーの通知がここに表示されます
-          </p>
-        </div>
+        <EmptyNotificationsState />
       ) : (
-        <div className="space-y-2">
+        <motion.div
+          className="space-y-4"
+          variants={containerVariants}
+          initial="initial"
+          animate="animate"
+        >
           {notifications.map((notification) => (
             <NotificationItem key={notification.id} notification={notification} />
           ))}
 
           {hasNextPage && (
-            <button
-              onClick={() => fetchNextPage()}
+            <motion.button
+              onClick={fetchNextPage}
               disabled={isFetchingNextPage}
-              className="w-full py-2 text-sm text-muted-foreground hover:text-foreground"
+              className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-primary-50 dark:hover:bg-primary-950"
+              whileTap={{ scale: 0.98 }}
             >
               {isFetchingNextPage ? '読み込み中...' : 'もっと見る'}
-            </button>
+            </motion.button>
           )}
-        </div>
+        </motion.div>
       )}
     </div>
   )
@@ -159,75 +105,99 @@ function NotificationItem({ notification }: NotificationItemProps) {
   const timeAgo = getTimeAgo(notification.createdAt)
 
   return (
-    <div
-      className={`p-4 rounded-lg border ${
-        notification.isRead ? 'bg-card' : 'bg-accent/50'
-      }`}
+    <motion.div
+      variants={notificationVariants}
+      initial="initial"
+      animate="animate"
+      className="p-4 rounded-xl border transition-all bg-card border-border"
     >
-      <div className="flex items-start gap-3">
-        {/* アイコン */}
-        <div className="flex-shrink-0 mt-0.5">
-          {notification.type === 'celebration' ? (
-            <div className="size-8 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-              <PartyPopper className="size-4 text-amber-600" />
-            </div>
-          ) : (
-            <div className="size-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-              <UserPlus className="size-4 text-blue-600" />
-            </div>
-          )}
-        </div>
-
-        {/* コンテンツ */}
+      <div className="flex items-start gap-4">
+        {/* 左側: ヘッダー + コンテンツ */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <Avatar className="size-6">
+          {/* ヘッダー: アバター + 名前・時間 */}
+          <div className="flex items-center gap-3 mb-2">
+            <Avatar className="size-10 shrink-0 ring-2 ring-primary-100 dark:ring-primary-900">
               <AvatarImage
                 src={notification.fromUser.avatarUrl ?? undefined}
                 alt={notification.fromUser.displayName}
               />
-              <AvatarFallback className="text-xs">
+              <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400">
                 {notification.fromUser.displayName?.charAt(0) ??
                   notification.fromUser.username.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <span className="font-medium truncate">
-              {notification.fromUser.displayName}
-            </span>
+            <div className="min-w-0">
+              <p className="font-medium truncate">{notification.fromUser.displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">
+                @{notification.fromUser.username} · {timeAgo}
+              </p>
+            </div>
           </div>
 
-          <p className="text-sm text-muted-foreground mt-1">
+          {/* コンテンツ: 通知メッセージ */}
+          <div className="flex items-center gap-2 p-2 rounded-lg bg-primary-50/50 dark:bg-primary-950/30">
             {notification.type === 'celebration' && notification.achievement ? (
               <>
-                あなたの「
-                {ACHIEVEMENT_TYPE_LABELS[notification.achievement.type]}
-                {notification.achievement.threshold}
-                」達成をお祝いしました {ACHIEVEMENT_ICONS[notification.achievement.type]}
+                {(() => {
+                  const { icon: Icon, color } = ACHIEVEMENT_ICONS[notification.achievement.type]
+                  return <Icon className={`size-5 shrink-0 ${color}`} />
+                })()}
+                <span className="text-sm text-primary-600 dark:text-primary-400">
+                  「{ACHIEVEMENT_TYPE_LABELS[notification.achievement.type]}
+                  {notification.achievement.threshold}」達成をお祝いしました
+                </span>
               </>
             ) : (
-              'あなたをフォローしました'
+              <>
+                <UserPlus className="size-5 shrink-0 text-primary-500" />
+                <span className="text-sm text-primary-600 dark:text-primary-400">
+                  あなたをフォローしました
+                </span>
+              </>
             )}
-          </p>
-
-          <p className="text-xs text-muted-foreground mt-1">{timeAgo}</p>
+          </div>
         </div>
+
       </div>
-    </div>
+    </motion.div>
   )
 }
 
-// 相対時間の表示
-function getTimeAgo(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMinutes = Math.floor(diffMs / (1000 * 60))
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+// 空状態
+function EmptyNotificationsState() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="text-center py-12"
+    >
+      <div className="size-16 mx-auto mb-4 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
+        <Bell className="size-8 text-primary-400" />
+      </div>
+      <h3 className="font-medium text-lg mb-2">通知はありません</h3>
+      <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+        フォロワーからのお祝いや新しいフォロワーの通知がここに表示されます
+      </p>
+    </motion.div>
+  )
+}
 
-  if (diffMinutes < 1) return 'たった今'
-  if (diffMinutes < 60) return `${diffMinutes}分前`
-  if (diffHours < 24) return `${diffHours}時間前`
-  if (diffDays < 7) return `${diffDays}日前`
-  return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })
+// スケルトンローディング
+function NotificationsSkeleton() {
+  return (
+    <div className="space-y-4">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="p-4 rounded-xl border border-border bg-card">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="size-10 rounded-full bg-muted animate-pulse" />
+            <div className="space-y-2 flex-1">
+              <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+              <div className="h-3 w-32 bg-muted rounded animate-pulse" />
+            </div>
+          </div>
+          <div className="h-10 bg-muted rounded-lg animate-pulse" />
+        </div>
+      ))}
+    </div>
+  )
 }

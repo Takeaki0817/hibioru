@@ -209,7 +209,7 @@ src/features/{feature}/
 └── types.ts                 # 型定義
 ```
 
-**機能一覧**: auth, entry, hotsure, mypage, notification, streak, timeline
+**機能一覧**: auth, entry, hotsure, notification, social, streak, timeline
 
 ### PWA/Service Worker
 
@@ -252,7 +252,7 @@ Kiro-style Spec Driven Development を採用。
 | timeline | タイムライン/カレンダー |
 | entry-input | 入力/編集機能 |
 | streak | ストリーク（継続記録） |
-| mypage | マイページ |
+| social | ソーシャル（プロフィール、フォロー、通知） |
 | notification | プッシュ通知 |
 
 進捗確認: `/kiro:spec-status [feature-name]`

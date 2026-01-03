@@ -69,7 +69,8 @@ export async function getSocialFeed(cursor?: string): Promise<SocialResult<Socia
         entry:entries!achievements_entry_id_fkey(
           id,
           content,
-          image_urls
+          image_urls,
+          is_deleted
         ),
         celebrations(
           id,
@@ -96,6 +97,10 @@ export async function getSocialFeed(cursor?: string): Promise<SocialResult<Socia
     // フォロー前の達成は各ユーザーにつき最新1件のみ表示
     const preFollowShownUsers = new Set<string>()
     const filteredAchievements = achievements.filter((achievement) => {
+      // 削除されたエントリに紐づく達成は除外
+      const entry = achievement.entry as { is_deleted?: boolean } | null
+      if (entry?.is_deleted) return false
+
       const followedAt = followedAtMap.get(achievement.user_id)
       if (!followedAt) return false
 

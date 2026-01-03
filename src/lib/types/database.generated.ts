@@ -42,6 +42,7 @@ export type Database = {
           is_shared: boolean
           threshold: number
           type: string
+          updated_at: string
           user_id: string
           value: number
         }
@@ -52,6 +53,7 @@ export type Database = {
           is_shared?: boolean
           threshold: number
           type: string
+          updated_at?: string
           user_id: string
           value: number
         }
@@ -62,6 +64,7 @@ export type Database = {
           is_shared?: boolean
           threshold?: number
           type?: string
+          updated_at?: string
           user_id?: string
           value?: number
         }

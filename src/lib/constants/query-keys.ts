@@ -23,21 +23,30 @@ export const queryKeys = {
   // social関連
   social: {
     all: ['social'] as const,
+    // cursorなしの場合はundefinedを含めない（TanStack Queryの前方一致に対応）
     feed: (cursor?: string) =>
-      [...queryKeys.social.all, 'feed', cursor] as const,
+      cursor
+        ? ([...queryKeys.social.all, 'feed', cursor] as const)
+        : ([...queryKeys.social.all, 'feed'] as const),
     notifications: (cursor?: string) =>
-      [...queryKeys.social.all, 'notifications', cursor] as const,
+      cursor
+        ? ([...queryKeys.social.all, 'notifications', cursor] as const)
+        : ([...queryKeys.social.all, 'notifications'] as const),
     unreadCount: () =>
       [...queryKeys.social.all, 'unreadCount'] as const,
     followStatus: (userId: string) =>
       [...queryKeys.social.all, 'followStatus', userId] as const,
     followCounts: (userId: string) =>
       [...queryKeys.social.all, 'followCounts', userId] as const,
+    myFollowCounts: () =>
+      [...queryKeys.social.all, 'myFollowCounts'] as const,
     userSearch: (query: string) =>
       [...queryKeys.social.all, 'userSearch', query] as const,
     profile: (username: string) =>
       [...queryKeys.social.all, 'profile', username] as const,
     userAchievements: (userId: string, cursor?: string) =>
       [...queryKeys.social.all, 'userAchievements', userId, cursor] as const,
+    followingIds: () =>
+      [...queryKeys.social.all, 'followingIds'] as const,
   },
 } as const

@@ -92,7 +92,6 @@ export interface SocialNotificationItem {
     type: AchievementType
     threshold: number
   }
-  isRead: boolean
   createdAt: string
 }
 
@@ -132,9 +131,7 @@ export interface PaginatedResult<T> {
 export type SocialFeedResult = PaginatedResult<SocialFeedItem>
 
 // ソーシャル通知結果
-export interface SocialNotificationsResult extends PaginatedResult<SocialNotificationItem> {
-  unreadCount: number
-}
+export type SocialNotificationsResult = PaginatedResult<SocialNotificationItem>
 
 // ユーザー検索結果
 export type UserSearchResult = PaginatedResult<PublicUserInfo>

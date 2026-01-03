@@ -2,32 +2,31 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PageLayout } from '@/components/layouts/page-layout'
-import { MypageTabs } from '@/features/mypage/components/mypage-tabs'
+import { SocialTabs } from '@/features/social/components/social-tabs'
 import { SocialFeedTab } from '@/features/social/components/social-feed-tab'
 import { SocialNotificationsTab } from '@/features/social/components/social-notifications-tab'
 import { getStreakInfo, getWeeklyRecords } from '@/features/streak/api/service'
 import { getNotificationSettings } from '@/features/notification/api/service'
-import { getUnreadCount } from '@/features/social/api/notifications'
 import { DEFAULT_REMINDERS } from '@/features/notification/types'
 
 // プロフィールタブで使用するコンポーネント（app層での統合）
-import { ProfileSection } from '@/features/mypage/components/profile-section'
+import { ProfileSection } from '@/features/social/components/profile-section'
 import { ProfileEditForm } from '@/features/social/components/profile-edit-form'
 import { StreakDisplay } from '@/features/streak/components/streak-display'
 import { HotsureDisplay } from '@/features/hotsure/components/hotsure-display'
 import { NotificationSettings } from '@/features/notification/components/notification-settings'
-import { AppearanceSection } from '@/features/mypage/components/appearance-section'
-import { ExportSection } from '@/features/mypage/components/export-section'
-import { FeedbackSection } from '@/features/mypage/components/feedback-section'
-import { LogoutButton } from '@/features/mypage/components/logout-button'
-import { DeleteAccountSection } from '@/features/mypage/components/delete-account-section'
+import { AppearanceSection } from '@/features/social/components/appearance-section'
+import { ExportSection } from '@/features/social/components/export-section'
+import { FeedbackSection } from '@/features/social/components/feedback-section'
+import { LogoutButton } from '@/features/social/components/logout-button'
+import { DeleteAccountSection } from '@/features/social/components/delete-account-section'
 
 export const metadata: Metadata = {
-  title: 'マイページ - ヒビオル',
+  title: 'ソーシャル - ヒビオル',
   description: 'ストリーク、ほつれ、通知設定の管理',
 }
 
-export default async function MypagePage() {
+export default async function SocialPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -36,12 +35,11 @@ export default async function MypagePage() {
     redirect('/login')
   }
 
-  // ストリーク・ほつれ・通知設定・未読数・プロフィールを並列取得（パフォーマンス最適化）
-  const [streakResult, weeklyResult, notificationResult, unreadResult, profileResult] = await Promise.all([
+  // ストリーク・ほつれ・通知設定・プロフィールを並列取得（パフォーマンス最適化）
+  const [streakResult, weeklyResult, notificationResult, profileResult] = await Promise.all([
     getStreakInfo(user.id),
     getWeeklyRecords(user.id),
     getNotificationSettings(user.id),
-    getUnreadCount(),
     supabase.from('users').select('username, display_name').eq('id', user.id).single(),
   ])
 
@@ -63,7 +61,6 @@ export default async function MypagePage() {
         follow_up_max_count: 2,
         social_notifications_enabled: true,
       }
-  const unreadCount = unreadResult.ok ? unreadResult.value : 0
   const profileData = profileResult.data
   const username = profileData?.username ?? null
   const displayName = profileData?.display_name ?? user.user_metadata?.full_name ?? null
@@ -119,13 +116,12 @@ export default async function MypagePage() {
     <PageLayout>
       <div className="container mx-auto p-4 max-w-2xl pb-6">
         <h1 className="sr-only">ヒビオル</h1>
-        <h2 className="text-2xl font-bold mb-6">マイページ</h2>
+        <h2 className="text-2xl font-bold mb-6">ソーシャル</h2>
 
-        <MypageTabs
+        <SocialTabs
           profileContent={profileTabContent}
           socialFeedContent={<SocialFeedTab />}
           notificationsContent={<SocialNotificationsTab />}
-          unreadCount={unreadCount}
         />
       </div>
     </PageLayout>

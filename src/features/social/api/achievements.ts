@@ -127,6 +127,53 @@ async function hasExistingAchievement(
 }
 
 /**
+ * 達成チェック・作成の共通ロジック
+ * @param isDailyCheck trueなら当日チェック、falseなら全期間チェック
+ */
+async function checkAndCreateAchievementForType(
+  adminClient: ReturnType<typeof createAdminClient>,
+  userId: string,
+  type: AchievementType,
+  currentValue: number,
+  thresholds: readonly number[],
+  entryId: string,
+  isDailyCheck: boolean
+): Promise<Achievement | null> {
+  for (const threshold of thresholds) {
+    if (currentValue === threshold) {
+      const exists = isDailyCheck
+        ? await hasExistingDailyAchievement(userId, type, threshold)
+        : await hasExistingAchievement(userId, type, threshold)
+
+      if (!exists) {
+        const { data, error } = await adminClient
+          .from('achievements')
+          .insert({
+            user_id: userId,
+            type,
+            threshold,
+            value: currentValue,
+            entry_id: entryId,
+            is_shared: false,
+          })
+          .select()
+          .single()
+
+        if (error) {
+          console.error(`${type}達成作成エラー:`, error.message)
+          return null
+        }
+
+        if (data) {
+          return mapToAchievement(data)
+        }
+      }
+    }
+  }
+  return null
+}
+
+/**
  * 達成をチェックして作成
  * エントリ作成時に呼び出す
  */
@@ -181,89 +228,163 @@ export async function checkAndCreateAchievements(
 
     // 2. 1日の投稿数チェック
     const todayCount = await getTodayEntryCount(userId)
-    for (const threshold of ACHIEVEMENT_THRESHOLDS.daily_posts) {
-      if (todayCount === threshold) {
-        const exists = await hasExistingDailyAchievement(userId, 'daily_posts', threshold)
-        if (!exists) {
-          const { data, error } = await adminClient
-            .from('achievements')
-            .insert({
-              user_id: userId,
-              type: 'daily_posts',
-              threshold,
-              value: todayCount,
-              entry_id: entryId,
-              is_shared: false,
-            })
-            .select()
-            .single()
-
-          if (error) {
-            console.error('1日投稿数達成作成エラー:', error.message)
-          } else if (data) {
-            newAchievements.push(mapToAchievement(data))
-          }
-        }
-      }
+    const dailyAchievement = await checkAndCreateAchievementForType(
+      adminClient,
+      userId,
+      'daily_posts',
+      todayCount,
+      ACHIEVEMENT_THRESHOLDS.daily_posts,
+      entryId,
+      true // 当日チェック
+    )
+    if (dailyAchievement) {
+      newAchievements.push(dailyAchievement)
     }
 
     // 3. 総投稿数チェック
     const totalCount = await getTotalEntryCount(userId)
-    for (const threshold of ACHIEVEMENT_THRESHOLDS.total_posts) {
-      if (totalCount === threshold) {
-        const exists = await hasExistingAchievement(userId, 'total_posts', threshold)
-        if (!exists) {
-          const { data, error } = await adminClient
-            .from('achievements')
-            .insert({
-              user_id: userId,
-              type: 'total_posts',
-              threshold,
-              value: totalCount,
-              entry_id: entryId,
-              is_shared: false,
-            })
-            .select()
-            .single()
-
-          if (error) {
-            console.error('総投稿数達成作成エラー:', error.message)
-          } else if (data) {
-            newAchievements.push(mapToAchievement(data))
-          }
-        }
-      }
+    const totalAchievement = await checkAndCreateAchievementForType(
+      adminClient,
+      userId,
+      'total_posts',
+      totalCount,
+      ACHIEVEMENT_THRESHOLDS.total_posts,
+      entryId,
+      false // 全期間チェック
+    )
+    if (totalAchievement) {
+      newAchievements.push(totalAchievement)
     }
 
     // 4. 継続日数チェック
     const currentStreak = await getCurrentStreak(userId)
-    for (const threshold of ACHIEVEMENT_THRESHOLDS.streak_days) {
-      if (currentStreak === threshold) {
-        const exists = await hasExistingAchievement(userId, 'streak_days', threshold)
-        if (!exists) {
-          const { data, error } = await adminClient
-            .from('achievements')
-            .insert({
-              user_id: userId,
-              type: 'streak_days',
-              threshold,
-              value: currentStreak,
-              entry_id: entryId,
-              is_shared: false,
-            })
-            .select()
-            .single()
-
-          if (error) {
-            console.error('継続日数達成作成エラー:', error.message)
-          } else if (data) {
-            newAchievements.push(mapToAchievement(data))
-          }
-        }
-      }
+    const streakAchievement = await checkAndCreateAchievementForType(
+      adminClient,
+      userId,
+      'streak_days',
+      currentStreak,
+      ACHIEVEMENT_THRESHOLDS.streak_days,
+      entryId,
+      false // 全期間チェック
+    )
+    if (streakAchievement) {
+      newAchievements.push(streakAchievement)
     }
 
     return { ok: true, value: newAchievements }
+  } catch (error) {
+    return {
+      ok: false,
+      error: {
+        code: 'DB_ERROR',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      },
+    }
+  }
+}
+
+/**
+ * 共有エントリの達成レコードを削除
+ * 共有→非共有に変更した時に呼び出す
+ */
+export async function deleteSharedEntryAchievement(
+  userId: string,
+  entryId: string
+): Promise<SocialResult<void>> {
+  try {
+    const supabase = await createClient()
+    const { data: userData } = await supabase.auth.getUser()
+
+    if (!userData.user) {
+      return {
+        ok: false,
+        error: { code: 'UNAUTHORIZED', message: '未認証です' },
+      }
+    }
+
+    if (userData.user.id !== userId) {
+      return {
+        ok: false,
+        error: { code: 'FORBIDDEN', message: '他のユーザーの達成を削除する権限がありません' },
+      }
+    }
+
+    const adminClient = createAdminClient()
+
+    // shared_entry タイプの達成レコードを削除
+    const { error } = await adminClient
+      .from('achievements')
+      .delete()
+      .eq('user_id', userId)
+      .eq('entry_id', entryId)
+      .eq('type', 'shared_entry')
+
+    if (error) {
+      console.error('共有達成削除エラー:', error.message)
+      return {
+        ok: false,
+        error: { code: 'DB_ERROR', message: error.message },
+      }
+    }
+
+    return { ok: true, value: undefined }
+  } catch (error) {
+    return {
+      ok: false,
+      error: {
+        code: 'DB_ERROR',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      },
+    }
+  }
+}
+
+/**
+ * 共有投稿の achievements レコードを touch（updated_at 更新）
+ * 投稿内容・画像編集時に Realtime UPDATE イベントを発火させるため
+ */
+export async function touchSharedEntryAchievement(
+  userId: string,
+  entryId: string
+): Promise<SocialResult<void>> {
+  try {
+    const supabase = await createClient()
+    const { data: userData } = await supabase.auth.getUser()
+
+    if (!userData.user) {
+      return {
+        ok: false,
+        error: { code: 'UNAUTHORIZED', message: '未認証です' },
+      }
+    }
+
+    if (userData.user.id !== userId) {
+      return {
+        ok: false,
+        error: { code: 'FORBIDDEN', message: '他のユーザーの達成を更新する権限がありません' },
+      }
+    }
+
+    const adminClient = createAdminClient()
+
+    // shared_entry タイプの達成レコードの updated_at を更新
+    // トリガーにより updated_at が自動で NOW() に設定される
+    const { error } = await adminClient
+      .from('achievements')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('entry_id', entryId)
+      .eq('type', 'shared_entry')
+
+    if (error) {
+      console.error('共有達成touch エラー:', error.message)
+      return {
+        ok: false,
+        error: { code: 'DB_ERROR', message: error.message },
+      }
+    }
+
+    return { ok: true, value: undefined }
   } catch (error) {
     return {
       ok: false,
