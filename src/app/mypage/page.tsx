@@ -1,18 +1,14 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
-import { ProfileSection } from '@/features/mypage/components/profile-section'
-import { StreakDisplay } from '@/features/streak/components/streak-display'
-import { HotsureDisplay } from '@/features/hotsure/components/hotsure-display'
-import { NotificationSettings } from '@/features/notification/components/notification-settings'
-import { AppearanceSection } from '@/features/mypage/components/appearance-section'
-import { ExportSection } from '@/features/mypage/components/export-section'
-import { FeedbackSection } from '@/features/mypage/components/feedback-section'
-import { LogoutButton } from '@/features/mypage/components/logout-button'
-import { DeleteAccountSection } from '@/features/mypage/components/delete-account-section'
 import { PageLayout } from '@/components/layouts/page-layout'
+import { MypageTabs } from '@/features/mypage/components/mypage-tabs'
+import { ProfileTabContent } from '@/features/mypage/components/profile-tab-content'
+import { SocialFeedTab } from '@/features/social/components/social-feed-tab'
+import { SocialNotificationsTab } from '@/features/social/components/social-notifications-tab'
 import { getStreakInfo, getWeeklyRecords } from '@/features/streak/api/service'
 import { getNotificationSettings } from '@/features/notification/api/service'
+import { getUnreadCount } from '@/features/social/api/notifications'
 import { DEFAULT_REMINDERS } from '@/features/notification/types'
 
 export const metadata: Metadata = {
@@ -29,12 +25,15 @@ export default async function MypagePage() {
     redirect('/login')
   }
 
-  // ストリーク・ほつれ・通知設定を並列取得（パフォーマンス最適化）
-  const [streakResult, weeklyResult, notificationResult] = await Promise.all([
+  // ストリーク・ほつれ・通知設定・未読数・プロフィールを並列取得（パフォーマンス最適化）
+  const [streakResult, weeklyResult, notificationResult, unreadResult, profileResult] = await Promise.all([
     getStreakInfo(user.id),
     getWeeklyRecords(user.id),
     getNotificationSettings(user.id),
+    getUnreadCount(),
+    supabase.from('users').select('username, display_name').eq('id', user.id).single(),
   ])
+
   const stats = {
     currentStreak: streakResult.ok ? streakResult.value.currentStreak : 0,
     longestStreak: streakResult.ok ? streakResult.value.longestStreak : 0,
@@ -52,6 +51,10 @@ export default async function MypagePage() {
         chase_reminder_delay_minutes: 60,
         follow_up_max_count: 2,
       }
+  const unreadCount = unreadResult.ok ? unreadResult.value : 0
+  const profileData = profileResult.data
+  const username = profileData?.username ?? null
+  const displayName = profileData?.display_name ?? user.user_metadata?.full_name ?? null
 
   return (
     <PageLayout>
@@ -59,51 +62,21 @@ export default async function MypagePage() {
         <h1 className="sr-only">ヒビオル</h1>
         <h2 className="text-2xl font-bold mb-6">マイページ</h2>
 
-        {/* プロフィールセクション */}
-        <ProfileSection user={user} />
-
-        {/* 統計情報セクション */}
-        <div className="mt-6 space-y-4">
-          <StreakDisplay
-            currentStreak={stats.currentStreak}
-            longestStreak={stats.longestStreak}
-            weeklyRecords={weeklyRecords}
-          />
-          <HotsureDisplay
-            remaining={stats.hotsureRemaining}
-            max={stats.hotsureMax}
-          />
-        </div>
-
-        {/* 通知設定セクション */}
-        <div className="mt-6">
-          <NotificationSettings initialSettings={notificationSettings} />
-        </div>
-
-        {/* 外観設定セクション */}
-        <div className="mt-6">
-          <AppearanceSection />
-        </div>
-
-        {/* データエクスポートセクション */}
-        <div className="mt-6">
-          <ExportSection />
-        </div>
-
-        {/* フィードバックセクション */}
-        <div className="mt-6">
-          <FeedbackSection />
-        </div>
-
-        {/* ログアウトボタン */}
-        <div className="mt-8">
-          <LogoutButton />
-        </div>
-
-        {/* アカウント削除セクション */}
-        <div className="mt-4">
-          <DeleteAccountSection />
-        </div>
+        <MypageTabs
+          profileContent={
+            <ProfileTabContent
+              user={user}
+              stats={stats}
+              weeklyRecords={weeklyRecords}
+              notificationSettings={notificationSettings}
+              username={username}
+              displayName={displayName}
+            />
+          }
+          socialFeedContent={<SocialFeedTab />}
+          notificationsContent={<SocialNotificationsTab />}
+          unreadCount={unreadCount}
+        />
       </div>
     </PageLayout>
   )
