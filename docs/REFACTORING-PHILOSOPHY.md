@@ -228,25 +228,85 @@ if (error && users.length === 0) {
 - 配列: 複数形（entries, users）
 - オブジェクト: 単数形（entry, user）
 
-## 8. 将来の改善計画
+## 8. 実施済み大規模改善（Phase 7-9）
 
-### Phase 7-9（大規模改善）
+### 8.1 Next.js エコシステム最適化（Phase 7）
 
-以下は別タスクとして実施予定：
+#### React `cache()` によるSupabaseクエリのメモ化
 
-1. **Next.js エコシステム最適化**
-   - React `cache()` によるSupabaseクエリのメモ化
-   - Suspense境界の追加
-   - revalidatePath によるキャッシュ無効化
+```typescript
+// src/lib/supabase/cached-queries.ts
+import { cache } from 'react'
 
-2. **データフェッチベストプラクティス**
-   - HydrationBoundary によるServer→Client データ引き継ぎ
-   - 次ページ自動プリフェッチ
+export const getUser = cache(async () => {
+  const supabase = await createClient()
+  return supabase.auth.getUser()
+})
+```
 
-3. **状態管理ベストプラクティス**
-   - useMutation への移行（楽観的更新の標準化）
-   - useQuery / useInfiniteQuery への移行
-   - social-store の導入
+#### Server Actionsでのキャッシュ無効化
+
+```typescript
+// 更新後にrevalidatePathで関連ページのSSRキャッシュを無効化
+revalidatePath('/timeline')
+revalidatePath('/social')
+```
+
+### 8.2 データフェッチベストプラクティス（Phase 8）
+
+#### 次ページ自動プリフェッチ
+
+```typescript
+// use-timeline.ts
+useEffect(() => {
+  if (hasNextPage && nextCursor) {
+    queryClient.prefetchInfiniteQuery({
+      queryKey: queryKeys.entries.timeline(userId, nextCursor),
+      queryFn: ({ pageParam }) => fetchEntries({ ... }),
+    })
+  }
+}, [hasNextPage, nextCursor, userId])
+```
+
+### 8.3 状態管理ベストプラクティス（Phase 9）
+
+#### useMutation への移行
+
+```typescript
+// Before: useState + useTransition
+const [isPending, startTransition] = useTransition()
+startTransition(async () => { ... })
+
+// After: useMutation
+const mutation = useMutation({
+  mutationFn: async (newState) => { ... },
+  onMutate: async (newState) => {
+    // 楽観的更新
+    const previousState = getCurrentState()
+    updateCache(newState)
+    return { previousState }
+  },
+  onError: (err, newState, context) => {
+    // ロールバック
+    updateCache(context?.previousState)
+  },
+})
+```
+
+#### useQuery への移行
+
+```typescript
+// Before: useState + useEffect
+const [data, setData] = useState([])
+useEffect(() => { fetchData() }, [])
+
+// After: useQuery
+const { data } = useQuery({
+  queryKey: queryKeys.social.followingIds(),
+  queryFn: fetchFollowingIds,
+  staleTime: 5 * 60 * 1000,
+})
+```
 
 ## 参考資料
 
