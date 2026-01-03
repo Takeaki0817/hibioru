@@ -127,6 +127,53 @@ async function hasExistingAchievement(
 }
 
 /**
+ * 達成チェック・作成の共通ロジック
+ * @param isDailyCheck trueなら当日チェック、falseなら全期間チェック
+ */
+async function checkAndCreateAchievementForType(
+  adminClient: ReturnType<typeof createAdminClient>,
+  userId: string,
+  type: AchievementType,
+  currentValue: number,
+  thresholds: readonly number[],
+  entryId: string,
+  isDailyCheck: boolean
+): Promise<Achievement | null> {
+  for (const threshold of thresholds) {
+    if (currentValue === threshold) {
+      const exists = isDailyCheck
+        ? await hasExistingDailyAchievement(userId, type, threshold)
+        : await hasExistingAchievement(userId, type, threshold)
+
+      if (!exists) {
+        const { data, error } = await adminClient
+          .from('achievements')
+          .insert({
+            user_id: userId,
+            type,
+            threshold,
+            value: currentValue,
+            entry_id: entryId,
+            is_shared: false,
+          })
+          .select()
+          .single()
+
+        if (error) {
+          console.error(`${type}達成作成エラー:`, error.message)
+          return null
+        }
+
+        if (data) {
+          return mapToAchievement(data)
+        }
+      }
+    }
+  }
+  return null
+}
+
+/**
  * 達成をチェックして作成
  * エントリ作成時に呼び出す
  */
@@ -181,86 +228,47 @@ export async function checkAndCreateAchievements(
 
     // 2. 1日の投稿数チェック
     const todayCount = await getTodayEntryCount(userId)
-    for (const threshold of ACHIEVEMENT_THRESHOLDS.daily_posts) {
-      if (todayCount === threshold) {
-        const exists = await hasExistingDailyAchievement(userId, 'daily_posts', threshold)
-        if (!exists) {
-          const { data, error } = await adminClient
-            .from('achievements')
-            .insert({
-              user_id: userId,
-              type: 'daily_posts',
-              threshold,
-              value: todayCount,
-              entry_id: entryId,
-              is_shared: false,
-            })
-            .select()
-            .single()
-
-          if (error) {
-            console.error('1日投稿数達成作成エラー:', error.message)
-          } else if (data) {
-            newAchievements.push(mapToAchievement(data))
-          }
-        }
-      }
+    const dailyAchievement = await checkAndCreateAchievementForType(
+      adminClient,
+      userId,
+      'daily_posts',
+      todayCount,
+      ACHIEVEMENT_THRESHOLDS.daily_posts,
+      entryId,
+      true // 当日チェック
+    )
+    if (dailyAchievement) {
+      newAchievements.push(dailyAchievement)
     }
 
     // 3. 総投稿数チェック
     const totalCount = await getTotalEntryCount(userId)
-    for (const threshold of ACHIEVEMENT_THRESHOLDS.total_posts) {
-      if (totalCount === threshold) {
-        const exists = await hasExistingAchievement(userId, 'total_posts', threshold)
-        if (!exists) {
-          const { data, error } = await adminClient
-            .from('achievements')
-            .insert({
-              user_id: userId,
-              type: 'total_posts',
-              threshold,
-              value: totalCount,
-              entry_id: entryId,
-              is_shared: false,
-            })
-            .select()
-            .single()
-
-          if (error) {
-            console.error('総投稿数達成作成エラー:', error.message)
-          } else if (data) {
-            newAchievements.push(mapToAchievement(data))
-          }
-        }
-      }
+    const totalAchievement = await checkAndCreateAchievementForType(
+      adminClient,
+      userId,
+      'total_posts',
+      totalCount,
+      ACHIEVEMENT_THRESHOLDS.total_posts,
+      entryId,
+      false // 全期間チェック
+    )
+    if (totalAchievement) {
+      newAchievements.push(totalAchievement)
     }
 
     // 4. 継続日数チェック
     const currentStreak = await getCurrentStreak(userId)
-    for (const threshold of ACHIEVEMENT_THRESHOLDS.streak_days) {
-      if (currentStreak === threshold) {
-        const exists = await hasExistingAchievement(userId, 'streak_days', threshold)
-        if (!exists) {
-          const { data, error } = await adminClient
-            .from('achievements')
-            .insert({
-              user_id: userId,
-              type: 'streak_days',
-              threshold,
-              value: currentStreak,
-              entry_id: entryId,
-              is_shared: false,
-            })
-            .select()
-            .single()
-
-          if (error) {
-            console.error('継続日数達成作成エラー:', error.message)
-          } else if (data) {
-            newAchievements.push(mapToAchievement(data))
-          }
-        }
-      }
+    const streakAchievement = await checkAndCreateAchievementForType(
+      adminClient,
+      userId,
+      'streak_days',
+      currentStreak,
+      ACHIEVEMENT_THRESHOLDS.streak_days,
+      entryId,
+      false // 全期間チェック
+    )
+    if (streakAchievement) {
+      newAchievements.push(streakAchievement)
     }
 
     return { ok: true, value: newAchievements }

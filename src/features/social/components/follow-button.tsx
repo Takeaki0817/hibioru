@@ -4,19 +4,13 @@ import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2, UserPlus, UserMinus, Check } from 'lucide-react'
 import { useFollow } from '../hooks/use-follow'
+import { ANIMATION_CONFIG } from '../constants'
 import { cn } from '@/lib/utils'
 
 interface FollowButtonProps {
   userId: string
   initialIsFollowing?: boolean
   size?: 'default' | 'sm'
-}
-
-// スプリングアニメーション設定
-const springTransition = {
-  type: 'spring' as const,
-  stiffness: 400,
-  damping: 25,
 }
 
 // アイコンアニメーション
@@ -71,7 +65,7 @@ export function FollowButton({ userId, initialIsFollowing, size = 'default' }: F
       onClick={toggle}
       disabled={isPending}
       whileTap={{ scale: 0.95 }}
-      transition={springTransition}
+      transition={ANIMATION_CONFIG.springSnappy}
       className={cn(
         'inline-flex items-center justify-center gap-1 rounded-md font-medium',
         'transition-colors disabled:pointer-events-none disabled:opacity-50',

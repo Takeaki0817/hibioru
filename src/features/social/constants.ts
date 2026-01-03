@@ -1,6 +1,46 @@
 import { Pencil, Trophy, Flame, Share2, type LucideIcon } from 'lucide-react'
 import type { AchievementType } from './types'
 
+// アニメーション設定（framer-motion用）
+export const ANIMATION_CONFIG = {
+  // デフォルトのスプリングアニメーション
+  springDefault: {
+    type: 'spring' as const,
+    stiffness: 300,
+    damping: 25,
+  },
+  // よりスナッピーなスプリングアニメーション（ボタン等）
+  springSnappy: {
+    type: 'spring' as const,
+    stiffness: 400,
+    damping: 25,
+  },
+} as const
+
+// パーティクルエフェクト設定（お祝いアニメーション用）
+export const PARTICLE_CONFIG = {
+  COUNT: 12,
+  COLORS: [
+    'bg-celebrate-300',
+    'bg-celebrate-400',
+    'bg-celebrate-500',
+    'bg-accent-400',
+  ],
+  DURATION_MS: 600,
+} as const
+
+// パーティクル生成関数
+export function generateParticles() {
+  return Array.from({ length: PARTICLE_CONFIG.COUNT }, (_, i) => ({
+    id: i,
+    angle: (360 / PARTICLE_CONFIG.COUNT) * i + Math.random() * 30 - 15,
+    distance: 40 + Math.random() * 10,
+    color: PARTICLE_CONFIG.COLORS[Math.floor(Math.random() * PARTICLE_CONFIG.COLORS.length)],
+    size: Math.random() > 0.5 ? 'size-2.5' : 'size-2',
+    delay: Math.random() * 0.1,
+  }))
+}
+
 // 達成閾値（固定）
 export const ACHIEVEMENT_THRESHOLDS: Record<Exclude<AchievementType, 'shared_entry'>, readonly number[]> = {
   // 1日の投稿数: 20から50まで10刻み
@@ -87,3 +127,12 @@ export function validateUsername(username: string): { valid: boolean; error?: st
   }
   return { valid: true }
 }
+
+// 共通エラーメッセージ
+export const ERROR_MESSAGES = {
+  UNAUTHORIZED: '未認証です',
+  NETWORK_ERROR: 'ネットワークエラーが発生しました',
+  LOAD_FAILED: '読み込みに失敗しました',
+  FOLLOW_LIST_LOAD_FAILED: 'フォローリストの読み込みに失敗しました',
+  RETRY: '再試行',
+} as const

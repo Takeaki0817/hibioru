@@ -4,7 +4,7 @@ import { useCallback, useMemo } from 'react'
 import { useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { getSocialNotifications } from '../api/notifications'
-import type { SocialNotificationItem, SocialNotificationsResult } from '../types'
+import type { SocialNotificationItem } from '../types'
 
 // キャッシュ設定
 const NOTIFICATIONS_STALE_TIME = 5 * 60 * 1000 // 5分
@@ -31,7 +31,7 @@ export interface UseSocialNotificationsReturn {
 
 export function useSocialNotifications(): UseSocialNotificationsReturn {
   const queryClient = useQueryClient()
-  const queryKey = [...queryKeys.social.all, 'notifications']
+  const queryKey = queryKeys.social.notifications()
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading, refetch } =
     useInfiniteQuery({

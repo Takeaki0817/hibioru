@@ -4,6 +4,7 @@ import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { PartyPopper, Loader2 } from 'lucide-react'
 import { useCelebration } from '../hooks/use-celebration'
+import { ANIMATION_CONFIG } from '../constants'
 import { cn } from '@/lib/utils'
 
 interface CelebrateButtonProps {
@@ -20,13 +21,6 @@ const generateParticles = () =>
     id: i,
     angle: (360 / PARTICLE_COUNT) * i + Math.random() * 20 - 10,
   }))
-
-// スプリングアニメーション設定
-const springTransition = {
-  type: 'spring' as const,
-  stiffness: 400,
-  damping: 25,
-}
 
 // ボタンアニメーション
 const buttonVariants = {
@@ -95,7 +89,7 @@ export function CelebrateButton({
         initial="idle"
         whileTap="tap"
         animate={showParticles ? 'celebrate' : 'idle'}
-        transition={springTransition}
+        transition={ANIMATION_CONFIG.springSnappy}
         className={cn(
           'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium',
           'transition-colors disabled:pointer-events-none disabled:opacity-50',

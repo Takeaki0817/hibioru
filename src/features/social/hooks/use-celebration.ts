@@ -51,7 +51,7 @@ export function useCelebration({
   // フィードキャッシュを更新
   const updateFeedCache = useCallback(
     (newIsCelebrated: boolean) => {
-      const queryKey = [...queryKeys.social.all, 'feed']
+      const queryKey = queryKeys.social.feed()
       queryClient.setQueryData<FeedQueryData>(queryKey, (oldData) => {
         if (!oldData) return oldData
         return {

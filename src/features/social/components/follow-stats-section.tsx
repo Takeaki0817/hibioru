@@ -6,13 +6,7 @@ import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { getFollowCounts } from '../api/follows'
 import { FollowListContent } from './follow-list-content'
-
-// スプリングアニメーション設定
-const springTransition = {
-  type: 'spring' as const,
-  stiffness: 300,
-  damping: 25,
-}
+import { ANIMATION_CONFIG } from '../constants'
 
 /**
  * フォロー統計（コンパクト版）
@@ -47,7 +41,7 @@ export function FollowStatsSection() {
         <DrawerTrigger asChild>
           <motion.button
             whileTap={{ scale: 0.95 }}
-            transition={springTransition}
+            transition={ANIMATION_CONFIG.springDefault}
             className="flex items-center gap-1.5 px-1 md:px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
           >
             <span className="text-xs md:text-sm text-muted-foreground">フォロー</span>
@@ -70,7 +64,7 @@ export function FollowStatsSection() {
         <DrawerTrigger asChild>
           <motion.button
             whileTap={{ scale: 0.95 }}
-            transition={springTransition}
+            transition={ANIMATION_CONFIG.springDefault}
             className="flex items-center gap-1.5 px-1 md:px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
           >
             <span className="text-xs md:text-sm text-muted-foreground">フォロワー</span>

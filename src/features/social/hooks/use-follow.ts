@@ -59,8 +59,8 @@ export function useFollow({
   // フィードキャッシュを無効化
   const invalidateRelatedQueries = useCallback(async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: [...queryKeys.social.all, 'feed'] }),
-      queryClient.invalidateQueries({ queryKey: [...queryKeys.social.all, 'notifications'] }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.social.feed() }),
+      queryClient.invalidateQueries({ queryKey: queryKeys.social.notifications() }),
       queryClient.invalidateQueries({ queryKey: queryKeys.social.followCounts(userId) }),
     ])
   }, [queryClient, userId])

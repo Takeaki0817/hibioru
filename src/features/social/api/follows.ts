@@ -190,37 +190,37 @@ export async function getFollowCounts(): Promise<SocialResult<FollowCounts>> {
       }
     }
 
-    // フォロー中の数
-    const { count: followingCount, error: followingError } = await supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('follower_id', userData.user.id)
+    // フォロー中・フォロワー数を並列取得
+    const [followingResult, followerResult] = await Promise.all([
+      supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('follower_id', userData.user.id),
+      supabase
+        .from('follows')
+        .select('*', { count: 'exact', head: true })
+        .eq('following_id', userData.user.id),
+    ])
 
-    if (followingError) {
+    if (followingResult.error) {
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: followingError.message },
+        error: { code: 'DB_ERROR', message: followingResult.error.message },
       }
     }
 
-    // フォロワー数
-    const { count: followerCount, error: followerError } = await supabase
-      .from('follows')
-      .select('*', { count: 'exact', head: true })
-      .eq('following_id', userData.user.id)
-
-    if (followerError) {
+    if (followerResult.error) {
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: followerError.message },
+        error: { code: 'DB_ERROR', message: followerResult.error.message },
       }
     }
 
     return {
       ok: true,
       value: {
-        followingCount: followingCount ?? 0,
-        followerCount: followerCount ?? 0,
+        followingCount: followingResult.count ?? 0,
+        followerCount: followerResult.count ?? 0,
       },
     }
   } catch (error) {

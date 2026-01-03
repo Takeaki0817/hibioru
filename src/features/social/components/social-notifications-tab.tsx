@@ -7,15 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useSocialNotifications } from '../hooks/use-social-notifications'
 import { useSocialRealtime } from '../hooks/use-social-realtime'
 import type { SocialNotificationItem } from '../types'
-import { ACHIEVEMENT_ICONS, ACHIEVEMENT_TYPE_LABELS } from '../constants'
+import { ACHIEVEMENT_ICONS, ACHIEVEMENT_TYPE_LABELS, ANIMATION_CONFIG } from '../constants'
 import { createClient } from '@/lib/supabase/client'
-
-// アニメーション設定
-const springTransition = {
-  type: 'spring' as const,
-  stiffness: 300,
-  damping: 25,
-}
+import { getTimeAgo } from '@/lib/date-utils'
 
 const containerVariants = {
   animate: {
@@ -28,7 +22,7 @@ const notificationVariants = {
   animate: {
     opacity: 1,
     x: 0,
-    transition: springTransition,
+    transition: ANIMATION_CONFIG.springDefault,
   },
 }
 
@@ -206,20 +200,4 @@ function NotificationsSkeleton() {
       ))}
     </div>
   )
-}
-
-// 相対時間の表示
-function getTimeAgo(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMinutes = Math.floor(diffMs / (1000 * 60))
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-  if (diffMinutes < 1) return 'たった今'
-  if (diffMinutes < 60) return `${diffMinutes}分前`
-  if (diffHours < 24) return `${diffHours}時間前`
-  if (diffDays < 7) return `${diffDays}日前`
-  return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })
 }

@@ -8,6 +8,21 @@ import type { AchievementType } from '../types'
 import { getAchievementMessage } from '../constants'
 
 /**
+ * ソーシャル通知が有効かチェック
+ * @returns 有効な場合true、無効またはエラー時はfalse
+ */
+async function isSocialNotificationEnabled(userId: string): Promise<boolean> {
+  const adminClient = createAdminClient()
+  const { data: settings, error: settingsError } = await adminClient
+    .from('notification_settings')
+    .select('social_notifications_enabled')
+    .eq('user_id', userId)
+    .single()
+
+  return !settingsError && settings?.social_notifications_enabled === true
+}
+
+/**
  * お祝い通知のプッシュを送信
  */
 export async function sendCelebrationPushNotification(
@@ -17,16 +32,7 @@ export async function sendCelebrationPushNotification(
   threshold: number
 ): Promise<void> {
   try {
-    // 通知設定確認
-    const adminClient = createAdminClient()
-    const { data: settings, error: settingsError } = await adminClient
-      .from('notification_settings')
-      .select('social_notifications_enabled')
-      .eq('user_id', toUserId)
-      .single()
-
-    if (settingsError || !settings?.social_notifications_enabled) {
-      // 通知が無効な場合はスキップ
+    if (!(await isSocialNotificationEnabled(toUserId))) {
       return
     }
 
@@ -58,16 +64,7 @@ export async function sendFollowPushNotification(
   fromUserName: string
 ): Promise<void> {
   try {
-    // 通知設定確認
-    const adminClient = createAdminClient()
-    const { data: settings, error: settingsError } = await adminClient
-      .from('notification_settings')
-      .select('social_notifications_enabled')
-      .eq('user_id', toUserId)
-      .single()
-
-    if (settingsError || !settings?.social_notifications_enabled) {
-      // 通知が無効な場合はスキップ
+    if (!(await isSocialNotificationEnabled(toUserId))) {
       return
     }
 

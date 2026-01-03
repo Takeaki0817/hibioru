@@ -9,13 +9,7 @@ import { searchUsers } from '../api/user-search'
 import { FollowButton } from './follow-button'
 import type { PublicUserInfo } from '../types'
 import { useDebouncedCallback } from 'use-debounce'
-
-// アニメーション設定
-const springTransition = {
-  type: 'spring' as const,
-  stiffness: 300,
-  damping: 25,
-}
+import { ANIMATION_CONFIG } from '../constants'
 
 const containerVariants = {
   animate: {
@@ -28,7 +22,7 @@ const itemVariants = {
   animate: {
     opacity: 1,
     y: 0,
-    transition: springTransition,
+    transition: ANIMATION_CONFIG.springDefault,
   },
   exit: { opacity: 0, y: -5 },
 }
@@ -102,7 +96,7 @@ export function UserSearch() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            transition={springTransition}
+            transition={ANIMATION_CONFIG.springDefault}
             className="absolute left-0 right-0 top-full mt-2 z-10"
           >
             <div className="p-3 rounded-xl border border-border bg-card shadow-lg">

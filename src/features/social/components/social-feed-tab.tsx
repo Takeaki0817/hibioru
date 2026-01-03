@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, PartyPopper, Loader2, Share2, Quote } from 'lucide-react'
 import { UserSearch } from './user-search'
@@ -9,25 +9,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useSocialFeed } from '../hooks/use-social-feed'
 import { useSocialRealtime } from '../hooks/use-social-realtime'
 import { useFollowingIds } from '../hooks/use-following-ids'
-import { useCelebration } from '../hooks/use-celebration'
+import { useFeedItem } from '../hooks/use-feed-item'
 import type { SocialFeedItem } from '../types'
-import { ACHIEVEMENT_ICONS, getAchievementMessage } from '../constants'
+import { ACHIEVEMENT_ICONS, ANIMATION_CONFIG, getAchievementMessage } from '../constants'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-
-// アニメーション設定
-const springTransition = {
-  type: 'spring' as const,
-  stiffness: 300,
-  damping: 25,
-}
+import { getTimeAgo } from '@/lib/date-utils'
 
 const feedItemVariants = {
   initial: { opacity: 0, y: 10 },
   animate: {
     opacity: 1,
     y: 0,
-    transition: springTransition,
+    transition: ANIMATION_CONFIG.springDefault,
   },
   exit: {
     opacity: 0,
@@ -36,24 +30,7 @@ const feedItemVariants = {
   },
 }
 
-// パーティクル設定（派手版）
-const PARTICLE_COUNT = 12
-const PARTICLE_COLORS = [
-  'bg-celebrate-300',
-  'bg-celebrate-400',
-  'bg-celebrate-500',
-  'bg-accent-400',
-]
-const generateParticles = () =>
-  Array.from({ length: PARTICLE_COUNT }, (_, i) => ({
-    id: i,
-    angle: (360 / PARTICLE_COUNT) * i + Math.random() * 30 - 15,
-    distance: 40 + Math.random() * 10,
-    color: PARTICLE_COLORS[Math.floor(Math.random() * PARTICLE_COLORS.length)],
-    size: Math.random() > 0.5 ? 'size-2.5' : 'size-2',
-    delay: Math.random() * 0.1,
-  }))
-
+// パーティクルアニメーション設定
 const particleVariants = {
   initial: { scale: 0, opacity: 1, rotate: 0 },
   animate: (custom: { angle: number; distance: number; delay: number }) => ({
@@ -199,27 +176,13 @@ interface FeedItemProps {
 
 function FeedItem({ item }: FeedItemProps) {
   const timeAgo = getTimeAgo(item.createdAt)
-  const [showParticles, setShowParticles] = useState(false)
-  const [particles, setParticles] = useState<
-    { id: number; angle: number; distance: number; color: string; size: string; delay: number }[]
-  >([])
-
   const isSharedEntry = item.type === 'shared_entry'
 
-  // 成功時のコールバック（パーティクルエフェクト）
-  const handleSuccess = useCallback((newState: boolean) => {
-    if (newState) {
-      setParticles(generateParticles())
-      setShowParticles(true)
-      setTimeout(() => setShowParticles(false), 600)
-    }
-  }, [])
-
-  const { isCelebrated, isPending, toggle } = useCelebration({
+  // useFeedItem でお祝い状態とパーティクルエフェクトを管理
+  const { isCelebrated, isPending, toggle, showParticles, particles } = useFeedItem({
     achievementId: item.id,
     initialIsCelebrated: item.isCelebrated,
     initialCount: item.celebrationCount,
-    onSuccess: handleSuccess,
   })
 
   return (
@@ -428,20 +391,4 @@ function FeedSkeleton() {
       ))}
     </div>
   )
-}
-
-// 相対時間の表示
-function getTimeAgo(dateString: string): string {
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffMs = now.getTime() - date.getTime()
-  const diffMinutes = Math.floor(diffMs / (1000 * 60))
-  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-
-  if (diffMinutes < 1) return 'たった今'
-  if (diffMinutes < 60) return `${diffMinutes}分前`
-  if (diffHours < 24) return `${diffHours}時間前`
-  if (diffDays < 7) return `${diffDays}日前`
-  return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' })
 }
