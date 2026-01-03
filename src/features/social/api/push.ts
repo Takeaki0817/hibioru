@@ -37,7 +37,7 @@ export async function sendCelebrationPushNotification(
       icon: '/icon-192.png',
       badge: '/badge-72.png',
       data: {
-        url: '/mypage?tab=notifications',
+        url: '/social?tab=notifications',
         type: 'celebration' as const,
         notificationId: crypto.randomUUID(),
         timestamp: Date.now(),
@@ -77,7 +77,7 @@ export async function sendFollowPushNotification(
       icon: '/icon-192.png',
       badge: '/badge-72.png',
       data: {
-        url: '/mypage?tab=notifications',
+        url: '/social?tab=notifications',
         type: 'follow' as const,
         notificationId: crypto.randomUUID(),
         timestamp: Date.now(),
