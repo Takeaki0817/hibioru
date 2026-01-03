@@ -244,6 +244,13 @@ interface StreakService {
    * @param targetDate 確認対象日 (JST, YYYY-MM-DD)
    */
   hasEntryOnDate(userId: string, targetDate: string): Promise<boolean>;
+
+  /**
+   * 過去7日間の記録状態を取得する（カレンダー表示用）
+   * @param userId ユーザーID
+   * @returns 過去7日間の各日の記録有無（boolean配列、[6日前, ..., 今日]）
+   */
+  getWeeklyRecords(userId: string): Promise<Result<boolean[], StreakError>>;
 }
 ```
 
@@ -254,11 +261,11 @@ interface StreakService {
 
 ---
 
-#### HotsureService
+#### HotsureService（DB駆動実装）
 
 | Field | Detail |
 |-------|--------|
-| Intent | ほつれの消費とリセットを管理するサービス |
+| Intent | ほつれの消費とリセットを管理する（PostgreSQL関数で実装） |
 | Requirements | 3.1, 3.2, 3.3, 3.4, 3.5, 4.1, 4.2, 4.3, 4.4, 4.5 |
 
 **Responsibilities & Constraints**
@@ -267,49 +274,52 @@ interface StreakService {
 - 週次リセット処理（月曜0:00 JST）
 - ほつれ最大数は2個固定
 
+**Implementation Architecture**:
+> **Note**: 当初TypeScript Service層での実装を想定していたが、パフォーマンスとトランザクション整合性の観点から、**PostgreSQL関数（process_daily_streak, reset_weekly_hotsure）内で完全に実装**された。これによりネットワークレイテンシを排除し、FOR UPDATEによる排他制御も確実に行える。
+
 **Dependencies**
-- Outbound: SupabaseClient - データ永続化 (P0)
-- Outbound: StreakService - ストリーク途切れ処理 (P1)
+- Outbound: なし（DB関数内で完結）
 
-**Contracts**: Service [x]
+**Contracts**: Database Function [x]
 
-##### Service Interface
+##### Database Function Interface
 
+```sql
+-- ほつれ自動消費（日次バッチ process_daily_streak 内で実行）
+-- hotsure_remaining >= 1 の場合:
+--   hotsure_remaining を1減少
+--   targetDate を hotsure_used_dates に追加
+--   current_streak は維持
+-- hotsure_remaining = 0 の場合:
+--   current_streak を0にリセット
+
+-- 週次リセット（reset_weekly_hotsure 関数）
+CREATE OR REPLACE FUNCTION reset_weekly_hotsure()
+RETURNS void AS $$
+BEGIN
+  UPDATE streaks
+  SET
+    hotsure_remaining = 2,
+    hotsure_used_dates = ARRAY[]::date[],
+    updated_at = NOW()
+  WHERE hotsure_remaining < 2 OR array_length(hotsure_used_dates, 1) > 0;
+END;
+$$ LANGUAGE plpgsql;
+```
+
+**TypeScript側の参照用インターフェース**:
 ```typescript
-interface HotsureConsumeResult {
-  consumed: boolean;
-  hotsureRemaining: number;
-  streakMaintained: boolean;
-}
-
-interface HotsureService {
-  /**
-   * ほつれを自動消費する
-   * @precondition hotsure_remaining >= 1
-   * @postcondition hotsure_remaining が1減少
-   * @postcondition targetDate が hotsure_used_dates に追加
-   * @postcondition current_streak は維持
-   */
-  consumeHotsure(userId: string, targetDate: string): Promise<HotsureConsumeResult>;
-
-  /**
-   * ほつれをリセットする（週次処理）
-   * @postcondition hotsure_remaining = 2
-   * @postcondition hotsure_used_dates = []
-   */
-  resetHotsure(userId: string): Promise<void>;
-
-  /**
-   * ほつれが利用可能かチェックする
-   */
-  canUseHotsure(userId: string): Promise<boolean>;
+// クライアント側で使用するほつれ情報（StreakService.getStreakInfo で取得）
+interface HotsureInfo {
+  hotsureRemaining: number;    // 残りほつれ数 (0-2)
+  hotsureUsedCount: number;    // 今週使用したほつれ数
 }
 ```
 
 **Implementation Notes**
-- Integration: 日次バッチから呼び出される想定
-- Validation: hotsure_remaining の範囲チェック (0-2)
-- Risks: 同時実行による二重消費（PostgreSQLのFOR UPDATE で保護）
+- Integration: pg_cronから直接呼び出し（TypeScript経由なし）
+- Validation: hotsure_remaining の範囲チェック (0-2) はDB制約で保証
+- Risks: 同時実行による二重消費 → FOR UPDATE + トランザクションで保護
 
 ### Database Layer
 

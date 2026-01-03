@@ -16,9 +16,11 @@
 
 ### Non-Goals
 - リッチテキストエディタ（Markdown、装飾機能）
-- 複数画像添付（1投稿1枚に限定）
-- 投稿の公開/非公開切り替えUI（将来のソーシャル機能で対応）
 - オフライン投稿キュー（PWA Phase 2以降）
+
+> **設計変更メモ**:
+> - ~~複数画像添付（1投稿1枚に限定）~~ → 最大2枚に拡張済み
+> - ~~投稿の公開/非公開切り替えUI~~ → ソーシャル共有機能（isShared）として実装済み
 
 ## Architecture
 
@@ -30,6 +32,7 @@ graph TB
         NewPage[New Page]
         EditPage[Edit Page]
         EntryForm[EntryForm Component]
+        EntryFormStore[EntryFormStore Zustand]
         ImageAttachment[ImageAttachment Component]
         DraftManager[Draft Manager]
     end
@@ -50,11 +53,13 @@ graph TB
 
     NewPage --> EntryForm
     EditPage --> EntryForm
+    EntryForm --> EntryFormStore
     EntryForm --> ImageAttachment
     EntryForm --> DraftManager
 
     EntryForm --> EntryService
     ImageAttachment --> ImageService
+    ImageAttachment --> EntryFormStore
     DraftManager --> DraftStorage
 
     EntryService --> LimitChecker
@@ -208,8 +213,9 @@ sequenceDiagram
 |-----------|--------------|--------|--------------|------------------|-----------|
 | NewPage | Pages | 新規入力ページ | 1.1, 1.4 | EntryForm (P0) | - |
 | EditPage | Pages | 編集ページ | 4.1, 4.2 | EntryForm (P0), EntryService (P0) | - |
-| EntryForm | UI | 入力/編集フォーム | 1.1-1.5, 5.2, 6.1 | ImageAttachment (P1), DraftStorage (P1), EntryService (P0) | State |
-| ImageAttachment | UI | 画像添付コンポーネント | 2.1, 2.3, 2.4, 2.5 | ImageService (P0), LimitChecker (P1) | - |
+| EntryForm | UI | 入力/編集フォーム | 1.1-1.5, 5.2, 6.1 | EntryFormStore (P0), ImageAttachment (P1), EntryService (P0) | State |
+| ImageAttachment | UI | 画像添付コンポーネント（最大2枚） | 2.1, 2.3, 2.4, 2.5 | ImageService (P0), EntryFormStore (P0), LimitChecker (P1) | - |
+| EntryFormStore | Store | フォーム状態管理（Zustand） | 1.1-1.5, 2.1-2.4 | - | State |
 | EntryService | Logic | エントリCRUD操作 | 1.3, 4.3-4.5, 6.2-6.3, 7.2-7.3 | Supabase (P0), ImageService (P1) | Service |
 | ImageService | Logic | 画像圧縮・アップロード | 2.2, 2.6 | browser-image-compression (P0), Supabase Storage (P0) | Service |
 | LimitChecker | Logic | 制限チェック | 2.5, 5.1, 5.3 | Supabase (P0) | Service |
@@ -275,6 +281,7 @@ sequenceDiagram
 
 **Dependencies**
 - Inbound: NewPage, EditPage - ページからの埋め込み (P0)
+- Outbound: EntryFormStore - 状態管理 (P0)
 - Outbound: ImageAttachment - 画像添付UI (P1)
 - Outbound: DraftStorage - 下書き自動保存 (P1)
 - Outbound: EntryService - 投稿作成・更新 (P0)
@@ -284,13 +291,22 @@ sequenceDiagram
 
 ##### State Management
 
+状態管理はEntryFormStore（Zustand）に委譲。詳細は「EntryFormStore」セクションを参照。
+
 ```typescript
-interface EntryFormState {
-  content: string;
-  image: CompressedImage | null;
-  isSubmitting: boolean;
-  error: EntryFormError | null;
-}
+// EntryFormStoreからの状態取得
+const content = useEntryFormStore((s) => s.content)
+const images = useEntryFormStore((s) => s.images)
+const isShared = useEntryFormStore((s) => s.isShared)
+const isSubmitting = useEntryFormStore((s) => s.isSubmitting)
+const error = useEntryFormStore((s) => s.error)
+
+// アクション
+const setContent = useEntryFormStore((s) => s.setContent)
+const setIsShared = useEntryFormStore((s) => s.setIsShared)
+const submitStart = useEntryFormStore((s) => s.submitStart)
+const submitSuccess = useEntryFormStore((s) => s.submitSuccess)
+const submitError = useEntryFormStore((s) => s.submitError)
 
 interface CompressedImage {
   file: File;
@@ -298,15 +314,9 @@ interface CompressedImage {
   originalSize: number;
   compressedSize: number;
 }
-
-type EntryFormError =
-  | { type: 'DAILY_LIMIT_EXCEEDED'; message: string }
-  | { type: 'IMAGE_LIMIT_EXCEEDED'; message: string }
-  | { type: 'EDIT_EXPIRED'; message: string }
-  | { type: 'SUBMISSION_FAILED'; message: string };
 ```
 
-- State model: useStateによるローカル状態管理
+- State model: EntryFormStore（Zustand）によるグローバル状態管理
 - Persistence: DraftStorageへの自動保存（300msデバウンス）
 - Concurrency: 送信中はボタン無効化で二重送信防止
 
@@ -331,16 +341,19 @@ interface EntryFormProps {
 
 | Field | Detail |
 |-------|--------|
-| Intent | 画像選択・圧縮・プレビュー表示 |
+| Intent | 画像選択・圧縮・プレビュー表示（最大2枚） |
 | Requirements | 2.1, 2.3, 2.4, 2.5 |
 
 **Responsibilities & Constraints**
-- 1投稿1枚の制限をUIレベルで強制
+- 1投稿最大2枚の制限をUIレベルで強制（`MAX_IMAGES = 2`）
+- EntryFormStoreと連携して画像の追加・削除を管理
 - 圧縮進捗の表示
 - プレビュー表示と削除機能
+- 編集時は既存画像（existingImageUrls）と新規画像（images）を区別
 
 **Dependencies**
 - Outbound: ImageService - 画像圧縮 (P0)
+- Outbound: EntryFormStore - 画像状態管理 (P0)
 - Outbound: LimitChecker - 1日5枚制限チェック (P1)
 
 **Contracts**: State [x]
@@ -349,16 +362,128 @@ interface EntryFormProps {
 
 ```typescript
 interface ImageAttachmentProps {
-  image: CompressedImage | null;
-  onImageSelect: (image: CompressedImage) => void;
-  onImageRemove: () => void;
   disabled?: boolean;
 }
+
+// EntryFormStoreから画像状態を取得
+const images = useEntryFormStore((s) => s.images)
+const existingImageUrls = useEntryFormStore((s) => s.existingImageUrls)
+const removedImageUrls = useEntryFormStore((s) => s.removedImageUrls)
+const canAddImage = useEntryFormStore(selectCanAddImage)
+
+// EntryFormStoreのアクションで画像を操作
+const addImage = useEntryFormStore((s) => s.addImage)
+const removeImage = useEntryFormStore((s) => s.removeImage)
+const toggleExistingImageRemoval = useEntryFormStore((s) => s.toggleExistingImageRemoval)
 ```
 
 **Implementation Notes**
-- inputタイプfileでaccept="image/*"
+- inputタイプfileでaccept="image/*"、multiple属性対応
 - 圧縮中はスピナー表示
+- 既存画像の削除は`toggleExistingImageRemoval`で削除予定マーク（送信時に反映）
+
+---
+
+### State Management (Zustand Store)
+
+#### EntryFormStore
+
+| Field | Detail |
+|-------|--------|
+| Intent | フォーム状態を一元管理するZustandストア |
+| Requirements | 1.1-1.5, 2.1-2.4 |
+
+**Responsibilities & Constraints**
+- フォームのコンテンツ、画像、ソーシャル共有設定を管理
+- 送信・削除中のUI状態を管理
+- エラー状態を管理
+- 編集時の既存画像と削除予定画像を区別
+
+**Contracts**: State [x]
+
+##### Store Interface
+
+```typescript
+// 定数
+export const MAX_IMAGES = 2
+
+// 状態
+interface EntryFormState {
+  // フォーム内容
+  content: string;
+  images: CompressedImage[];      // 新規追加する画像（最大2枚）
+  existingImageUrls: string[];    // 編集時の既存画像URL
+  removedImageUrls: string[];     // 削除予定としてマークされた既存画像URL
+  isShared: boolean;              // ソーシャルタイムラインに共有するか
+
+  // UI状態
+  isSubmitting: boolean;
+  isDeleting: boolean;
+  showDeleteConfirm: boolean;
+  isSuccess: boolean;
+  isFocused: boolean;
+
+  // エラー
+  error: string | null;
+}
+
+// アクション
+interface EntryFormActions {
+  // フォーム操作
+  setContent: (content: string) => void;
+  setIsShared: (isShared: boolean) => void;
+  addImage: (image: CompressedImage) => void;
+  removeImage: (index: number) => void;
+  toggleExistingImageRemoval: (url: string) => void;
+
+  // UI状態
+  setSubmitting: (value: boolean) => void;
+  setDeleting: (value: boolean) => void;
+  setShowDeleteConfirm: (value: boolean) => void;
+  setSuccess: (value: boolean) => void;
+  setFocused: (value: boolean) => void;
+  setError: (error: string | null) => void;
+
+  // 複合アクション
+  submitStart: () => void;
+  submitSuccess: () => void;
+  submitError: (msg: string) => void;
+  deleteStart: () => void;
+  deleteError: (msg: string) => void;
+
+  // 初期化/リセット
+  initialize: (initialContent?: string, existingImageUrls?: string[] | null, initialIsShared?: boolean) => void;
+  reset: () => void;
+}
+
+export type EntryFormStore = EntryFormState & EntryFormActions;
+```
+
+##### セレクター
+
+```typescript
+// 送信可能かどうか判定
+export const selectCanSubmit = (state: EntryFormState): boolean =>
+  !state.isSubmitting && !state.isDeleting && !state.isSuccess && state.content.trim().length > 0;
+
+// 現在の合計画像数を計算
+export const selectTotalImageCount = (state: EntryFormState): number => {
+  const existingCount = state.existingImageUrls.filter(
+    (url) => !state.removedImageUrls.includes(url)
+  ).length;
+  return state.images.length + existingCount;
+};
+
+// 画像追加可能かどうか判定
+export const selectCanAddImage = (state: EntryFormState): boolean => {
+  return selectTotalImageCount(state) < MAX_IMAGES;
+};
+```
+
+**Implementation Notes**
+- `initialize`は新規作成時は引数なし、編集時は既存データを渡す
+- `reset`はページ離脱時に呼び出してメモリリーク防止
+- 画像のプレビューURLは`removeImage`時に`URL.revokeObjectURL`で解放
 
 ---
 
@@ -395,12 +520,14 @@ interface EntryServiceInterface {
 
 interface CreateEntryInput {
   content: string;
-  imageUrl: string | null;
+  imageUrls: string[] | null;  // 複数画像URL（最大2枚）
+  isShared?: boolean;          // ソーシャルタイムラインに共有するか（デフォルト: false）
 }
 
 interface UpdateEntryInput {
   content: string;
-  imageUrl: string | null;
+  imageUrls: string[] | null;  // 複数画像URL（最大2枚）
+  isShared?: boolean;          // ソーシャルタイムラインに共有するか
 }
 
 type EntryError =
@@ -576,8 +703,8 @@ erDiagram
         uuid id PK
         uuid user_id FK
         text content
-        text image_url
-        boolean is_public
+        text_array image_urls
+        boolean is_shared
         boolean is_deleted
         timestamp created_at
         timestamp updated_at
@@ -589,7 +716,8 @@ erDiagram
 
 **Business Rules & Invariants**:
 - contentは空白のみ不可（絵文字1文字は許可）
-- image_urlはSupabase Storage URLまたはnull
+- image_urlsはSupabase Storage URL配列（最大2枚）またはnull
+- is_sharedがtrueの場合、ソーシャルタイムラインに表示される
 - created_atから24時間以内のみ編集可能
 - is_deleted=trueの記録は表示されない
 
@@ -602,8 +730,8 @@ CREATE TABLE entries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   content TEXT NOT NULL,
-  image_url TEXT,
-  is_public BOOLEAN NOT NULL DEFAULT false,
+  image_urls TEXT[],              -- 複数画像URL（最大2枚）
+  is_shared BOOLEAN NOT NULL DEFAULT false,  -- ソーシャルタイムラインに共有
   is_deleted BOOLEAN NOT NULL DEFAULT false,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
@@ -617,11 +745,19 @@ CREATE INDEX idx_entries_user_id_created_at
 CREATE INDEX idx_entries_user_id_date
   ON entries(user_id, (created_at AT TIME ZONE 'Asia/Tokyo')::date);
 
+-- ソーシャル共有投稿用インデックス
+CREATE INDEX idx_entries_is_shared_created_at
+  ON entries(created_at DESC)
+  WHERE is_shared = true AND is_deleted = false;
+
 -- RLSポリシー
 ALTER TABLE entries ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Users can view own entries" ON entries
   FOR SELECT USING (auth.uid() = user_id AND is_deleted = false);
+
+CREATE POLICY "Users can view shared entries" ON entries
+  FOR SELECT USING (is_shared = true AND is_deleted = false);
 
 CREATE POLICY "Users can insert own entries" ON entries
   FOR INSERT WITH CHECK (auth.uid() = user_id);
@@ -647,8 +783,8 @@ interface Entry {
   id: string;
   userId: string;
   content: string;
-  imageUrl: string | null;
-  isPublic: boolean;
+  imageUrls: string[] | null;  // 複数画像URL（最大2枚）
+  isShared: boolean;           // ソーシャルタイムラインに共有するか
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;

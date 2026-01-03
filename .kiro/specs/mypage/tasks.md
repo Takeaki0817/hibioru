@@ -1,5 +1,9 @@
 # Implementation Plan
 
+> **⚠️ 非推奨通知**
+>
+> この仕様は`/social`ページに統合されました。新しい実装は`.kiro/specs/social/`を参照してください。
+
 ## Tasks
 
 - [x] 1. データベーススキーマとRLSポリシーの設定

@@ -8,6 +8,8 @@
 
 **Impact**: 新規のpush_subscriptions、notification_settings、notification_logsテーブルを追加し、Service Workerによるプッシュ通知受信機能をPWAに統合する。Supabase Edge FunctionsとCronによるバックグラウンドジョブで通知配信を実現する。
 
+> **設計変更メモ**: 当初は単一の`primaryTime`設計だったが、実装では複数リマインド対応（最大5スロット）に変更。`reminders`配列でユーザーごとに複数の通知時刻を設定可能。また、追いリマインドは`chase_reminder`命名に統一。
+
 ### Goals
 
 - Web Push APIによるクロスプラットフォームのプッシュ通知配信
@@ -287,27 +289,41 @@ interface NotificationSettingsService {
   ): Promise<Result<NotificationSettings, SettingsError>>;
 }
 
+/**
+ * 個別リマインド設定（最大5スロット）
+ */
+interface Reminder {
+  time: string | null;  // HH:mm形式、未設定時はnull
+  enabled: boolean;
+}
+
+const DEFAULT_REMINDERS: Reminder[] = [
+  { time: null, enabled: false },
+  { time: null, enabled: false },
+  { time: null, enabled: false },
+  { time: null, enabled: false },
+  { time: null, enabled: false },
+];
+
 interface NotificationSettings {
   userId: string;
-  enabled: boolean;
-  primaryTime: string; // HH:mm format
-  timezone: string; // IANA timezone
-  followUpEnabled: boolean;
-  followUpIntervalMinutes: number; // 15-180
-  followUpMaxCount: number; // 1-3
-  activeDays: number[]; // 0-6 (Sun-Sat)
+  enabled: boolean;                        // 全体のマスタースイッチ
+  reminders: Reminder[];                   // リマインド設定配列（最大5つ）
+  chaseReminderEnabled: boolean;           // 追いリマインドの有効/無効
+  chaseReminderDelayMinutes: number;       // 追いリマインド遅延時間（分）
+  followUpMaxCount: number;                // 追いリマインドの最大回数（1-5）
+  socialNotificationsEnabled: boolean;     // ソーシャル通知の有効/無効
   createdAt: Date;
   updatedAt: Date;
 }
 
 interface NotificationSettingsUpdate {
   enabled?: boolean;
-  primaryTime?: string;
-  timezone?: string;
-  followUpEnabled?: boolean;
-  followUpIntervalMinutes?: number;
+  reminders?: Reminder[];
+  chaseReminderEnabled?: boolean;
+  chaseReminderDelayMinutes?: number;
   followUpMaxCount?: number;
-  activeDays?: number[];
+  socialNotificationsEnabled?: boolean;
 }
 
 type SettingsError =
@@ -318,7 +334,7 @@ type SettingsError =
 
 - Preconditions: userIdは認証済みユーザーのID
 - Postconditions: 設定がバリデーション後に永続化される
-- Invariants: primaryTimeはHH:mm形式、followUpIntervalMinutesは15-180、followUpMaxCountは1-3
+- Invariants: remindersは最大5つ、各reminders[i].timeはHH:mm形式またはnull、followUpMaxCountは1-5
 
 #### NotificationDispatcher
 
@@ -754,12 +770,11 @@ erDiagram
     NotificationSettings {
         string userId PK FK
         boolean enabled
-        string primaryTime
-        string timezone
-        boolean followUpEnabled
-        int followUpIntervalMinutes
+        jsonb reminders
+        boolean chaseReminderEnabled
+        int chaseReminderDelayMinutes
         int followUpMaxCount
-        array activeDays
+        boolean socialNotificationsEnabled
         datetime createdAt
         datetime updatedAt
     }
@@ -783,10 +798,11 @@ erDiagram
 
 **Business Rules & Invariants**
 - 同一ユーザーの同一エンドポイントは重複不可
-- primaryTimeはHH:mm形式で00:00-23:59の範囲
-- followUpIntervalMinutesは15-180の範囲
-- followUpMaxCountは1-3の範囲
-- activeDaysは0-6の配列（空配列は全曜日無効を意味する）
+- remindersは最大5スロット
+- reminders[i].timeはHH:mm形式で00:00-23:59の範囲またはnull
+- reminders[i].enabledがtrueの場合、timeは必須
+- chaseReminderDelayMinutesは1以上
+- followUpMaxCountは1-5の範囲
 
 ### Physical Data Model
 
@@ -813,15 +829,21 @@ CREATE INDEX idx_push_subscriptions_user_id ON push_subscriptions(user_id);
 ```sql
 CREATE TABLE notification_settings (
   user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  enabled BOOLEAN NOT NULL DEFAULT true,
-  primary_time TIME NOT NULL DEFAULT '21:00',
-  timezone TEXT NOT NULL DEFAULT 'Asia/Tokyo',
-  follow_up_enabled BOOLEAN NOT NULL DEFAULT true,
-  follow_up_interval_minutes INTEGER NOT NULL DEFAULT 60
-    CHECK (follow_up_interval_minutes >= 15 AND follow_up_interval_minutes <= 180),
+  enabled BOOLEAN NOT NULL DEFAULT false,
+  -- reminders: JSONB配列（最大5スロット）
+  -- 各要素: { "time": "HH:mm" | null, "enabled": boolean }
+  reminders JSONB NOT NULL DEFAULT '[
+    {"time": null, "enabled": false},
+    {"time": null, "enabled": false},
+    {"time": null, "enabled": false},
+    {"time": null, "enabled": false},
+    {"time": null, "enabled": false}
+  ]'::jsonb,
+  chase_reminder_enabled BOOLEAN NOT NULL DEFAULT true,
+  chase_reminder_delay_minutes INTEGER NOT NULL DEFAULT 60,
   follow_up_max_count INTEGER NOT NULL DEFAULT 2
-    CHECK (follow_up_max_count >= 1 AND follow_up_max_count <= 3),
-  active_days INTEGER[] NOT NULL DEFAULT ARRAY[0,1,2,3,4,5,6],
+    CHECK (follow_up_max_count >= 1 AND follow_up_max_count <= 5),
+  social_notifications_enabled BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

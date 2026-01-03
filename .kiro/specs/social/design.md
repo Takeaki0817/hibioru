@@ -6,7 +6,9 @@
 
 **Users**: ヒビオルのユーザーが、フォロー中のユーザーの達成や共有投稿を閲覧し、お祝いを送るために使用する。
 
-**Impact**: マイページにソーシャルタブ（「みんな」「通知」）を追加し、エントリーフォームに共有トグルを統合する。
+**Impact**: `/social`ページ（旧マイページ機能を統合）として、「みんな」「通知」タブを提供し、エントリーフォームに共有トグルを統合する。
+
+> **設計変更メモ**: 当初は`/mypage`と`/social`を分離して設計していたが、実装では`/social`に統合。プロフィール表示・編集機能も`/social`で提供する。
 
 ### Goals
 
@@ -301,6 +303,45 @@ interface SocialFeedItem {
   isCelebrated: boolean     // 自分がお祝い済みか
   createdAt: string
 }
+```
+
+## Constants
+
+### 達成閾値（ACHIEVEMENT_THRESHOLDS）
+
+```typescript
+export const ACHIEVEMENT_THRESHOLDS: Record<Exclude<AchievementType, 'shared_entry'>, readonly number[]> = {
+  // 1日の投稿数: 20から50まで10刻み
+  daily_posts: [20, 30, 40, 50],
+  // 総投稿数: 10, 30, 50, 100, 150, 200, 250, 300, 400, 500, 以降100刻みで10000まで
+  total_posts: [
+    10, 30, 50, 100, 150, 200, 250, 300, 400, 500,
+    ...Array.from({ length: 95 }, (_, i) => 600 + i * 100),
+  ],
+  // 継続日数: 3, 7, 14, 30, 60, 90, 120, 150, 180, 240, 365, 以降60刻みで3650日まで
+  streak_days: [
+    3, 7, 14, 30, 60, 90, 120, 150, 180, 240, 365,
+    ...Array.from({ length: 55 }, (_, i) => 425 + i * 60),
+  ],
+} as const
+```
+
+### その他の定数
+
+```typescript
+// ページネーション設定
+export const SOCIAL_PAGINATION = {
+  FEED_PAGE_SIZE: 20,
+  NOTIFICATIONS_PAGE_SIZE: 20,
+  USER_SEARCH_PAGE_SIZE: 10,
+} as const
+
+// ユーザー名のバリデーション
+export const USERNAME_RULES = {
+  MIN_LENGTH: 3,
+  MAX_LENGTH: 20,
+  PATTERN: /^[a-zA-Z0-9_]+$/,  // 英数字とアンダースコアのみ
+} as const
 ```
 
 ## Error Handling
