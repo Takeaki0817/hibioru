@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cva } from 'class-variance-authority'
-import { Trash2, Users } from 'lucide-react'
+import { Trash2, Share } from 'lucide-react'
 import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
 import { SuccessOverlay } from './success-overlay'
@@ -18,7 +18,6 @@ import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Switch } from '@/components/ui/switch'
-import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { useEntryFormStore, selectCanSubmit, selectCanAddImage } from '../stores/entry-form-store'
@@ -268,11 +267,21 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
       animate="animate"
     >
       {/* ヘッダー */}
-      <div className="mb-4">
+      <div className="mb-4 flex items-center justify-between">
         <h1 className="text-lg font-medium text-muted-foreground flex items-center gap-2">
           <span>💭</span>
           <span>今、何を考えてる？</span>
         </h1>
+        <label htmlFor="share-toggle" className="flex items-center gap-2 cursor-pointer select-none">
+          <Share className="size-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">フォロワーに共有</span>
+          <Switch
+            id="share-toggle"
+            checked={isShared}
+            onCheckedChange={setIsShared}
+            disabled={isSubmitting || isSuccess}
+          />
+        </label>
       </div>
 
       {/* テキストエリア */}
@@ -331,22 +340,6 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
             <Trash2 size={24} className="text-red-500" />
           </Button>
         )}
-      </div>
-
-      {/* ソーシャル共有トグル */}
-      <div className="mt-4 flex items-center justify-between p-3 rounded-lg border bg-card">
-        <div className="flex items-center gap-2">
-          <Users className="size-4 text-muted-foreground" />
-          <Label htmlFor="share-toggle" className="text-sm cursor-pointer">
-            フォロワーに共有
-          </Label>
-        </div>
-        <Switch
-          id="share-toggle"
-          checked={isShared}
-          onCheckedChange={setIsShared}
-          disabled={isSubmitting || isSuccess}
-        />
       </div>
 
       {/* エラー表示 */}
