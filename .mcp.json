@@ -28,6 +28,13 @@
         "/Users/takeaki0817/WorkSpace/01_Private/apps/hibioru"
       ],
       "env": {}
+    },
+    "shadcn": {
+      "command": "npx",
+      "args": [
+        "shadcn@latest",
+        "mcp"
+      ]
     }
   }
 }
