@@ -276,6 +276,119 @@ export async function checkAndCreateAchievements(
 }
 
 /**
+ * 共有エントリの達成レコードを削除
+ * 共有→非共有に変更した時に呼び出す
+ */
+export async function deleteSharedEntryAchievement(
+  userId: string,
+  entryId: string
+): Promise<SocialResult<void>> {
+  try {
+    const supabase = await createClient()
+    const { data: userData } = await supabase.auth.getUser()
+
+    if (!userData.user) {
+      return {
+        ok: false,
+        error: { code: 'UNAUTHORIZED', message: '未認証です' },
+      }
+    }
+
+    if (userData.user.id !== userId) {
+      return {
+        ok: false,
+        error: { code: 'FORBIDDEN', message: '他のユーザーの達成を削除する権限がありません' },
+      }
+    }
+
+    const adminClient = createAdminClient()
+
+    // shared_entry タイプの達成レコードを削除
+    const { error } = await adminClient
+      .from('achievements')
+      .delete()
+      .eq('user_id', userId)
+      .eq('entry_id', entryId)
+      .eq('type', 'shared_entry')
+
+    if (error) {
+      console.error('共有達成削除エラー:', error.message)
+      return {
+        ok: false,
+        error: { code: 'DB_ERROR', message: error.message },
+      }
+    }
+
+    return { ok: true, value: undefined }
+  } catch (error) {
+    return {
+      ok: false,
+      error: {
+        code: 'DB_ERROR',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      },
+    }
+  }
+}
+
+/**
+ * 共有投稿の achievements レコードを touch（updated_at 更新）
+ * 投稿内容・画像編集時に Realtime UPDATE イベントを発火させるため
+ */
+export async function touchSharedEntryAchievement(
+  userId: string,
+  entryId: string
+): Promise<SocialResult<void>> {
+  try {
+    const supabase = await createClient()
+    const { data: userData } = await supabase.auth.getUser()
+
+    if (!userData.user) {
+      return {
+        ok: false,
+        error: { code: 'UNAUTHORIZED', message: '未認証です' },
+      }
+    }
+
+    if (userData.user.id !== userId) {
+      return {
+        ok: false,
+        error: { code: 'FORBIDDEN', message: '他のユーザーの達成を更新する権限がありません' },
+      }
+    }
+
+    const adminClient = createAdminClient()
+
+    // shared_entry タイプの達成レコードの updated_at を更新
+    // トリガーにより updated_at が自動で NOW() に設定される
+    const { error } = await adminClient
+      .from('achievements')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('entry_id', entryId)
+      .eq('type', 'shared_entry')
+
+    if (error) {
+      console.error('共有達成touch エラー:', error.message)
+      return {
+        ok: false,
+        error: { code: 'DB_ERROR', message: error.message },
+      }
+    }
+
+    return { ok: true, value: undefined }
+  } catch (error) {
+    return {
+      ok: false,
+      error: {
+        code: 'DB_ERROR',
+        message: error instanceof Error ? error.message : '不明なエラー',
+      },
+    }
+  }
+}
+
+/**
  * 達成をお祝い
  */
 export async function celebrateAchievement(achievementId: string): Promise<SocialResult<void>> {
