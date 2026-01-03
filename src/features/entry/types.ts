@@ -10,11 +10,13 @@ export type { Entry }
 export interface CreateEntryInput {
   content: string
   imageUrls: string[] | null
+  isShared?: boolean  // ソーシャルタイムラインに共有するか
 }
 
 export interface UpdateEntryInput {
   content: string
   imageUrls: string[] | null
+  isShared?: boolean  // ソーシャルタイムラインに共有するか
 }
 
 export interface CompressedImage {

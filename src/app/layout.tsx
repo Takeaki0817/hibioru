@@ -3,6 +3,7 @@ import { M_PLUS_1p } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { SkipLink } from "@/components/ui/skip-link";
@@ -65,7 +66,9 @@ export default function RootLayout({
       >
         <SkipLink />
         <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <QueryProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </QueryProvider>
           <ServiceWorkerRegistration />
           <InstallBanner />
         </ThemeProvider>

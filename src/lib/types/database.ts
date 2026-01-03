@@ -32,6 +32,7 @@ export interface Database {
           content: string
           image_urls: string[] | null
           is_public: boolean
+          is_shared: boolean
           is_deleted: boolean
           created_at: string
           updated_at: string
@@ -42,6 +43,7 @@ export interface Database {
           content: string
           image_urls?: string[] | null
           is_public?: boolean
+          is_shared?: boolean
           is_deleted?: boolean
           created_at?: string
           updated_at?: string
@@ -50,6 +52,7 @@ export interface Database {
           content?: string
           image_urls?: string[] | null
           is_public?: boolean
+          is_shared?: boolean
           is_deleted?: boolean
           updated_at?: string
         }

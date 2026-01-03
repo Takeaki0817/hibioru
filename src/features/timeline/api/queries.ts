@@ -51,7 +51,8 @@ export async function fetchEntries(
 
   // limit+1件取得しているので、次のページの有無を判定
   const hasMore = data.length > limit
-  const rawEntries: Entry[] = hasMore ? data.slice(0, limit) : data
+  // selectで必要カラムのみ取得しているのでEntry型とは一致しない
+  const rawEntries = (hasMore ? data.slice(0, limit) : data) as unknown as Entry[]
 
   // TimelineEntry型に変換
   const timelineEntries = rawEntries.map(convertToTimelineEntry)

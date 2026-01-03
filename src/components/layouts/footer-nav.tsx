@@ -35,8 +35,8 @@ export function FooterNav({ centerButton }: FooterNavProps) {
       isCenter: true,
     },
     {
-      href: '/mypage',
-      label: 'マイページ',
+      href: '/social',
+      label: 'ソーシャル',
       icon: User,
     },
   ]

@@ -1,5 +1,5 @@
 import { createBrowserClient } from '@supabase/ssr'
-import type { Database } from '@/lib/types/database'
+import type { Database } from '@/lib/types/database.generated'
 
 // ブラウザ用Supabaseクライアント
 // Client Componentsで使用
