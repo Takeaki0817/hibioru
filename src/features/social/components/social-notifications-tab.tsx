@@ -1,15 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import { useState, useEffect, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Bell, PartyPopper, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { getSocialNotifications, markAllAsRead } from '../api/notifications'
+import { useSocialNotifications } from '../hooks/use-social-notifications'
+import { useSocialRealtime } from '../hooks/use-social-realtime'
 import type { SocialNotificationItem } from '../types'
 import { ACHIEVEMENT_ICONS, ACHIEVEMENT_TYPE_LABELS } from '../constants'
-import { queryKeys } from '@/lib/constants/query-keys'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -41,94 +40,41 @@ const notificationVariants = {
  * Supabase Realtimeで新着通知をリアルタイム受信
  */
 export function SocialNotificationsTab() {
-  const queryClient = useQueryClient()
-  const [unreadCount, setUnreadCount] = useState(0)
+  const [currentUserId, setCurrentUserId] = useState<string | undefined>()
 
-  const {
-    data,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-    isLoading,
-    refetch,
-  } = useInfiniteQuery({
-    queryKey: [...queryKeys.social.all, 'notifications'],
-    queryFn: async ({ pageParam }) => {
-      const result = await getSocialNotifications(pageParam)
-      if (!result.ok) {
-        throw new Error('Failed to fetch notifications')
-      }
-      // 初回ロード時のみunreadCountを設定
-      if (!pageParam) {
-        setUnreadCount(result.value.unreadCount)
-      }
-      return result.value
-    },
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    initialPageParam: undefined as string | undefined,
-  })
-
-  // Supabase Realtimeで新着通知をサブスクライブ
+  // 現在のユーザーIDを取得
   useEffect(() => {
     const supabase = createClient()
-    let channel: ReturnType<typeof supabase.channel> | null = null
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setCurrentUserId(user?.id)
+    })
+  }, [])
 
-    // 現在のユーザーIDを取得してサブスクライブ
-    const setupRealtime = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
-      if (!user) return
+  // 通知取得
+  const {
+    notifications,
+    unreadCount,
+    isLoading,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+    markAllRead,
+    invalidateNotifications,
+  } = useSocialNotifications()
 
-      channel = supabase
-        .channel('social_notifications_realtime')
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'social_notifications',
-            filter: `user_id=eq.${user.id}`,
-          },
-          () => {
-            // 新しい通知が来たらrefetch
-            refetch()
-          }
-        )
-        .subscribe()
-    }
+  // Realtime購読: 新着通知を検知
+  const handleNotificationInsert = useCallback(() => {
+    invalidateNotifications()
+  }, [invalidateNotifications])
 
-    setupRealtime()
-
-    return () => {
-      if (channel) {
-        supabase.removeChannel(channel)
-      }
-    }
-  }, [refetch])
-
-  // ページをフラット化して通知リストを取得
-  const notifications = data?.pages.flatMap((page) => page.items) ?? []
+  useSocialRealtime({
+    isNotificationsActive: true,
+    currentUserId,
+    onNotificationInsert: handleNotificationInsert,
+  })
 
   const handleMarkAllAsRead = async () => {
-    const result = await markAllAsRead()
-    if (result.ok) {
-      // キャッシュを更新
-      queryClient.setQueryData(
-        [...queryKeys.social.all, 'notifications'],
-        (oldData: typeof data) => {
-          if (!oldData) return oldData
-          return {
-            ...oldData,
-            pages: oldData.pages.map((page) => ({
-              ...page,
-              items: page.items.map((n) => ({ ...n, isRead: true })),
-            })),
-          }
-        }
-      )
-      setUnreadCount(0)
-    }
+    await markAllRead()
   }
 
   return (
@@ -160,7 +106,7 @@ export function SocialNotificationsTab() {
 
           {hasNextPage && (
             <motion.button
-              onClick={() => fetchNextPage()}
+              onClick={fetchNextPage}
               disabled={isFetchingNextPage}
               className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-primary-50 dark:hover:bg-primary-950"
               whileTap={{ scale: 0.98 }}
