@@ -1,8 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { User, Users, Bell } from 'lucide-react'
+
+// 通知タブに渡すProps型
+interface NotificationsTabProps {
+  isActive?: boolean
+  onUnreadCountChange?: (count: number) => void
+}
 
 interface MypageTabsProps {
   profileContent: React.ReactNode
@@ -23,6 +29,8 @@ export function MypageTabs({
 }: MypageTabsProps) {
   const [activeTab, setActiveTab] = useState('profile')
   const [mounted, setMounted] = useState(false)
+  // バッジ表示用のローカル状態（子コンポーネントから更新可能）
+  const [badgeCount, setBadgeCount] = useState(unreadCount)
 
   // Hydration mismatch回避: クライアント側でマウント後にTabsをレンダリング
   useEffect(() => {
@@ -55,9 +63,9 @@ export function MypageTabs({
         <TabsTrigger value="notifications" className="relative flex items-center gap-1.5">
           <Bell className="size-4" />
           <span>通知</span>
-          {unreadCount > 0 && (
+          {badgeCount > 0 && (
             <span className="absolute -top-1 -right-1 size-4 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-              {unreadCount > 9 ? '9+' : unreadCount}
+              {badgeCount > 9 ? '9+' : badgeCount}
             </span>
           )}
         </TabsTrigger>
@@ -74,7 +82,13 @@ export function MypageTabs({
       </TabsContent>
 
       <TabsContent value="notifications" className="mt-0 data-[state=inactive]:hidden" forceMount>
-        {notificationsContent}
+        {React.cloneElement(
+          notificationsContent as React.ReactElement<NotificationsTabProps>,
+          {
+            isActive: activeTab === 'notifications',
+            onUnreadCountChange: setBadgeCount,
+          }
+        )}
       </TabsContent>
     </Tabs>
   )

@@ -34,12 +34,20 @@ const notificationVariants = {
   },
 }
 
+interface SocialNotificationsTabProps {
+  isActive?: boolean
+  onUnreadCountChange?: (count: number) => void
+}
+
 /**
  * ソーシャル通知タブ
  * お祝い・フォロー通知を表示
  * Supabase Realtimeで新着通知をリアルタイム受信
  */
-export function SocialNotificationsTab() {
+export function SocialNotificationsTab({
+  isActive = false,
+  onUnreadCountChange,
+}: SocialNotificationsTabProps) {
   const [currentUserId, setCurrentUserId] = useState<string | undefined>()
 
   // 現在のユーザーIDを取得
@@ -73,8 +81,29 @@ export function SocialNotificationsTab() {
     onNotificationInsert: handleNotificationInsert,
   })
 
+  // タブがアクティブになったら即座に既読化
+  useEffect(() => {
+    if (isActive && unreadCount > 0) {
+      markAllRead().then((success) => {
+        if (success && onUnreadCountChange) {
+          onUnreadCountChange(0)
+        }
+      })
+    }
+  }, [isActive, unreadCount, markAllRead, onUnreadCountChange])
+
+  // unreadCountが変わったら親に通知（バッジ即時更新）
+  useEffect(() => {
+    if (onUnreadCountChange) {
+      onUnreadCountChange(unreadCount)
+    }
+  }, [unreadCount, onUnreadCountChange])
+
   const handleMarkAllAsRead = async () => {
-    await markAllRead()
+    const success = await markAllRead()
+    if (success && onUnreadCountChange) {
+      onUnreadCountChange(0)
+    }
   }
 
   return (
@@ -130,6 +159,8 @@ function NotificationItem({ notification }: NotificationItemProps) {
   return (
     <motion.div
       variants={notificationVariants}
+      initial="initial"
+      animate="animate"
       className={cn(
         'p-4 rounded-xl border transition-all',
         notification.isRead
