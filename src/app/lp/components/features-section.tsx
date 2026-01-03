@@ -1,4 +1,4 @@
-import { Flame, Shield, Bell, Smartphone } from 'lucide-react'
+import { Flame, Shield, Bell, Smartphone, Users } from 'lucide-react'
 
 export function FeaturesSection() {
   const features = [
@@ -29,6 +29,17 @@ export function FeaturesSection() {
       description:
         'Webアプリなので、スマホ・タブレット・PCなど、どのデバイスからでもアクセス可能。思いついたときに、手元のデバイスですぐ記録。',
       highlights: ['アプリのインストール不要', 'デバイス間で自動同期'],
+    },
+    {
+      icon: Users,
+      title: 'みんなで応援',
+      description:
+        '仲間の頑張りを「お祝い」で応援できます。フォロー中のユーザーの達成がフィードに流れ、お祝いボタンでパーティクルエフェクトが表示されます。',
+      highlights: [
+        'フォロー中の仲間の達成をリアルタイムで確認',
+        'ワンタップで応援できるお祝い機能',
+        'フォロー数は非表示で競争心を避ける設計',
+      ],
     },
   ]
 
