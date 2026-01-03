@@ -19,4 +19,25 @@ export const queryKeys = {
     settings: (userId: string) =>
       [...queryKeys.notification.all, 'settings', userId] as const,
   },
+
+  // social関連
+  social: {
+    all: ['social'] as const,
+    feed: (cursor?: string) =>
+      [...queryKeys.social.all, 'feed', cursor] as const,
+    notifications: (cursor?: string) =>
+      [...queryKeys.social.all, 'notifications', cursor] as const,
+    unreadCount: () =>
+      [...queryKeys.social.all, 'unreadCount'] as const,
+    followStatus: (userId: string) =>
+      [...queryKeys.social.all, 'followStatus', userId] as const,
+    followCounts: (userId: string) =>
+      [...queryKeys.social.all, 'followCounts', userId] as const,
+    userSearch: (query: string) =>
+      [...queryKeys.social.all, 'userSearch', query] as const,
+    profile: (username: string) =>
+      [...queryKeys.social.all, 'profile', username] as const,
+    userAchievements: (userId: string, cursor?: string) =>
+      [...queryKeys.social.all, 'userAchievements', userId, cursor] as const,
+  },
 } as const
