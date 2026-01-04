@@ -157,6 +157,8 @@ export function SocialFeedTab() {
               <motion.button
                 onClick={fetchNextPage}
                 disabled={isFetchingNextPage}
+                aria-label="さらにフィードを読み込む"
+                aria-busy={isFetchingNextPage}
                 className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-primary-50 dark:hover:bg-primary-950"
                 whileTap={{ scale: 0.98 }}
               >
@@ -185,11 +187,25 @@ function FeedItem({ item }: FeedItemProps) {
     initialCount: item.celebrationCount,
   })
 
+  // アクセシブルなラベルを生成
+  const contentLabel = isSharedEntry
+    ? `${item.user.displayName}さんの共有投稿`
+    : item.achievement
+      ? `${item.user.displayName}さんの${getAchievementMessage(item.achievement.type, item.achievement.threshold)}`
+      : `${item.user.displayName}さんの投稿`
+
+  const ariaLabel = isCelebrated
+    ? `${contentLabel}（お祝い済み）。クリックでお祝いを取り消す`
+    : `${contentLabel}。クリックでお祝いする`
+
   return (
     <motion.button
       type="button"
       onClick={toggle}
       disabled={isPending}
+      aria-pressed={isCelebrated}
+      aria-label={ariaLabel}
+      aria-busy={isPending}
       variants={feedItemVariants}
       initial="initial"
       animate="animate"
@@ -210,8 +226,8 @@ function FeedItem({ item }: FeedItemProps) {
           {/* ヘッダー */}
           <div className="flex items-center gap-3 mb-2">
             <Avatar className="size-10 shrink-0 ring-2 ring-primary-100 dark:ring-primary-900">
-              <AvatarImage src={item.user.avatarUrl ?? undefined} alt={item.user.displayName} />
-              <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400">
+              <AvatarImage src={item.user.avatarUrl ?? undefined} alt="" />
+              <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400" aria-hidden="true">
                 {item.user.displayName?.charAt(0) ?? item.user.username.charAt(0)}
               </AvatarFallback>
             </Avatar>
@@ -265,7 +281,7 @@ function FeedItem({ item }: FeedItemProps) {
                       <div className="relative overflow-hidden rounded-md">
                         <img
                           src={item.entry.imageUrls[0]}
-                          alt=""
+                          alt={`${item.user.displayName}さんの共有画像`}
                           className="w-full max-h-40 object-cover"
                         />
                       </div>
@@ -285,7 +301,7 @@ function FeedItem({ item }: FeedItemProps) {
                           >
                             <img
                               src={url}
-                              alt=""
+                              alt={`${item.user.displayName}さんの共有画像 ${index + 1}`}
                               className="size-full object-cover"
                             />
                             {/* 残り枚数表示 */}
@@ -376,9 +392,10 @@ function EmptyFeedState() {
 // スケルトンローディング
 function FeedSkeleton() {
   return (
-    <div className="space-y-4">
+    <div role="status" aria-busy="true" aria-label="フィードを読み込み中" className="space-y-4">
+      <span className="sr-only">フィードを読み込み中...</span>
       {[...Array(3)].map((_, i) => (
-        <div key={i} className="p-4 rounded-xl border border-border bg-card">
+        <div key={i} className="p-4 rounded-xl border border-border bg-card" aria-hidden="true">
           <div className="flex items-center gap-3 mb-3">
             <div className="size-10 rounded-full bg-muted animate-pulse" />
             <div className="space-y-2 flex-1">

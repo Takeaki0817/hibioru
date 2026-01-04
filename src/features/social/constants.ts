@@ -132,6 +132,7 @@ export function validateUsername(username: string): { valid: boolean; error?: st
 export const ERROR_MESSAGES = {
   UNAUTHORIZED: '認証が必要です。再度ログインしてください',
   NETWORK_ERROR: 'ネットワークエラーが発生しました。接続を確認してください',
+  LOAD_FAILED: '読み込みに失敗しました',
   FEED_LOAD_FAILED: 'フィードの読み込みに失敗しました',
   NOTIFICATIONS_LOAD_FAILED: '通知の読み込みに失敗しました',
   FOLLOW_LIST_LOAD_FAILED: 'フォローリストの読み込みに失敗しました',

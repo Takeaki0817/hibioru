@@ -42,10 +42,11 @@ export function FollowStatsSection() {
           <motion.button
             whileTap={{ scale: 0.95 }}
             transition={ANIMATION_CONFIG.springDefault}
+            aria-label={`フォロー中 ${counts.followingCount}人の一覧を表示`}
             className="flex items-center gap-1.5 px-1 md:px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
           >
-            <span className="text-xs md:text-sm text-muted-foreground">フォロー</span>
-            <span className="text-xs md:text-sm font-semibold text-primary-600 dark:text-primary-400">
+            <span className="text-xs md:text-sm text-muted-foreground" aria-hidden="true">フォロー</span>
+            <span className="text-xs md:text-sm font-semibold text-primary-600 dark:text-primary-400" aria-hidden="true">
               {counts.followingCount}
             </span>
           </motion.button>
@@ -65,10 +66,11 @@ export function FollowStatsSection() {
           <motion.button
             whileTap={{ scale: 0.95 }}
             transition={ANIMATION_CONFIG.springDefault}
+            aria-label={`フォロワー ${counts.followerCount}人の一覧を表示`}
             className="flex items-center gap-1.5 px-1 md:px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
           >
-            <span className="text-xs md:text-sm text-muted-foreground">フォロワー</span>
-            <span className="text-xs md:text-sm font-semibold text-primary-600 dark:text-primary-400">
+            <span className="text-xs md:text-sm text-muted-foreground" aria-hidden="true">フォロワー</span>
+            <span className="text-xs md:text-sm font-semibold text-primary-600 dark:text-primary-400" aria-hidden="true">
               {counts.followerCount}
             </span>
           </motion.button>
@@ -88,13 +90,14 @@ export function FollowStatsSection() {
 // スケルトンローディング（コンパクト版）
 function StatsSkeleton() {
   return (
-    <div className="flex items-center gap-1">
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5">
+    <div role="status" aria-busy="true" aria-label="フォロー情報を読み込み中" className="flex items-center gap-1">
+      <span className="sr-only">フォロー情報を読み込み中...</span>
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5" aria-hidden="true">
         <div className="size-4 rounded bg-muted animate-pulse" />
         <div className="h-4 w-12 bg-muted rounded animate-pulse" />
         <div className="h-4 w-4 bg-muted rounded animate-pulse" />
       </div>
-      <div className="flex items-center gap-1.5 px-2.5 py-1.5">
+      <div className="flex items-center gap-1.5 px-2.5 py-1.5" aria-hidden="true">
         <div className="size-4 rounded bg-muted animate-pulse" />
         <div className="h-4 w-14 bg-muted rounded animate-pulse" />
         <div className="h-4 w-4 bg-muted rounded animate-pulse" />

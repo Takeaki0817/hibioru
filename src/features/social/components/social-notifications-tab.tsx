@@ -72,6 +72,8 @@ export function SocialNotificationsTab() {
         <EmptyNotificationsState />
       ) : (
         <motion.div
+          role="list"
+          aria-label="通知一覧"
           className="space-y-4"
           variants={containerVariants}
           initial="initial"
@@ -85,6 +87,8 @@ export function SocialNotificationsTab() {
             <motion.button
               onClick={fetchNextPage}
               disabled={isFetchingNextPage}
+              aria-label="さらに通知を読み込む"
+              aria-busy={isFetchingNextPage}
               className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-primary-50 dark:hover:bg-primary-950"
               whileTap={{ scale: 0.98 }}
             >
@@ -104,8 +108,16 @@ interface NotificationItemProps {
 function NotificationItem({ notification }: NotificationItemProps) {
   const timeAgo = getTimeAgo(notification.createdAt)
 
+  // 通知内容のラベル
+  const notificationLabel =
+    notification.type === 'celebration' && notification.achievement
+      ? `${notification.fromUser.displayName}さんがあなたの達成をお祝いしました`
+      : `${notification.fromUser.displayName}さんがあなたをフォローしました`
+
   return (
     <motion.div
+      role="listitem"
+      aria-label={`${notificationLabel}（${timeAgo}）`}
       variants={notificationVariants}
       initial="initial"
       animate="animate"
@@ -119,9 +131,9 @@ function NotificationItem({ notification }: NotificationItemProps) {
             <Avatar className="size-10 shrink-0 ring-2 ring-primary-100 dark:ring-primary-900">
               <AvatarImage
                 src={notification.fromUser.avatarUrl ?? undefined}
-                alt={notification.fromUser.displayName}
+                alt=""
               />
-              <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400">
+              <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400" aria-hidden="true">
                 {notification.fromUser.displayName?.charAt(0) ??
                   notification.fromUser.username.charAt(0)}
               </AvatarFallback>
@@ -185,9 +197,10 @@ function EmptyNotificationsState() {
 // スケルトンローディング
 function NotificationsSkeleton() {
   return (
-    <div className="space-y-4">
+    <div role="status" aria-busy="true" aria-label="通知を読み込み中" className="space-y-4">
+      <span className="sr-only">通知を読み込み中...</span>
       {[...Array(3)].map((_, i) => (
-        <div key={i} className="p-4 rounded-xl border border-border bg-card">
+        <div key={i} className="p-4 rounded-xl border border-border bg-card" aria-hidden="true">
           <div className="flex items-center gap-3 mb-3">
             <div className="size-10 rounded-full bg-muted animate-pulse" />
             <div className="space-y-2 flex-1">

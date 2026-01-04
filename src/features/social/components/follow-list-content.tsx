@@ -138,6 +138,8 @@ function FollowingList() {
 
   return (
     <motion.div
+      role="list"
+      aria-label="フォロー中のユーザー"
       className="space-y-2"
       variants={containerVariants}
       initial="initial"
@@ -153,6 +155,8 @@ function FollowingList() {
           className="w-full"
           onClick={() => loadUsers(nextCursor ?? undefined)}
           disabled={isLoading}
+          aria-label="さらにフォロー中のユーザーを読み込む"
+          aria-busy={isLoading}
         >
           {isLoading ? '読み込み中...' : 'もっと見る'}
         </Button>
@@ -219,6 +223,8 @@ function FollowerList() {
 
   return (
     <motion.div
+      role="list"
+      aria-label="フォロワー"
       className="space-y-2"
       variants={containerVariants}
       initial="initial"
@@ -234,6 +240,8 @@ function FollowerList() {
           className="w-full"
           onClick={() => loadUsers(nextCursor ?? undefined)}
           disabled={isLoading}
+          aria-label="さらにフォロワーを読み込む"
+          aria-busy={isLoading}
         >
           {isLoading ? '読み込み中...' : 'もっと見る'}
         </Button>
@@ -253,12 +261,14 @@ interface UserListItemProps {
 function UserListItem({ user, showFollowButton }: UserListItemProps) {
   return (
     <motion.div
+      role="listitem"
+      aria-label={`${user.displayName} (@${user.username})`}
       variants={itemVariants}
       className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card shadow-sm transition-colors hover:bg-primary-50/50 dark:hover:bg-primary-950/50"
     >
       <Avatar className="size-10 ring-2 ring-primary-100 dark:ring-primary-900">
-        <AvatarImage src={user.avatarUrl ?? undefined} alt={user.displayName} />
-        <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400">
+        <AvatarImage src={user.avatarUrl ?? undefined} alt="" />
+        <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400" aria-hidden="true">
           {user.displayName?.charAt(0) ?? user.username.charAt(0)}
         </AvatarFallback>
       </Avatar>
@@ -268,7 +278,7 @@ function UserListItem({ user, showFollowButton }: UserListItemProps) {
         <p className="text-sm text-muted-foreground truncate">@{user.username}</p>
       </div>
 
-      {showFollowButton && <FollowButton userId={user.id} />}
+      {showFollowButton && <FollowButton userId={user.id} username={user.displayName} />}
     </motion.div>
   )
 }
@@ -276,9 +286,10 @@ function UserListItem({ user, showFollowButton }: UserListItemProps) {
 // スケルトンローディング
 function ListSkeleton() {
   return (
-    <div className="space-y-2">
+    <div role="status" aria-busy="true" aria-label="ユーザーリストを読み込み中" className="space-y-2">
+      <span className="sr-only">ユーザーリストを読み込み中...</span>
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card">
+        <div key={i} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card" aria-hidden="true">
           <div className="size-10 rounded-full bg-muted animate-pulse" />
           <div className="flex-1 space-y-2">
             <div className="h-4 w-24 bg-muted rounded animate-pulse" />
