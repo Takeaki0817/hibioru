@@ -5,8 +5,12 @@
 
 import {
   validateUsername,
+  validateDisplayName,
+  sanitizeDisplayName,
+  escapeIlikeWildcards,
   getAchievementMessage,
   USERNAME_RULES,
+  DISPLAY_NAME_RULES,
   ACHIEVEMENT_THRESHOLDS,
 } from '../constants'
 
@@ -202,5 +206,160 @@ describe('ACHIEVEMENT_THRESHOLDS', () => {
       const after365 = ACHIEVEMENT_THRESHOLDS.streak_days.slice(11, 14)
       expect(after365).toEqual([425, 485, 545])
     })
+  })
+})
+
+describe('validateDisplayName', () => {
+  describe('有効な表示名', () => {
+    it('通常の日本語名で有効', () => {
+      const result = validateDisplayName('テストユーザー')
+      expect(result.valid).toBe(true)
+      expect(result.error).toBeUndefined()
+    })
+
+    it('英数字のみで有効', () => {
+      const result = validateDisplayName('TestUser123')
+      expect(result.valid).toBe(true)
+      expect(result.error).toBeUndefined()
+    })
+
+    it('絵文字を含んでも有効', () => {
+      const result = validateDisplayName('ユーザー🎉')
+      expect(result.valid).toBe(true)
+      expect(result.error).toBeUndefined()
+    })
+
+    it('スペースを含んでも有効', () => {
+      const result = validateDisplayName('Test User')
+      expect(result.valid).toBe(true)
+      expect(result.error).toBeUndefined()
+    })
+
+    it('50文字で有効', () => {
+      const result = validateDisplayName('あ'.repeat(50))
+      expect(result.valid).toBe(true)
+      expect(result.error).toBeUndefined()
+    })
+  })
+
+  describe('無効な表示名 - 長さ制約', () => {
+    it('空文字はエラー', () => {
+      const result = validateDisplayName('')
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.TOO_SHORT)
+    })
+
+    it('スペースのみはエラー（trimで空になる）', () => {
+      const result = validateDisplayName('   ')
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.TOO_SHORT)
+    })
+
+    it('51文字は長すぎてエラー', () => {
+      const result = validateDisplayName('a'.repeat(51))
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.TOO_LONG)
+    })
+  })
+
+  describe('無効な表示名 - 禁止文字', () => {
+    it('HTMLタグ文字<>を含むとエラー', () => {
+      const result = validateDisplayName('Test<script>')
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
+    })
+
+    it('ダブルクォートを含むとエラー', () => {
+      const result = validateDisplayName('Test"User')
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
+    })
+
+    it('シングルクォートを含むとエラー', () => {
+      const result = validateDisplayName("Test'User")
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
+    })
+
+    it('アンパサンドを含むとエラー', () => {
+      const result = validateDisplayName('Test&User')
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
+    })
+
+    it('NULL文字を含むとエラー', () => {
+      const result = validateDisplayName('Test\x00User')
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
+    })
+
+    it('改行文字を含むとエラー', () => {
+      const result = validateDisplayName('Test\nUser')
+      expect(result.valid).toBe(false)
+      expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
+    })
+  })
+
+  describe('境界値テスト', () => {
+    it('1文字（最小長）で有効', () => {
+      expect(validateDisplayName('あ').valid).toBe(true)
+    })
+
+    it('50文字（最大長）で有効', () => {
+      expect(validateDisplayName('a'.repeat(50)).valid).toBe(true)
+    })
+  })
+})
+
+describe('sanitizeDisplayName', () => {
+  it('前後の空白を除去', () => {
+    expect(sanitizeDisplayName('  テスト  ')).toBe('テスト')
+  })
+
+  it('制御文字を除去', () => {
+    expect(sanitizeDisplayName('Test\x00\x01User')).toBe('TestUser')
+  })
+
+  it('50文字を超える場合は切り詰め', () => {
+    const input = 'a'.repeat(100)
+    expect(sanitizeDisplayName(input)).toBe('a'.repeat(50))
+  })
+
+  it('正常な入力はそのまま返す', () => {
+    expect(sanitizeDisplayName('テストユーザー')).toBe('テストユーザー')
+  })
+
+  it('空白のみの入力は空文字を返す', () => {
+    expect(sanitizeDisplayName('   ')).toBe('')
+  })
+})
+
+describe('escapeIlikeWildcards', () => {
+  it('%をエスケープ', () => {
+    expect(escapeIlikeWildcards('100%')).toBe('100\\%')
+  })
+
+  it('_をエスケープ', () => {
+    expect(escapeIlikeWildcards('user_name')).toBe('user\\_name')
+  })
+
+  it('バックスラッシュをエスケープ', () => {
+    expect(escapeIlikeWildcards('path\\file')).toBe('path\\\\file')
+  })
+
+  it('複合パターンをエスケープ', () => {
+    expect(escapeIlikeWildcards('100%_test\\path')).toBe('100\\%\\_test\\\\path')
+  })
+
+  it('通常の文字はそのまま', () => {
+    expect(escapeIlikeWildcards('normaluser')).toBe('normaluser')
+  })
+
+  it('日本語はそのまま', () => {
+    expect(escapeIlikeWildcards('テスト')).toBe('テスト')
+  })
+
+  it('空文字は空文字を返す', () => {
+    expect(escapeIlikeWildcards('')).toBe('')
   })
 })

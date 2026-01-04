@@ -5,6 +5,8 @@ import 'server-only'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logger } from '@/lib/logger'
+import { createSafeError } from '@/lib/error-handler'
 import type { FollowCounts, PublicUserInfo, SocialResult, PaginatedResult } from '../types'
 import { SOCIAL_PAGINATION } from '../constants'
 import { sendFollowPushNotification } from './push'
@@ -42,12 +44,13 @@ export async function followUser(targetUserId: string): Promise<SocialResult<voi
       if (error.code === '23505') {
         return {
           ok: false,
-          error: { code: 'ALREADY_FOLLOWING', message: '既にフォローしています' },
+          error: createSafeError('ALREADY_FOLLOWING'),
         }
       }
+      logger.error('フォロー処理失敗', error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: error.message },
+        error: createSafeError('DB_ERROR', error),
       }
     }
 
@@ -70,8 +73,8 @@ export async function followUser(targetUserId: string): Promise<SocialResult<voi
       sendFollowPushNotification(
         targetUserId,
         fromUser.display_name || fromUser.username
-      ).catch((error) => {
-        console.error('フォロープッシュ通知エラー:', error)
+      ).catch((err) => {
+        logger.error('フォロープッシュ通知エラー', err)
       })
     }
 
@@ -82,10 +85,7 @@ export async function followUser(targetUserId: string): Promise<SocialResult<voi
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }
@@ -112,9 +112,10 @@ export async function unfollowUser(targetUserId: string): Promise<SocialResult<v
       .eq('following_id', targetUserId)
 
     if (error) {
+      logger.error('フォロー解除失敗', error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: error.message },
+        error: createSafeError('DB_ERROR', error),
       }
     }
 
@@ -122,7 +123,7 @@ export async function unfollowUser(targetUserId: string): Promise<SocialResult<v
     if (count === 0) {
       return {
         ok: false,
-        error: { code: 'NOT_FOLLOWING', message: 'フォローしていません' },
+        error: createSafeError('NOT_FOLLOWING'),
       }
     }
 
@@ -133,10 +134,7 @@ export async function unfollowUser(targetUserId: string): Promise<SocialResult<v
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }
@@ -164,9 +162,10 @@ export async function isFollowing(targetUserId: string): Promise<SocialResult<bo
       .maybeSingle()
 
     if (error) {
+      logger.error('フォロー状態確認失敗', error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: error.message },
+        error: createSafeError('DB_ERROR', error),
       }
     }
 
@@ -174,10 +173,7 @@ export async function isFollowing(targetUserId: string): Promise<SocialResult<bo
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }
@@ -210,16 +206,18 @@ export async function getFollowCounts(): Promise<SocialResult<FollowCounts>> {
     ])
 
     if (followingResult.error) {
+      logger.error('フォロー数取得失敗', followingResult.error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: followingResult.error.message },
+        error: createSafeError('DB_ERROR', followingResult.error),
       }
     }
 
     if (followerResult.error) {
+      logger.error('フォロワー数取得失敗', followerResult.error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: followerResult.error.message },
+        error: createSafeError('DB_ERROR', followerResult.error),
       }
     }
 
@@ -233,10 +231,7 @@ export async function getFollowCounts(): Promise<SocialResult<FollowCounts>> {
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }
@@ -281,9 +276,10 @@ export async function getFollowingList(
     const { data, error } = await query
 
     if (error) {
+      logger.error('フォロー中一覧取得失敗', error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: error.message },
+        error: createSafeError('DB_ERROR', error),
       }
     }
 
@@ -313,10 +309,7 @@ export async function getFollowingList(
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }
@@ -361,9 +354,10 @@ export async function getFollowerList(
     const { data, error } = await query
 
     if (error) {
+      logger.error('フォロワー一覧取得失敗', error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: error.message },
+        error: createSafeError('DB_ERROR', error),
       }
     }
 
@@ -393,10 +387,7 @@ export async function getFollowerList(
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }
