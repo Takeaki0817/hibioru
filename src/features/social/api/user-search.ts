@@ -3,8 +3,10 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
+import { createSafeError } from '@/lib/error-handler'
 import type { PublicUserInfo, SocialResult, UserSearchResult } from '../types'
-import { SOCIAL_PAGINATION } from '../constants'
+import { SOCIAL_PAGINATION, escapeIlikeWildcards } from '../constants'
 
 /**
  * ユーザーを検索（username または display_name で部分一致）
@@ -38,12 +40,15 @@ export async function searchUsers(
       ? normalizedQuery.slice(1)
       : normalizedQuery
 
+    // ワイルドカード文字をエスケープ（%と_が検索文字として使える）
+    const escapedTerm = escapeIlikeWildcards(searchTerm)
+
     // ILIKE検索（大文字小文字を区別しない部分一致）
     let searchQuery = supabase
       .from('users')
       .select('id, username, display_name, avatar_url, created_at')
       .neq('id', userData.user.id) // 自分を除外
-      .or(`username.ilike.%${searchTerm}%,display_name.ilike.%${searchTerm}%`)
+      .or(`username.ilike.%${escapedTerm}%,display_name.ilike.%${escapedTerm}%`)
       .order('created_at', { ascending: false })
       .limit(SOCIAL_PAGINATION.USER_SEARCH_PAGE_SIZE + 1)
 
@@ -54,9 +59,10 @@ export async function searchUsers(
     const { data, error } = await searchQuery
 
     if (error) {
+      logger.error('ユーザー検索失敗', error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: error.message },
+        error: createSafeError('DB_ERROR', error),
       }
     }
 
@@ -78,10 +84,7 @@ export async function searchUsers(
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }

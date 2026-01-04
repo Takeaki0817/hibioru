@@ -115,6 +115,7 @@ export interface SocialError {
     | 'NOT_CELEBRATED'
     | 'USERNAME_TAKEN'
     | 'INVALID_USERNAME'
+    | 'INVALID_DISPLAY_NAME'
   message: string
 }
 

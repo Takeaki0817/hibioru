@@ -3,8 +3,14 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
+import { createSafeError } from '@/lib/error-handler'
 import type { PublicUserInfo, SocialResult, UpdateProfileInput } from '../types'
-import { validateUsername } from '../constants'
+import {
+  validateUsername,
+  validateDisplayName,
+  sanitizeDisplayName,
+} from '../constants'
 
 /**
  * ユーザーIDでプロフィールを取得
@@ -38,10 +44,7 @@ export async function getProfileById(userId: string): Promise<SocialResult<Publi
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }
@@ -81,10 +84,7 @@ export async function getProfileByUsername(username: string): Promise<SocialResu
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }
@@ -108,10 +108,7 @@ export async function getMyProfile(): Promise<SocialResult<PublicUserInfo>> {
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }
@@ -151,9 +148,10 @@ export async function checkUsernameAvailability(
       .maybeSingle()
 
     if (error) {
+      logger.error('ユーザー名重複チェック失敗', error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: error.message },
+        error: createSafeError('DB_ERROR', error),
       }
     }
 
@@ -164,10 +162,7 @@ export async function checkUsernameAvailability(
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }
@@ -212,10 +207,22 @@ export async function updateProfile(
       }
     }
 
+    // displayNameのバリデーション
+    if (input.displayName !== undefined) {
+      const displayNameValidation = validateDisplayName(input.displayName)
+      if (!displayNameValidation.valid) {
+        return {
+          ok: false,
+          error: { code: 'INVALID_DISPLAY_NAME', message: displayNameValidation.error! },
+        }
+      }
+    }
+
     // 更新データを構築
     const updateData: Record<string, string> = {}
     if (input.displayName !== undefined) {
-      updateData.display_name = input.displayName
+      // サニタイズして保存
+      updateData.display_name = sanitizeDisplayName(input.displayName)
     }
     if (input.username !== undefined) {
       updateData.username = input.username
@@ -238,12 +245,13 @@ export async function updateProfile(
       if (error.code === '23505') {
         return {
           ok: false,
-          error: { code: 'USERNAME_TAKEN', message: 'このユーザーIDは既に使用されています' },
+          error: createSafeError('USERNAME_TAKEN'),
         }
       }
+      logger.error('プロフィール更新失敗', error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: error.message },
+        error: createSafeError('DB_ERROR', error),
       }
     }
 
@@ -259,10 +267,7 @@ export async function updateProfile(
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }

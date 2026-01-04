@@ -128,6 +128,50 @@ export function validateUsername(username: string): { valid: boolean; error?: st
   return { valid: true }
 }
 
+// 表示名のバリデーション
+export const DISPLAY_NAME_RULES = {
+  MIN_LENGTH: 1,
+  MAX_LENGTH: 50,
+  // 制御文字・危険な文字を禁止
+  FORBIDDEN_PATTERN: /[\x00-\x1F\x7F<>"'&]/,
+  ERROR_MESSAGES: {
+    TOO_SHORT: '表示名を入力してください',
+    TOO_LONG: '表示名は50文字以内で入力してください',
+    INVALID_CHARS: '表示名に使用できない文字が含まれています',
+  },
+} as const
+
+// 表示名のバリデーション関数
+export function validateDisplayName(displayName: string): { valid: boolean; error?: string } {
+  const trimmed = displayName.trim()
+  if (trimmed.length < DISPLAY_NAME_RULES.MIN_LENGTH) {
+    return { valid: false, error: DISPLAY_NAME_RULES.ERROR_MESSAGES.TOO_SHORT }
+  }
+  if (trimmed.length > DISPLAY_NAME_RULES.MAX_LENGTH) {
+    return { valid: false, error: DISPLAY_NAME_RULES.ERROR_MESSAGES.TOO_LONG }
+  }
+  if (DISPLAY_NAME_RULES.FORBIDDEN_PATTERN.test(trimmed)) {
+    return { valid: false, error: DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS }
+  }
+  return { valid: true }
+}
+
+// 表示名のサニタイズ
+export function sanitizeDisplayName(displayName: string): string {
+  return displayName
+    .trim()
+    .replace(/[\x00-\x1F\x7F]/g, '') // 制御文字除去
+    .slice(0, DISPLAY_NAME_RULES.MAX_LENGTH)
+}
+
+// ILIKE検索用ワイルドカードエスケープ
+export function escapeIlikeWildcards(input: string): string {
+  return input
+    .replace(/\\/g, '\\\\')
+    .replace(/%/g, '\\%')
+    .replace(/_/g, '\\_')
+}
+
 // 共通エラーメッセージ
 export const ERROR_MESSAGES = {
   UNAUTHORIZED: '認証が必要です。再度ログインしてください',
@@ -138,5 +182,6 @@ export const ERROR_MESSAGES = {
   FOLLOW_LIST_LOAD_FAILED: 'フォローリストの読み込みに失敗しました',
   USER_SEARCH_FAILED: 'ユーザー検索に失敗しました',
   CELEBRATION_FAILED: 'お祝いの処理に失敗しました',
+  LOAD_FAILED: '読み込みに失敗しました',
   RETRY: '再試行',
 } as const
