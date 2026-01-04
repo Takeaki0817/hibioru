@@ -9,7 +9,7 @@
 **Objective:** As a ユーザー, I want デバイスでプッシュ通知を受け取れるように登録したい, so that 記録を忘れないようリマインドを受けられる
 
 #### Acceptance Criteria
-1. When ユーザーがマイページで通知機能をオンにする, the 通知サービス shall ブラウザの通知許可ダイアログを表示する
+1. When ユーザーがソーシャルページで通知機能をオンにする, the 通知サービス shall ブラウザの通知許可ダイアログを表示する
 2. When ユーザーが通知許可を承諾する, the 通知サービス shall Web Pushの購読情報（endpoint, p256dh, auth）をpush_subscriptionsテーブルに保存する
 3. When ユーザーが同一アカウントで別デバイスから通知を有効化する, the 通知サービス shall 新しいデバイスの購読情報を追加登録する（複数デバイス対応）
 4. When ユーザーが通知の購読を解除する, the 通知サービス shall 該当デバイスの購読情報をpush_subscriptionsテーブルから削除する
@@ -26,7 +26,7 @@
 3. The リマインド設定 shall DBに保存され、全デバイスで共有される
 4. When 新規ユーザーが登録される, the 通知サービス shall 全リマインドをデフォルトでオフに設定する
 5. When ユーザーがリマインド設定を変更する, the 通知サービス shall 変更内容をnotification_settingsテーブルに即時反映する
-6. The 通知サービス shall 通知設定UIをマイページに配置する
+6. The 通知サービス shall 通知設定UIをソーシャルページに配置する
 7. The 通知サービス shall timezoneをAsia/Tokyoとして通知時刻を計算する
 
 ### Requirement 3: リマインド通知

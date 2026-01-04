@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { DayPicker, type DayButtonProps } from 'react-day-picker'
 import { ja } from 'date-fns/locale'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Spool } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { useCalendarData } from '../hooks/use-calendar-data'
@@ -26,6 +26,7 @@ function CustomDayButton(props: DayButtonProps) {
   const disabledClass = modifiers.disabled ? 'calendar-disabled' : ''
   const todayClass = modifiers.today ? 'calendar-today' : ''
   const selectedClass = modifiers.selected ? 'calendar-selected' : ''
+  const hotsureClass = modifiers.hotsure ? 'calendar-hotsure' : ''
 
   return (
     <button
@@ -37,10 +38,14 @@ function CustomDayButton(props: DayButtonProps) {
         disabledClass,
         todayClass,
         selectedClass,
+        hotsureClass,
         buttonProps.className
       )}
     >
       {modifiers.today && <span className="today-dot" />}
+      {modifiers.hotsure && (
+        <Spool className="absolute -right-0.5 -top-0.5 h-3 w-3 text-primary-400" />
+      )}
       <span>{day.date.getDate()}</span>
     </button>
   )
@@ -94,6 +99,7 @@ export function MonthCalendar({
     const streakMiddleDays: Date[] = []
     const streakEndDays: Date[] = []
     const streakSingleDays: Date[] = []
+    const hotsureDays: Date[] = []
     const noEntryDays: Date[] = []
     let today: Date | undefined
 
@@ -103,6 +109,7 @@ export function MonthCalendar({
       if (d.hasEntry) entryDays.push(dateObj)
       else noEntryDays.push(dateObj)
 
+      if (d.hasHotsure) hotsureDays.push(dateObj)
       if (d.isStreakStart) streakStartDays.push(dateObj)
       if (d.isStreakMiddle) streakMiddleDays.push(dateObj)
       if (d.isStreakEnd) streakEndDays.push(dateObj)
@@ -116,6 +123,7 @@ export function MonthCalendar({
       streakMiddleDays,
       streakEndDays,
       streakSingleDays,
+      hotsureDays,
       noEntryDays,
       today,
     }
@@ -127,6 +135,7 @@ export function MonthCalendar({
     streakMiddleDays,
     streakEndDays,
     streakSingleDays,
+    hotsureDays,
     noEntryDays,
     today,
   } = calendarCategories
@@ -170,6 +179,7 @@ export function MonthCalendar({
                 streakMiddle: streakMiddleDays,
                 streakEnd: streakEndDays,
                 streakSingle: streakSingleDays,
+                hotsure: hotsureDays,
                 today: today ? [today] : [],
               }}
               components={{
@@ -192,6 +202,10 @@ export function MonthCalendar({
           <div className="flex items-center gap-2">
             <span className="inline-block h-1 w-6 rounded-full bg-primary-300"></span>
             <span>記録あり</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Spool className="h-3 w-3 text-primary-400" />
+            <span>ほつれ</span>
           </div>
         </div>
       </div>

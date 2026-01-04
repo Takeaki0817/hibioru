@@ -38,7 +38,7 @@ function TimelineContent({
   const setSyncSource = useTimelineStore((s) => s.setSyncSource)
 
   // 全期間の投稿日付を取得（カルーセル用）
-  const { entryDates } = useAllEntryDates({ userId })
+  const { entryDates, hotsureDates } = useAllEntryDates({ userId })
 
   // ストアAPIに直接アクセス（初期化用）
   const storeApi = useTimelineStoreApi()
@@ -122,6 +122,7 @@ function TimelineContent({
       <DateHeader
         currentDate={currentDate}
         entryDates={entryDates}
+        hotsureDates={hotsureDates}
         onDateChange={handleDateChange}
         externalDateChangeRef={carouselDateChangeRef}
       />

@@ -10,6 +10,10 @@
       "mcp__next-devtools",
       "mcp__ide",
       "mcp__playwright",
+      "mcp__gcloud",
+      "mcp__vercel-awesome-ai",
+      "mcp__shadcn",
+      "mcp__shadcn",
       "Bash(pnpm:*)",
       "Bash(npm:*)",
       "Bash(npx:*)",
@@ -45,35 +49,13 @@
       "Bash(supabase:*)",
       "WebSearch"
     ],
-    "deny": []
-  },
-  "hooks": {
-    "Stop": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "afplay ~/Library/Sounds/notification.aiff"
-          }
-        ]
-      }
-    ],
-    "Notification": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "afplay ~/Library/Sounds/caution.aiff"
-          }
-        ]
-      }
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(./secrets/**)"
     ]
   },
-  "statusLine": {
-    "type": "command",
-    "command": "~/.claude/statusline.js"
-  },
+  "enabledPlugins": {},
   "alwaysThinkingEnabled": true
 }

@@ -297,7 +297,7 @@ describe('Service Worker - 通知クリックハンドラ', () => {
       const targetUrl = '/new';
       const client1 = createMockClient('/');
       const client2 = createMockClient('/new');
-      const client3 = createMockClient('/mypage');
+      const client3 = createMockClient('/social');
       const mockClients = createMockClients([client1, client2, client3]);
 
       const result = await handleNotificationClick({ url: targetUrl }, mockClients);

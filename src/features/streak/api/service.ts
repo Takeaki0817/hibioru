@@ -5,7 +5,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { getJSTToday, getJSTDateString } from '@/lib/date-utils'
 import type { StreakInsert } from '@/lib/types/database'
-import type { StreakInfo, StreakError, Result } from '../types'
+import type { StreakInfo, StreakError, Result, WeeklyRecords } from '../types'
 
 /**
  * ストリーク情報を取得
@@ -212,12 +212,13 @@ export async function hasEntryOnDate(
 }
 
 /**
- * 今週（月〜日）の記録有無を取得
- * @returns [月, 火, 水, 木, 金, 土, 日] の boolean 配列
+ * 今週（月〜日）の記録有無とほつれ使用日を取得
+ * @returns entries: [月, 火, 水, 木, 金, 土, 日] の boolean 配列
+ *          hotsures: [月, 火, 水, 木, 金, 土, 日] の boolean 配列
  */
 export async function getWeeklyRecords(
   userId: string
-): Promise<Result<boolean[], StreakError>> {
+): Promise<Result<WeeklyRecords, StreakError>> {
   try {
     const today = getJSTToday()
     const todayDate = new Date(`${today}T00:00:00+09:00`)
@@ -237,32 +238,37 @@ export async function getWeeklyRecords(
       weekDates.push(date.toISOString().split('T')[0])
     }
 
-    // 日曜日の日付を計算
-    const sundayDate = new Date(mondayDate)
-    sundayDate.setUTCDate(sundayDate.getUTCDate() + 6)
-
-    // 1つのクエリで1週間分のエントリを取得（N+1解消）
+    // エントリーとほつれ使用日を並列取得
     const supabase = await createClient()
-    const { data, error } = await supabase
-      .from('entries')
-      .select('created_at')
-      .eq('user_id', userId)
-      .eq('is_deleted', false)
-      .gte('created_at', `${weekDates[0]}T00:00:00+09:00`)
-      .lte('created_at', `${weekDates[6]}T23:59:59+09:00`)
+    const [entriesResult, streakResult] = await Promise.all([
+      // 1週間分のエントリを取得
+      supabase
+        .from('entries')
+        .select('created_at')
+        .eq('user_id', userId)
+        .eq('is_deleted', false)
+        .gte('created_at', `${weekDates[0]}T00:00:00+09:00`)
+        .lte('created_at', `${weekDates[6]}T23:59:59+09:00`),
+      // ほつれ使用日を取得
+      supabase
+        .from('streaks')
+        .select('hotsure_used_dates')
+        .eq('user_id', userId)
+        .single(),
+    ])
 
-    if (error) {
+    if (entriesResult.error) {
       return {
         ok: false,
         error: {
           code: 'DB_ERROR',
-          message: error.message
+          message: entriesResult.error.message
         }
       }
     }
 
     // 取得したエントリから各日付の有無を判定
-    const entries = data as { created_at: string }[] | null
+    const entries = entriesResult.data as { created_at: string }[] | null
     const entriesByDate = new Set(
       (entries ?? []).map(e => {
         // created_at を JST の日付文字列に変換
@@ -270,9 +276,17 @@ export async function getWeeklyRecords(
       })
     )
 
+    // ほつれ使用日のSet作成（エラーの場合は空）
+    const hotsureUsedDates = new Set<string>(
+      (streakResult.data?.hotsure_used_dates as string[] | null) ?? []
+    )
+
     return {
       ok: true,
-      value: weekDates.map(date => entriesByDate.has(date))
+      value: {
+        entries: weekDates.map(date => entriesByDate.has(date)),
+        hotsures: weekDates.map(date => hotsureUsedDates.has(date)),
+      }
     }
   } catch (error) {
     return {

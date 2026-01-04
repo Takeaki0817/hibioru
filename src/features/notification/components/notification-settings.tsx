@@ -23,6 +23,9 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
   const [reminders, setReminders] = useState<Reminder[]>(
     initialSettings.reminders?.length > 0 ? initialSettings.reminders : DEFAULT_REMINDERS
   )
+  const [socialNotificationsEnabled, setSocialNotificationsEnabled] = useState(
+    initialSettings.social_notifications_enabled ?? true
+  )
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -123,6 +126,18 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
     }
   }
 
+  // ソーシャル通知のトグル変更
+  const handleSocialNotificationsToggle = async (newEnabled: boolean) => {
+    const previousEnabled = socialNotificationsEnabled
+    setSocialNotificationsEnabled(newEnabled)
+
+    try {
+      await updateSettings({ social_notifications_enabled: newEnabled })
+    } catch {
+      setSocialNotificationsEnabled(previousEnabled)
+    }
+  }
+
   if (!isSupported) {
     return (
       <FeatureCard title="通知設定" titleSize="xl">
@@ -156,7 +171,7 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
           <div className="space-y-1">
             <Label htmlFor="notification-toggle">通知を受け取る</Label>
             <p className="text-sm text-muted-foreground">
-              毎日決まった時刻にリマインド通知を送ります
+              リマインドやソーシャルの通知を受け取ります
             </p>
           </div>
           <Switch
@@ -200,6 +215,24 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
                   />
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* ソーシャル通知設定 */}
+          <div className="pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label htmlFor="social-notification-toggle">ソーシャル通知</Label>
+                <p className="text-sm text-muted-foreground">
+                  お祝いやフォローをブラウザ通知で受け取る
+                </p>
+              </div>
+              <Switch
+                id="social-notification-toggle"
+                checked={socialNotificationsEnabled}
+                onCheckedChange={handleSocialNotificationsToggle}
+                disabled={isLoading}
+              />
             </div>
           </div>
 

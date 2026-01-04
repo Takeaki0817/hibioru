@@ -10,7 +10,7 @@ interface FeatureCardProps {
 
 /**
  * フィーチャーセクション用の共通カードコンポーネント
- * マイページのセクション、ストリーク表示、通知設定などで使用
+ * ソーシャルページのセクション、ストリーク表示、通知設定などで使用
  */
 export function FeatureCard({
   title,

@@ -43,10 +43,12 @@ Thumbs.db
 
 # Local settings
 .claude/settings.local.json
-.serena/
 
 # Playwright MCP
 .playwright-mcp/
+
+# Serena LSP cache
+.serena/
 
 # Backup files
 _.mcp.json

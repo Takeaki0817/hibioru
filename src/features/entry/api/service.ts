@@ -2,12 +2,18 @@
 
 import 'server-only'
 
+import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { EntryInsert, EntryUpdate } from '@/lib/types/database'
 import type { Entry, CreateEntryInput, UpdateEntryInput, EntryError, Result } from '../types'
 import { isEditable } from '../utils'
 import { handleEntryCreated } from '@/features/notification/api/entry-integration'
 import { updateStreakOnEntry } from '@/features/streak/api/service'
+import {
+  checkAndCreateAchievements,
+  deleteSharedEntryAchievement,
+  touchSharedEntryAchievement,
+} from '@/features/social/api/achievements'
 
 /**
  * 新規エントリを作成
@@ -42,6 +48,7 @@ export async function createEntry(
       user_id: userData.user.id,
       content: input.content,
       image_urls: input.imageUrls ?? null,
+      is_shared: input.isShared ?? false,
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
@@ -59,7 +66,7 @@ export async function createEntry(
 
     const entry = data as Entry
 
-    // ストリーク更新と通知連携を並列実行（パフォーマンス最適化）
+    // ストリーク更新、通知連携、達成チェックを並列実行（パフォーマンス最適化）
     // これらの処理の失敗はエントリー作成結果に影響しない（ログのみ）
     await Promise.allSettled([
       updateStreakOnEntry(userData.user.id),
@@ -68,6 +75,7 @@ export async function createEntry(
         entryId: entry.id,
         createdAt: new Date(entry.created_at),
       }),
+      checkAndCreateAchievements(userData.user.id, entry.id, input.isShared ?? false),
     ]).then((results) => {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
@@ -78,6 +86,10 @@ export async function createEntry(
         }
       })
     })
+
+    // タイムラインとソーシャルページのSSRキャッシュを無効化
+    revalidatePath('/timeline')
+    revalidatePath('/social')
 
     return { ok: true, value: entry }
   } catch (error) {
@@ -120,6 +132,7 @@ export async function updateEntry(
     const updateData: EntryUpdate = {
       content: input.content,
       image_urls: input.imageUrls ?? null,
+      is_shared: input.isShared,
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase as any)
@@ -136,7 +149,42 @@ export async function updateEntry(
       }
     }
 
-    return { ok: true, value: data as Entry }
+    const entry = data as Entry
+
+    // 共有状態の変更を処理
+    if (!getResult.value.is_shared && input.isShared) {
+      // 非共有→共有: 達成レコードを作成
+      await checkAndCreateAchievements(
+        getResult.value.user_id,
+        id,
+        true
+      ).catch((err) => {
+        console.error('達成チェック失敗:', err instanceof Error ? err.message : err)
+      })
+    } else if (getResult.value.is_shared && !input.isShared) {
+      // 共有→非共有: 達成レコードを削除
+      await deleteSharedEntryAchievement(
+        getResult.value.user_id,
+        id
+      ).catch((err) => {
+        console.error('達成削除失敗:', err instanceof Error ? err.message : err)
+      })
+    } else if (getResult.value.is_shared && input.isShared) {
+      // 共有状態を維持したまま内容を編集: achievements の updated_at を更新
+      // これにより Realtime UPDATE イベントが発火し、フォロワーのフィードが更新される
+      await touchSharedEntryAchievement(
+        getResult.value.user_id,
+        id
+      ).catch((err) => {
+        console.error('達成touch失敗:', err instanceof Error ? err.message : err)
+      })
+    }
+
+    // タイムラインとソーシャルページのSSRキャッシュを無効化
+    revalidatePath('/timeline')
+    revalidatePath('/social')
+
+    return { ok: true, value: entry }
   } catch (error) {
     return {
       ok: false,
@@ -155,6 +203,12 @@ export async function deleteEntry(id: string): Promise<Result<void, EntryError>>
   try {
     const supabase = await createClient()
 
+    // 削除前にエントリ情報を取得（共有状態確認のため）
+    const getResult = await getEntry(id)
+    if (!getResult.ok) {
+      return getResult
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase as any)
       .from('entries')
@@ -167,6 +221,20 @@ export async function deleteEntry(id: string): Promise<Result<void, EntryError>>
         error: { code: 'DB_ERROR', message: error.message }
       }
     }
+
+    // 共有投稿の場合は達成レコードも削除
+    if (getResult.value.is_shared) {
+      await deleteSharedEntryAchievement(
+        getResult.value.user_id,
+        id
+      ).catch((err) => {
+        console.error('達成削除失敗:', err instanceof Error ? err.message : err)
+      })
+    }
+
+    // タイムラインとソーシャルページのSSRキャッシュを無効化
+    revalidatePath('/timeline')
+    revalidatePath('/social')
 
     return { ok: true, value: undefined }
   } catch (error) {

@@ -10,7 +10,7 @@
 
 ### Goals
 
-- 日付ベースのナビゲーション（スワイプ・カレンダー選択）による直感的な操作
+- 日付ベースのナビゲーション（カルーセル・カレンダー選択）による直感的な操作
 - 仮想スクロールによる大量投稿の効率的な表示
 - 日付とスクロール位置の双方向同期による一貫したUX
 - 継続記録の視覚化（●記録、━━継続線、🧵ほつれ、◎今日）
@@ -35,6 +35,7 @@ graph TB
 
     subgraph Components
         DateHeader[DateHeader]
+        DateCarousel[DateCarousel]
         MonthCalendar[MonthCalendar]
         TimelineList[TimelineList]
         EntryCard[EntryCard]
@@ -43,9 +44,14 @@ graph TB
 
     subgraph Hooks
         useTimeline[useTimeline]
-        useSwipeNavigation[useSwipeNavigation]
+        useDateCarousel[useDateCarousel]
+        useAllEntryDates[useAllEntryDates]
         useScrollSync[useScrollSync]
         useCalendarData[useCalendarData]
+    end
+
+    subgraph State
+        TimelineStore[TimelineStore - Zustand]
     end
 
     subgraph DataLayer
@@ -60,20 +66,26 @@ graph TB
     TimelinePage --> DateHeader
     TimelinePage --> MonthCalendar
     TimelinePage --> TimelineList
+    DateHeader --> DateCarousel
     TimelineList --> EntryCard
     EntryCard --> ContextMenu
 
-    DateHeader --> useSwipeNavigation
+    DateCarousel --> useDateCarousel
+    DateCarousel --> useAllEntryDates
     TimelineList --> useTimeline
     TimelineList --> useScrollSync
     MonthCalendar --> useCalendarData
     DateHeader --> useScrollSync
+    DateHeader --> TimelineStore
 
     useTimeline --> TanStackQuery
     useCalendarData --> TanStackQuery
+    useAllEntryDates --> TanStackQuery
     TanStackQuery --> SupabaseClient
     SupabaseClient --> SupabaseDB
 ```
+
+> **設計変更メモ**: 当初の`useSwipeNavigation`は`useDateCarousel`および`useAllEntryDates`に置き換え。また、状態管理にTimelineStore（Zustand）を追加し、カレンダー開閉状態やアクティブ日付の管理を集中化。
 
 **Architecture Integration**:
 - **Selected pattern**: Feature-First構成 + Hooks分離。UIコンポーネントとビジネスロジックを明確に分離し、再利用性とテスト容易性を確保
@@ -234,7 +246,7 @@ interface TimelineEntry {
   id: string;
   userId: string;
   content: string;
-  imageUrl: string | null;
+  imageUrls: string[] | null;  // 複数画像対応（配列）
   createdAt: Date;
   date: string; // YYYY-MM-DD形式
 }
@@ -277,55 +289,91 @@ function useTimeline(options?: UseTimelineOptions): UseTimelineReturn;
 
 ---
 
-#### useSwipeNavigation
+#### useDateCarousel
 
 | Field | Detail |
 |-------|--------|
-| Intent | スワイプジェスチャーの検出と日付ナビゲーション |
+| Intent | 日付カルーセルのスクロール制御と日付選択 |
 | Requirements | 1.1, 1.2 |
 
 **Responsibilities & Constraints**
-- 左右スワイプの検出とコールバック呼び出し
-- スワイプ感度の調整（最小距離、最大時間）
-- タッチデバイスとマウスの両方に対応
+- カルーセル内の日付アイテムのスクロール位置管理
+- 選択された日付の中央寄せアニメーション
+- スクロールイベントのデバウンス処理
 
 **Dependencies**
-- External: react-swipeable — スワイプ検出ライブラリ (P0)
+- Inbound: DateCarousel — UIコンポーネント (P0)
+- Outbound: TimelineStore — アクティブ日付の更新 (P0)
+
+**Contracts**: Service [x] / State [x]
+
+##### Service Interface
+```typescript
+interface UseDateCarouselOptions {
+  containerRef: React.RefObject<HTMLElement>;
+  dates: string[];  // YYYY-MM-DD[]
+  activeDate: string;
+  onDateSelect: (date: string) => void;
+}
+
+interface UseDateCarouselReturn {
+  scrollToDate: (date: string) => void;
+  handleScroll: () => void;
+  getVisibleDateIndex: () => number;
+}
+
+function useDateCarousel(options: UseDateCarouselOptions): UseDateCarouselReturn;
+```
+
+- Preconditions: containerRefが有効なDOM要素を参照していること
+- Postconditions: 選択された日付がカルーセル中央に表示される
+- Invariants: スクロール位置と表示日付の整合性を維持
+
+**Implementation Notes**
+- Integration: `scrollIntoView`でスムースなスクロールアニメーション
+- Validation: 日付が配列内に存在するか確認
+- Risks: 高頻度スクロールイベント → `requestAnimationFrame`でデバウンス
+
+---
+
+#### useAllEntryDates
+
+| Field | Detail |
+|-------|--------|
+| Intent | 全期間の記録日付を軽量に取得（カルーセル表示用） |
+| Requirements | 1.1 |
+
+**Responsibilities & Constraints**
+- ユーザーの全記録日付（重複なし）を取得
+- カルーセル表示に必要な最小限のデータのみ取得
+- キャッシュによる効率的なデータ管理
+
+**Dependencies**
+- Outbound: TanStack Query — クエリ管理 (P0)
+- External: Supabase Client — データベースアクセス (P0)
 
 **Contracts**: Service [x]
 
 ##### Service Interface
 ```typescript
-interface UseSwipeNavigationOptions {
-  onSwipeLeft: () => void;
-  onSwipeRight: () => void;
-  minSwipeDistance?: number;
-  preventScrollOnSwipe?: boolean;
+interface UseAllEntryDatesReturn {
+  dates: string[];  // YYYY-MM-DD[] (降順)
+  isLoading: boolean;
+  isError: boolean;
+  refetch: () => Promise<void>;
 }
 
-interface UseSwipeNavigationReturn {
-  handlers: {
-    onTouchStart: (e: TouchEvent) => void;
-    onTouchMove: (e: TouchEvent) => void;
-    onTouchEnd: (e: TouchEvent) => void;
-    onMouseDown: (e: MouseEvent) => void;
-    onMouseMove: (e: MouseEvent) => void;
-    onMouseUp: (e: MouseEvent) => void;
-  };
-  isSwiping: boolean;
-}
-
-function useSwipeNavigation(options: UseSwipeNavigationOptions): UseSwipeNavigationReturn;
+function useAllEntryDates(userId: string): UseAllEntryDatesReturn;
 ```
 
-- Preconditions: コールバック関数が提供されていること
-- Postconditions: スワイプ完了時に適切なコールバックが呼び出される
-- Invariants: 垂直スクロールとの干渉を防ぐ
+- Preconditions: ユーザーが認証済みであること
+- Postconditions: 全期間の記録日付が取得される
+- Invariants: 日付は降順（新しい順）でソートされる
 
 **Implementation Notes**
-- Integration: react-swipeableの`useSwipeable`フックをラップ
-- Validation: スワイプ距離が閾値を超えているか確認
-- Risks: 垂直スクロールとの誤認識 → `delta`設定で調整
+- Integration: `SELECT DISTINCT DATE(created_at AT TIME ZONE 'Asia/Tokyo') FROM entries`
+- Validation: 日付形式の妥当性チェック
+- Performance: 日付のみ取得することでペイロードを最小化
 
 ---
 
@@ -440,6 +488,56 @@ function useCalendarData(options: UseCalendarDataOptions): UseCalendarDataReturn
 - Validation: 年月の有効性チェック
 - Risks: 月をまたぐ連続記録の判定 → 前月最終日も含めて取得
 
+### Store Layer
+
+#### TimelineStore (Zustand)
+
+| Field | Detail |
+|-------|--------|
+| Intent | タイムライン画面の状態を集中管理し、Props Drillingを回避する |
+| Requirements | 1.3, 3.1, 3.2 |
+
+**Responsibilities & Constraints**
+- カレンダー開閉状態（isCalendarOpen）の管理
+- アクティブ日付（activeDates）の管理
+- 同期ソース（syncSource: 'scroll' | 'carousel' | 'calendar'）の追跡
+- コンポーネント間の状態共有
+
+**Dependencies**
+- Inbound: DateHeader, DateCarousel, MonthCalendar, TimelineList
+- External: zustand (P0)
+
+**Contracts**: State [x]
+
+##### State Management
+
+```typescript
+interface TimelineStoreState {
+  isCalendarOpen: boolean;
+  activeDates: string[];  // 現在表示中の日付（複数可）
+  syncSource: 'scroll' | 'carousel' | 'calendar' | null;
+}
+
+interface TimelineStoreActions {
+  setCalendarOpen: (open: boolean) => void;
+  setActiveDates: (dates: string[], source: 'scroll' | 'carousel' | 'calendar') => void;
+  reset: () => void;
+}
+
+type TimelineStore = TimelineStoreState & TimelineStoreActions;
+```
+
+- State model: Zustandによるグローバル状態管理
+- Persistence: なし（コンポーネントのライフサイクルに依存）
+- Location: `/features/timeline/stores/timeline-store.ts`
+
+**Implementation Notes**
+- Integration: useTimelineStore()で任意のコンポーネントから状態にアクセス
+- Validation: activeDatesは空配列を許容しない（最低1つの日付が必要）
+- Benefits: カレンダー、カルーセル、スクロールの状態を一元管理
+
+---
+
 ### UI Layer
 
 #### DateHeader
@@ -450,14 +548,14 @@ function useCalendarData(options: UseCalendarDataOptions): UseCalendarDataReturn
 | Requirements | 1.1, 1.2, 1.3, 3.1, 3.2, 4.2 |
 
 **Responsibilities & Constraints**
-- 現在表示中の日付を「YYYY年MM月DD日（曜日）」形式で表示
-- スワイプジェスチャーによる前後日移動
+- DateCarouselを内包し、日付カルーセルを表示
 - カレンダーアイコンタップで月カレンダー展開
 - ほつれ使用日に🧵マーク表示
 
 **Dependencies**
 - Inbound: useScrollSync — 現在日付通知 (P0)
-- Outbound: useSwipeNavigation — スワイプハンドラ (P0)
+- Outbound: DateCarousel — 日付カルーセル (P0)
+- Outbound: TimelineStore — カレンダー開閉状態 (P0)
 - Outbound: MonthCalendar — 展開制御 (P1)
 
 **Contracts**: State [x]
@@ -469,7 +567,38 @@ function useCalendarData(options: UseCalendarDataOptions): UseCalendarDataReturn
 **Implementation Notes**
 - Integration: `'use client'`ディレクティブが必要
 - Validation: 日付の表示形式変換
-- Risks: スワイプとスクロールの競合 → 横スワイプのみ検出
+
+---
+
+#### DateCarousel
+
+| Field | Detail |
+|-------|--------|
+| Intent | 記録がある日付を横スクロール可能なカルーセルで表示 |
+| Requirements | 1.1, 1.2 |
+
+**Responsibilities & Constraints**
+- 全期間の記録日付を横並びで表示
+- 選択された日付を中央に配置
+- スクロールに応じてアクティブ日付を更新
+- 記録がある日にドットインジケーター表示
+
+**Dependencies**
+- Inbound: DateHeader — 親コンポーネント (P0)
+- Outbound: useDateCarousel — スクロール制御 (P0)
+- Outbound: useAllEntryDates — 日付データ取得 (P0)
+- Outbound: TimelineStore — アクティブ日付更新 (P0)
+
+**Contracts**: State [x]
+
+##### State Management
+- State model: カルーセル内のスクロール位置はDOM状態として管理
+- UI State: アクティブ日付はTimelineStoreから取得
+
+**Implementation Notes**
+- Integration: `overflow-x: auto`で横スクロール、`scroll-snap-type`でスナップ
+- Validation: 日付が空の場合は「記録がありません」を表示
+- Performance: 大量の日付でも軽量表示（日付文字列のみ）
 
 ---
 

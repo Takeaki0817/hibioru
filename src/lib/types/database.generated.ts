@@ -34,6 +34,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          created_at: string
+          entry_id: string | null
+          id: string
+          is_shared: boolean
+          threshold: number
+          type: string
+          updated_at: string
+          user_id: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          entry_id?: string | null
+          id?: string
+          is_shared?: boolean
+          threshold: number
+          type: string
+          updated_at?: string
+          user_id: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          entry_id?: string | null
+          id?: string
+          is_shared?: boolean
+          threshold?: number
+          type?: string
+          updated_at?: string
+          user_id?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "achievements_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "achievements_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       batch_logs: {
         Row: {
           affected_rows: number | null
@@ -64,6 +115,42 @@ export type Database = {
         }
         Relationships: []
       }
+      celebrations: {
+        Row: {
+          achievement_id: string
+          created_at: string
+          from_user_id: string
+          id: string
+        }
+        Insert: {
+          achievement_id: string
+          created_at?: string
+          from_user_id: string
+          id?: string
+        }
+        Update: {
+          achievement_id?: string
+          created_at?: string
+          from_user_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "celebrations_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "celebrations_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       entries: {
         Row: {
           content: string
@@ -72,6 +159,7 @@ export type Database = {
           image_urls: string[] | null
           is_deleted: boolean
           is_public: boolean
+          is_shared: boolean
           updated_at: string
           user_id: string
         }
@@ -82,6 +170,7 @@ export type Database = {
           image_urls?: string[] | null
           is_deleted?: boolean
           is_public?: boolean
+          is_shared?: boolean
           updated_at?: string
           user_id: string
         }
@@ -92,6 +181,7 @@ export type Database = {
           image_urls?: string[] | null
           is_deleted?: boolean
           is_public?: boolean
+          is_shared?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -99,6 +189,63 @@ export type Database = {
           {
             foreignKeyName: "entries_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follow_up_cancellations: {
+        Row: {
+          cancelled_at: string
+          id: string
+          target_date: string
+          user_id: string
+        }
+        Insert: {
+          cancelled_at?: string
+          id?: string
+          target_date: string
+          user_id: string
+        }
+        Update: {
+          cancelled_at?: string
+          id?: string
+          target_date?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          following_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          following_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          following_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_following_id_fkey"
+            columns: ["following_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["id"]
@@ -155,6 +302,7 @@ export type Database = {
           follow_up_max_count: number
           notification_prompt_shown: boolean
           reminders: Json
+          social_notifications_enabled: boolean
           timezone: string
           user_id: string
         }
@@ -166,6 +314,7 @@ export type Database = {
           follow_up_max_count?: number
           notification_prompt_shown?: boolean
           reminders?: Json
+          social_notifications_enabled?: boolean
           timezone?: string
           user_id: string
         }
@@ -177,6 +326,7 @@ export type Database = {
           follow_up_max_count?: number
           notification_prompt_shown?: boolean
           reminders?: Json
+          social_notifications_enabled?: boolean
           timezone?: string
           user_id?: string
         }
@@ -228,6 +378,58 @@ export type Database = {
           },
         ]
       }
+      social_notifications: {
+        Row: {
+          achievement_id: string | null
+          created_at: string
+          from_user_id: string
+          id: string
+          is_read: boolean
+          type: string
+          user_id: string
+        }
+        Insert: {
+          achievement_id?: string | null
+          created_at?: string
+          from_user_id: string
+          id?: string
+          is_read?: boolean
+          type: string
+          user_id: string
+        }
+        Update: {
+          achievement_id?: string | null
+          created_at?: string
+          from_user_id?: string
+          id?: string
+          is_read?: boolean
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "social_notifications_achievement_id_fkey"
+            columns: ["achievement_id"]
+            isOneToOne: false
+            referencedRelation: "achievements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_notifications_from_user_id_fkey"
+            columns: ["from_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "social_notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       streaks: {
         Row: {
           current_streak: number
@@ -235,6 +437,7 @@ export type Database = {
           hotsure_used_dates: string[]
           last_entry_date: string | null
           longest_streak: number
+          updated_at: string
           user_id: string
         }
         Insert: {
@@ -243,6 +446,7 @@ export type Database = {
           hotsure_used_dates?: string[]
           last_entry_date?: string | null
           longest_streak?: number
+          updated_at?: string
           user_id: string
         }
         Update: {
@@ -251,6 +455,7 @@ export type Database = {
           hotsure_used_dates?: string[]
           last_entry_date?: string | null
           longest_streak?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: [
@@ -270,6 +475,7 @@ export type Database = {
           display_name: string
           email: string
           id: string
+          username: string
         }
         Insert: {
           avatar_url?: string | null
@@ -277,6 +483,7 @@ export type Database = {
           display_name: string
           email: string
           id: string
+          username: string
         }
         Update: {
           avatar_url?: string | null
@@ -284,6 +491,7 @@ export type Database = {
           display_name?: string
           email?: string
           id?: string
+          username?: string
         }
         Relationships: []
       }

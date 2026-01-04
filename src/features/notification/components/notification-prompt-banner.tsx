@@ -63,7 +63,7 @@ export function NotificationPromptBanner() {
 
           {/* サブテキスト */}
           <p className="mt-2 text-xs text-muted-foreground">
-            マイページからいつでも設定できます
+            ソーシャルページからいつでも設定できます
           </p>
 
           {/* アクションボタン */}

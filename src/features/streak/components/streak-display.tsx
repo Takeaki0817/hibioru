@@ -16,6 +16,8 @@ interface StreakDisplayProps {
   longestStreak: number
   // 過去7日間の記録状態（true=記録あり、false=記録なし）
   weeklyRecords?: boolean[]
+  // 過去7日間のほつれ使用状態（true=ほつれ使用、false=未使用）
+  hotsureRecords?: boolean[]
 }
 
 // CVAバリアント定義 - メインストリーク表示
@@ -35,6 +37,7 @@ export function StreakDisplay({
   currentStreak,
   longestStreak,
   weeklyRecords = [true, true, true, true, true, false, false],
+  hotsureRecords,
 }: StreakDisplayProps) {
   // 現在のストリークが最長記録と一致するかチェック
   const isNewRecord = currentStreak === longestStreak && currentStreak > 0
@@ -120,7 +123,11 @@ export function StreakDisplay({
           </div>
 
           {/* 週間ビュー */}
-          <WeeklyRecordDots weeklyRecords={weeklyRecords} todayIndex={todayIndex} />
+          <WeeklyRecordDots
+            weeklyRecords={weeklyRecords}
+            hotsureRecords={hotsureRecords}
+            todayIndex={todayIndex}
+          />
 
           {/* 最長記録 */}
           <LongestStreakCard

@@ -1,6 +1,7 @@
 'use client'
 
-import { useInfiniteQuery } from '@tanstack/react-query'
+import { useEffect } from 'react'
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { fetchEntries } from '../api/queries'
 import type { TimelineEntry } from '../types'
@@ -31,6 +32,7 @@ interface PageParam {
 
 export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
   const { userId, initialDate, pageSize = 20 } = options
+  const queryClient = useQueryClient()
 
   // initialDateが指定されている場合、その日付の翌日0:00をcursorとして使用
   // これにより、その日付を含むデータから取得を開始する
@@ -81,6 +83,26 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
 
   // 全ページのentriesをフラット化
   const entries = data?.pages.flatMap((page) => page.entries) || []
+
+  // 次ページを自動プリフェッチ（UX向上）
+  // hasNextPageがtrueの場合、バックグラウンドで次ページをプリフェッチ
+  const nextCursor = data?.pages[data.pages.length - 1]?.nextCursor
+  useEffect(() => {
+    if (hasNextPage && nextCursor) {
+      queryClient.prefetchInfiniteQuery({
+        queryKey: queryKeys.entries.timeline(userId, nextCursor),
+        queryFn: ({ pageParam }) =>
+          fetchEntries({
+            userId,
+            cursor: pageParam.cursor,
+            limit: pageSize,
+            direction: pageParam.direction,
+          }),
+        initialPageParam: { cursor: nextCursor, direction: 'before' } as PageParam,
+        staleTime: 10 * 60 * 1000, // 10分
+      })
+    }
+  }, [hasNextPage, nextCursor, userId, pageSize, queryClient])
 
   return {
     entries,
