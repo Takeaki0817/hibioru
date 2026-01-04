@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useMemo, useCallback, useId } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Users, PartyPopper, Loader2, Share2, Quote } from 'lucide-react'
 import { UserSearch } from './user-search'
@@ -187,6 +187,9 @@ function FeedItem({ item }: FeedItemProps) {
     initialCount: item.celebrationCount,
   })
 
+  // アクセシビリティ用ID
+  const descriptionId = useId()
+
   // アクセシブルなラベルを生成
   const contentLabel = isSharedEntry
     ? `${item.user.displayName}さんの共有投稿`
@@ -194,9 +197,9 @@ function FeedItem({ item }: FeedItemProps) {
       ? `${item.user.displayName}さんの${getAchievementMessage(item.achievement.type, item.achievement.threshold)}`
       : `${item.user.displayName}さんの投稿`
 
-  const ariaLabel = isCelebrated
-    ? `${contentLabel}（お祝い済み）。クリックでお祝いを取り消す`
-    : `${contentLabel}。クリックでお祝いする`
+  const actionDescription = isCelebrated
+    ? 'クリックでお祝いを取り消す'
+    : 'クリックでお祝いする'
 
   return (
     <motion.button
@@ -204,7 +207,8 @@ function FeedItem({ item }: FeedItemProps) {
       onClick={toggle}
       disabled={isPending}
       aria-pressed={isCelebrated}
-      aria-label={ariaLabel}
+      aria-label={isCelebrated ? `${contentLabel}（お祝い済み）` : contentLabel}
+      aria-describedby={descriptionId}
       aria-busy={isPending}
       variants={feedItemVariants}
       initial="initial"
@@ -219,6 +223,11 @@ function FeedItem({ item }: FeedItemProps) {
           : 'border-2 border-dashed border-muted-foreground/30 bg-card hover:border-celebrate-300 hover:bg-celebrate-50/30 dark:hover:bg-celebrate-100/10 hover:shadow-md cursor-pointer'
       )}
     >
+      {/* スクリーンリーダー向け操作説明 */}
+      <span id={descriptionId} className="sr-only">
+        {actionDescription}
+      </span>
+
       {/* 内側div: ボーダー太さの差をpaddingで吸収 */}
       <div className={cn('flex items-start gap-4', isCelebrated ? 'p-[15px]' : 'p-[14px]')}>
         {/* 左側: ヘッダー + コンテンツ */}

@@ -42,16 +42,16 @@ export function UserSearch() {
 
   // 外側クリックで検索結果を閉じる
   useEffect(() => {
+    if (!hasSearched) return
+
     const handleClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setHasSearched(false)
       }
     }
 
-    if (hasSearched) {
-      document.addEventListener('mousedown', handleClickOutside)
-      return () => document.removeEventListener('mousedown', handleClickOutside)
-    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [hasSearched])
 
   const performSearch = useDebouncedCallback(async (searchQuery: string) => {
@@ -171,6 +171,7 @@ function UserSearchResultItem({ user }: UserSearchResultItemProps) {
   return (
     <motion.div
       role="option"
+      aria-selected={false}
       aria-label={`${user.displayName} (@${user.username})`}
       variants={itemVariants}
       className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-muted"

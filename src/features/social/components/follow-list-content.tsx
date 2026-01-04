@@ -266,6 +266,7 @@ function UserListItem({ user, showFollowButton }: UserListItemProps) {
       variants={itemVariants}
       className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card shadow-sm transition-colors hover:bg-primary-50/50 dark:hover:bg-primary-950/50"
     >
+      {/* アバター画像: 親要素のaria-labelでユーザー情報を提供しているため装飾画像として扱う */}
       <Avatar className="size-10 ring-2 ring-primary-100 dark:ring-primary-900">
         <AvatarImage src={user.avatarUrl ?? undefined} alt="" />
         <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400" aria-hidden="true">
