@@ -146,8 +146,9 @@ export function ProfileEditForm({
               size="sm"
               onClick={() => setIsEditing(true)}
               className="h-8 w-8 p-0"
+              aria-label="プロフィールを編集"
             >
-              <Pencil className="size-4" />
+              <Pencil className="size-4" aria-hidden="true" />
             </Button>
           </div>
         </CardHeader>
@@ -196,8 +197,9 @@ export function ProfileEditForm({
               onClick={handleCancel}
               disabled={isPending}
               className="h-8 w-8 p-0"
+              aria-label="編集をキャンセル"
             >
-              <X className="size-4" />
+              <X className="size-4" aria-hidden="true" />
             </Button>
             <Button
               variant="ghost"
@@ -205,11 +207,13 @@ export function ProfileEditForm({
               onClick={handleSave}
               disabled={isPending || !hasChanges || !!usernameError || isCheckingUsername}
               className="h-8 w-8 p-0"
+              aria-label="プロフィールを保存"
+              aria-busy={isPending}
             >
               {isPending ? (
-                <Loader2 className="size-4 animate-spin" />
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
               ) : (
-                <Check className="size-4" />
+                <Check className="size-4" aria-hidden="true" />
               )}
             </Button>
           </div>
@@ -217,7 +221,7 @@ export function ProfileEditForm({
       </CardHeader>
       <CardContent className="space-y-4">
         {error && (
-          <p className="text-sm text-destructive">{error}</p>
+          <p className="text-sm text-destructive" role="alert" aria-live="assertive">{error}</p>
         )}
 
         <div className="space-y-2">
@@ -250,7 +254,7 @@ export function ProfileEditForm({
             )}
           </div>
           {usernameError && (
-            <p className="text-sm text-destructive">{usernameError}</p>
+            <p className="text-sm text-destructive" role="alert" aria-live="polite">{usernameError}</p>
           )}
           <p className="text-xs text-muted-foreground">
             {USERNAME_RULES.MIN_LENGTH}〜{USERNAME_RULES.MAX_LENGTH}文字、半角英数字とアンダースコアのみ

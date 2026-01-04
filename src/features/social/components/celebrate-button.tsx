@@ -85,6 +85,9 @@ export function CelebrateButton({
         type="button"
         onClick={toggle}
         disabled={isPending}
+        aria-pressed={isCelebrated}
+        aria-label={isCelebrated ? 'お祝いを取り消す' : 'お祝いする'}
+        aria-busy={isPending}
         variants={buttonVariants}
         initial="idle"
         whileTap="tap"

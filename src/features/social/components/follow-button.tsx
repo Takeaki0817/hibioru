@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils'
 
 interface FollowButtonProps {
   userId: string
+  username?: string | null
   initialIsFollowing?: boolean
   size?: 'default' | 'sm'
 }
@@ -24,7 +25,7 @@ const iconVariants = {
  * フォロー/フォロー解除ボタン
  * MotionButton化によりタップ時のスケールアニメーション付き
  */
-export function FollowButton({ userId, initialIsFollowing, size = 'default' }: FollowButtonProps) {
+export function FollowButton({ userId, username, initialIsFollowing, size = 'default' }: FollowButtonProps) {
   const [showSuccess, setShowSuccess] = useState(false)
 
   // 成功時のコールバック（成功アニメーション）
@@ -59,11 +60,23 @@ export function FollowButton({ userId, initialIsFollowing, size = 'default' }: F
     )
   }
 
+  // アクセシブルなラベルを生成
+  const ariaLabel = username
+    ? isFollowing
+      ? `${username}のフォローを解除`
+      : `${username}をフォロー`
+    : isFollowing
+      ? 'フォローを解除'
+      : 'フォローする'
+
   return (
     <motion.button
       type="button"
       onClick={toggle}
       disabled={isPending}
+      aria-pressed={isFollowing ?? false}
+      aria-label={ariaLabel}
+      aria-busy={isPending}
       whileTap={{ scale: 0.95 }}
       transition={ANIMATION_CONFIG.springSnappy}
       className={cn(
