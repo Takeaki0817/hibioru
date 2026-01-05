@@ -3,7 +3,7 @@
 ## アーキテクチャ
 
 **フルスタックJamstack構成**
-- フロントエンド: Next.js App Router (RSC対応)
+- フロントエンド: Next.js 16 App Router (RSC対応、React Compiler)
 - バックエンド: Supabase (BaaS)
 - ホスティング: Vercel
 - PWAによるマルチデバイス対応
@@ -13,9 +13,9 @@
 ## コア技術
 
 - **言語**: TypeScript
-- **フレームワーク**: Next.js (App Router)
-- **ランタイム**: Node.js
-- **スタイリング**: Tailwind CSS
+- **フレームワーク**: Next.js 16 (App Router, Turbopack, React Compiler)
+- **ランタイム**: Node.js 20+
+- **スタイリング**: Tailwind CSS v4
 
 ---
 
@@ -25,8 +25,11 @@
 |----------|------|------|
 | バックエンド/DB | Supabase | PostgreSQL、Auth、Storage、Realtime |
 | 認証 | Supabase Auth | Google OAuth |
+| 状態管理 | Zustand | フィーチャー内ストア |
+| データフェッチ | TanStack Query | キャッシュ・無効化管理 |
+| アニメーション | framer-motion | UI遷移・インタラクション |
 | 画像処理 | browser-image-compression | クライアント側WebP変換・圧縮 |
-| PWA | next-pwa (または同等) | オフライン対応、プッシュ通知 |
+| PWA | Web Push API | プッシュ通知 |
 
 ---
 
@@ -53,10 +56,11 @@ interface Entry {
 - ESLint + Prettier による自動フォーマット
 - コミット前のリント実行推奨
 
-### テスト（Phase 2以降）
+### テスト
 
-- Jest + React Testing Library
-- 重要なビジネスロジック（ストリーク計算、ほつれ消費）を優先
+- **ユニットテスト**: Jest + React Testing Library
+- **E2Eテスト**: Playwright
+- 重要なビジネスロジック（ストリーク計算、ほつれ消費）を優先カバー
 
 ---
 
@@ -65,33 +69,37 @@ interface Entry {
 ### 必須ツール
 
 - Node.js 20+
-- pnpm（推奨）または npm
-- Supabase CLI（ローカル開発用）
+- pnpm
+- Docker Desktop（ローカルSupabase用）
+- Supabase CLI
 
 ### 基本コマンド
 
 ```bash
 # 開発サーバー起動
-pnpm dev
+pnpm db:start && pnpm dev
 
-# ビルド
-pnpm build
+# ビルド・リント
+pnpm build && pnpm lint
 
-# リント
-pnpm lint
+# テスト
+pnpm test                     # ユニットテスト
+pnpm exec playwright test     # E2Eテスト
 
-# Supabaseローカル起動
-supabase start
+# Supabase
+pnpm db:types                 # 型定義生成
+pnpm db:migration:new <name>  # マイグレーション作成
 ```
 
 ---
 
 ## 重要な技術決定
 
-### Next.js App Router採用
+### Next.js 16 + React Compiler 採用
 
 **理由**:
 - React Server Components によるパフォーマンス最適化
+- React Compiler による自動メモ化
 - レイアウト・ローディング状態の宣言的管理
 - Vercelとの最適な統合
 
@@ -137,7 +145,6 @@ GET /api/export?format=json|markdown
 ```
 
 本人の投稿データをAI（Claude等）に渡して振り返り・分析に活用。
-Phase 2以降でMCPサーバー対応予定。
 
 ---
 _標準とパターンを記載、全依存関係のリストではない_
