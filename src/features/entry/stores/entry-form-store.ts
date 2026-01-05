@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { CompressedImage } from '@/features/entry/types'
+import type { CompressedImage, NewAchievementInfo } from '@/features/entry/types'
 
 // 画像の最大数
 export const MAX_IMAGES = 2
@@ -22,6 +22,9 @@ const initialState = {
 
   // エラー
   error: null as string | null,
+
+  // 達成情報（投稿成功時）
+  newAchievements: null as NewAchievementInfo[] | null,
 }
 
 interface EntryFormState {
@@ -41,6 +44,9 @@ interface EntryFormState {
 
   // エラー
   error: string | null
+
+  // 達成情報（投稿成功時）
+  newAchievements: NewAchievementInfo[] | null
 }
 
 interface EntryFormActions {
@@ -61,7 +67,7 @@ interface EntryFormActions {
 
   // 複合アクション
   submitStart: () => void
-  submitSuccess: () => void
+  submitSuccess: (achievements?: NewAchievementInfo[] | null) => void
   submitError: (msg: string) => void
   deleteStart: () => void
   deleteError: (msg: string) => void
@@ -135,7 +141,7 @@ export const useEntryFormStore = create<EntryFormStore>((set) => ({
 
   // 複合アクション
   submitStart: () => set({ isSubmitting: true, error: null }),
-  submitSuccess: () => set({ isSubmitting: false, isSuccess: true }),
+  submitSuccess: (achievements) => set({ isSubmitting: false, isSuccess: true, newAchievements: achievements ?? null }),
   submitError: (msg) => set({ isSubmitting: false, error: msg }),
   deleteStart: () => set({ isDeleting: true, error: null }),
   deleteError: (msg) => set({ isDeleting: false, error: msg, showDeleteConfirm: false }),

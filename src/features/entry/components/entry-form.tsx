@@ -85,6 +85,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   const isSuccess = useEntryFormStore((s) => s.isSuccess)
   const isFocused = useEntryFormStore((s) => s.isFocused)
   const error = useEntryFormStore((s) => s.error)
+  const newAchievements = useEntryFormStore((s) => s.newAchievements)
   const canSubmit = useEntryFormStore(selectCanSubmit)
   const canAddImage = useEntryFormStore(selectCanAddImage)
 
@@ -214,23 +215,19 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
         clearDraft()
       }
 
-      // 成功アニメーション表示
-      submitSuccess()
+      // 達成情報を取得（新規作成時のみ）
+      const achievements = mode === 'create' && 'newAchievements' in result.value
+        ? result.value.newAchievements
+        : null
+
+      // 成功アニメーション表示（達成情報を渡す）
+      submitSuccess(achievements)
 
       // キャッシュ無効化（共有状態の変更を反映）
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: queryKeys.entries.all }),
         queryClient.invalidateQueries({ queryKey: queryKeys.social.all }),
       ])
-
-      // 少し待ってから遷移
-      setTimeout(() => {
-        if (onSuccess) {
-          onSuccess()
-        } else {
-          router.push('/timeline')
-        }
-      }, 300)
     } catch (err) {
       submitError(err instanceof Error ? err.message : '投稿に失敗しました')
     }
@@ -304,9 +301,21 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           disabled={isSubmitting || isSuccess}
         />
 
-        {/* 成功オーバーレイ */}
+        {/* 成功オーバーレイ（達成演出統合） */}
         <AnimatePresence>
-          {isSuccess && <SuccessOverlay />}
+          {isSuccess && (
+            <SuccessOverlay
+              achievements={newAchievements}
+              onComplete={() => {
+                // エフェクト完了後に遷移（Requirements 4.5）
+                if (onSuccess) {
+                  onSuccess()
+                } else {
+                  router.push('/timeline')
+                }
+              }}
+            />
+          )}
         </AnimatePresence>
       </div>
 

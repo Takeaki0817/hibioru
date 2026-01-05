@@ -5,7 +5,8 @@ import 'server-only'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import type { EntryInsert, EntryUpdate } from '@/lib/types/database'
-import type { Entry, CreateEntryInput, UpdateEntryInput, EntryError, Result } from '../types'
+import type { Entry, CreateEntryInput, UpdateEntryInput, EntryError, Result, CreateEntryResultWithAchievements, NewAchievementInfo } from '../types'
+import { getAchievementLevel } from '@/features/social/utils/achievement-level'
 import { isEditable } from '../utils'
 import { handleEntryCreated } from '@/features/notification/api/entry-integration'
 import { updateStreakOnEntry } from '@/features/streak/api/service'
@@ -21,10 +22,15 @@ import {
  * エントリー作成成功時に以下の通知連携処理を実行します:
  * - 当日の通知ログのentry_recorded_atを更新（Requirement 6.1）
  * - 追いリマインドのキャンセル（Requirement 4.4）
+ *
+ * Requirements (achievement-celebration): 1.1, 1.2, 1.3, 1.4
+ * - 新規達成したアチーブメント情報を戻り値に含める
+ * - 新規達成がない場合は空配列を返却
+ * - 達成情報の取得に失敗した場合はnullを返却（エントリ作成は成功）
  */
 export async function createEntry(
   input: CreateEntryInput
-): Promise<Result<Entry, EntryError>> {
+): Promise<Result<CreateEntryResultWithAchievements, EntryError>> {
   try {
     const supabase = await createClient()
 
@@ -67,8 +73,8 @@ export async function createEntry(
     const entry = data as Entry
 
     // ストリーク更新、通知連携、達成チェックを並列実行（パフォーマンス最適化）
-    // これらの処理の失敗はエントリー作成結果に影響しない（ログのみ）
-    await Promise.allSettled([
+    // 達成チェックの結果は戻り値に含める
+    const results = await Promise.allSettled([
       updateStreakOnEntry(userData.user.id),
       handleEntryCreated({
         userId: userData.user.id,
@@ -76,22 +82,38 @@ export async function createEntry(
         createdAt: new Date(entry.created_at),
       }),
       checkAndCreateAchievements(userData.user.id, entry.id, input.isShared ?? false),
-    ]).then((results) => {
-      results.forEach((result, index) => {
-        if (result.status === 'rejected') {
-          console.error(
-            `並列処理[${index}]失敗:`,
-            result.reason instanceof Error ? result.reason.message : result.reason
-          )
-        }
-      })
+    ])
+
+    // エラーログ出力
+    results.forEach((result, index) => {
+      if (result.status === 'rejected') {
+        console.error(
+          `並列処理[${index}]失敗:`,
+          result.reason instanceof Error ? result.reason.message : result.reason
+        )
+      }
     })
+
+    // 達成情報を抽出（Requirements 1.1, 1.2, 1.3, 1.4）
+    let newAchievements: NewAchievementInfo[] | null = null
+    const achievementResult = results[2] // checkAndCreateAchievements の結果
+
+    if (achievementResult.status === 'fulfilled' && achievementResult.value.ok) {
+      // 達成情報取得成功: レベルを付与して返却
+      const achievements = achievementResult.value.value
+      newAchievements = achievements.map((achievement) => ({
+        type: achievement.type,
+        threshold: achievement.threshold,
+        level: getAchievementLevel(achievement.type, achievement.threshold),
+      }))
+    }
+    // 達成チェック失敗時は newAchievements = null のまま（graceful degradation）
 
     // タイムラインとソーシャルページのSSRキャッシュを無効化
     revalidatePath('/timeline')
     revalidatePath('/social')
 
-    return { ok: true, value: entry }
+    return { ok: true, value: { entry, newAchievements } }
   } catch (error) {
     return {
       ok: false,

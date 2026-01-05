@@ -2,10 +2,25 @@
 
 import type { Entry } from '@/lib/types/database'
 import type { Result } from '@/lib/types/result'
+import type { AchievementType } from '@/features/social/types'
+import type { AchievementLevel } from '@/features/social/utils/achievement-level'
 
 export type { Result }
 
 export type { Entry }
+
+// 新規達成情報（投稿成功時に返却）
+export interface NewAchievementInfo {
+  type: AchievementType
+  threshold: number
+  level: AchievementLevel
+}
+
+// createEntry拡張後の戻り値
+export interface CreateEntryResultWithAchievements {
+  entry: Entry
+  newAchievements: NewAchievementInfo[] | null  // null = 取得失敗
+}
 
 export interface CreateEntryInput {
   content: string
