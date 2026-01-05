@@ -1,11 +1,13 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Bell, UserPlus } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useSocialNotifications } from '../hooks/use-social-notifications'
 import { useSocialRealtime } from '../hooks/use-social-realtime'
+import { useFollowingIds } from '../hooks/use-following-ids'
+import { FollowButton } from './follow-button'
 import type { SocialNotificationItem } from '../types'
 import { ACHIEVEMENT_ICONS, ACHIEVEMENT_TYPE_LABELS, ANIMATION_CONFIG } from '../constants'
 import { createClient } from '@/lib/supabase/client'
@@ -52,6 +54,12 @@ export function SocialNotificationsTab() {
     invalidateNotifications,
   } = useSocialNotifications()
 
+  // フォロー中のユーザーIDを取得
+  const { followingIds } = useFollowingIds()
+
+  // フォロー中ユーザーIDのセット（パフォーマンス最適化）
+  const followingIdsSet = useMemo(() => new Set(followingIds), [followingIds])
+
   // Realtime購読: 新着通知を検知
   const handleNotificationInsert = useCallback(() => {
     invalidateNotifications()
@@ -80,7 +88,12 @@ export function SocialNotificationsTab() {
           animate="animate"
         >
           {notifications.map((notification) => (
-            <NotificationItem key={notification.id} notification={notification} />
+            <NotificationItem
+              key={notification.id}
+              notification={notification}
+              currentUserId={currentUserId}
+              isFollowing={followingIdsSet.has(notification.fromUser.id)}
+            />
           ))}
 
           {hasNextPage && (
@@ -103,9 +116,11 @@ export function SocialNotificationsTab() {
 
 interface NotificationItemProps {
   notification: SocialNotificationItem
+  currentUserId: string | undefined
+  isFollowing: boolean
 }
 
-function NotificationItem({ notification }: NotificationItemProps) {
+function NotificationItem({ notification, currentUserId, isFollowing }: NotificationItemProps) {
   const timeAgo = getTimeAgo(notification.createdAt)
 
   // 通知内容のラベル
@@ -113,6 +128,13 @@ function NotificationItem({ notification }: NotificationItemProps) {
     notification.type === 'celebration' && notification.achievement
       ? `${notification.fromUser.displayName}さんがあなたの達成をお祝いしました`
       : `${notification.fromUser.displayName}さんがあなたをフォローしました`
+
+  // フォロー通知の場合、フォローバックボタンを表示するかどうか
+  // 自分自身には表示しない
+  const showFollowButton =
+    notification.type === 'follow' &&
+    currentUserId &&
+    notification.fromUser.id !== currentUserId
 
   return (
     <motion.div
@@ -138,12 +160,21 @@ function NotificationItem({ notification }: NotificationItemProps) {
                   notification.fromUser.username.charAt(0)}
               </AvatarFallback>
             </Avatar>
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="font-medium truncate">{notification.fromUser.displayName}</p>
               <p className="text-xs text-muted-foreground truncate">
                 @{notification.fromUser.username} · {timeAgo}
               </p>
             </div>
+            {/* フォロー通知の場合、フォローバックボタンを表示 */}
+            {showFollowButton && (
+              <FollowButton
+                userId={notification.fromUser.id}
+                username={notification.fromUser.username}
+                initialIsFollowing={isFollowing}
+                size="sm"
+              />
+            )}
           </div>
 
           {/* コンテンツ: 通知メッセージ */}
