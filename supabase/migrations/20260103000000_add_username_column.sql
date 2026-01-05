@@ -5,9 +5,22 @@
 ALTER TABLE users
 ADD COLUMN IF NOT EXISTS username TEXT;
 
--- 既存ユーザーにusernameを設定（emailの@以前を使用）
+-- 既存ユーザーにusernameを設定（emailの@以前を使用、無効な文字を除去）
 UPDATE users
-SET username = split_part(email, '@', 1)
+SET username = (
+  SELECT
+    CASE
+      -- 20文字を超える場合は切り詰め
+      WHEN length(sanitized) > 20 THEN substring(sanitized from 1 for 20)
+      -- 3文字未満の場合はランダム文字を追加
+      WHEN length(sanitized) < 3 THEN sanitized || 'user' || floor(random() * 1000)::text
+      ELSE sanitized
+    END
+  FROM (
+    -- 無効な文字を除去（英数字とアンダースコアのみ残す）
+    SELECT regexp_replace(split_part(email, '@', 1), '[^a-zA-Z0-9_]', '', 'g') AS sanitized
+  ) AS s
+)
 WHERE username IS NULL;
 
 -- ユニーク制約を追加（重複がある場合に備えて、まず重複を解消）
