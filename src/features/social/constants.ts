@@ -182,6 +182,5 @@ export const ERROR_MESSAGES = {
   FOLLOW_LIST_LOAD_FAILED: 'フォローリストの読み込みに失敗しました',
   USER_SEARCH_FAILED: 'ユーザー検索に失敗しました',
   CELEBRATION_FAILED: 'お祝いの処理に失敗しました',
-  LOAD_FAILED: '読み込みに失敗しました',
   RETRY: '再試行',
 } as const
