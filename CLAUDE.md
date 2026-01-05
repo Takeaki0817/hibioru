@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-このファイルは、Claude Code がこのリポジトリのコードを扱う際のガイダンスを提供します。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## プロジェクト概要
 
@@ -89,8 +89,9 @@ CLAUDE.md（このファイル）= エントリーポイント、全体概要
     │   ├── testing.md            # Jest・Playwright
     │   ├── git-workflow.md       # Gitブランチ戦略
     │   ├── refactoring.md        # 共通化・責務分離
-    │   ├── skills-guide.md       # Skills活用ガイド ★
-    │   └── mcp-guide.md          # MCP活用ガイド ★
+    │   ├── security.md           # セキュリティ規約 ★
+    │   ├── skills-guide.md       # Skills活用ガイド
+    │   └── mcp-guide.md          # MCP活用ガイド
     │
     ├── .kiro/steering/   = WHAT（方針）：AI向け、プロダクトコンテキスト
     │   ├── product.md            # プロダクト概要・フェーズ計画
@@ -144,6 +145,8 @@ pnpm db:stop                 # 停止
 pnpm db:reset                # DBリセット
 pnpm db:types                # 型定義生成 → src/lib/types/database.generated.ts
 pnpm db:migration:new <name> # 新規マイグレーション
+pnpm db:backup               # リモートDBのバックアップ（スキーマ+データ）
+pnpm db:push                 # マイグレーションをリモートに適用
 ```
 
 ## ローカル開発環境
@@ -244,6 +247,16 @@ main        ← 本番環境
 - PR作成時は `--base develop` を指定
 
 → 詳細: `.claude/rules/git-workflow.md`
+
+### Git Hooks（husky）
+
+mainブランチへのマージ時、`supabase/migrations/` に変更があれば自動でバックアップを実行。
+
+```
+.husky/post-merge  → scripts/backup-db.sh を実行
+```
+
+バックアップ先: `supabase/backups/{schema,data}/`
 
 ---
 

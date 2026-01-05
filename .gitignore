@@ -51,6 +51,7 @@ Thumbs.db
 .serena/
 
 # Backup files
+supabase/backups/
 _.mcp.json
 next-env.d.ts
 .vercel

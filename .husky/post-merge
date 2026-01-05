@@ -1,0 +1,30 @@
+#!/bin/bash
+# post-merge: mainブランチへのマージ時、supabase変更があればバックアップ実行
+
+# 現在のブランチを取得
+CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+# mainブランチでない場合はスキップ
+if [ "$CURRENT_BRANCH" != "main" ]; then
+  exit 0
+fi
+
+# マージ前後でsupabase/migrations/に変更があるか確認
+# ORIG_HEAD: マージ前のHEAD, HEAD: マージ後のHEAD
+CHANGED_FILES=$(git diff --name-only ORIG_HEAD HEAD -- 'supabase/migrations/')
+
+if [ -n "$CHANGED_FILES" ]; then
+  echo ""
+  echo "🔍 supabase/migrations/ に変更を検出:"
+  echo "$CHANGED_FILES" | sed 's/^/   /'
+  echo ""
+
+  # バックアップ実行
+  ./scripts/backup-db.sh
+
+  echo ""
+  echo "💡 リモートDBへの適用は手動で実行してください:"
+  echo "   supabase db push"
+else
+  echo "ℹ️  supabase/migrations/ に変更なし - バックアップをスキップ"
+fi

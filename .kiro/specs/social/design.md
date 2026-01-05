@@ -195,7 +195,7 @@ sequenceDiagram
 |-----------|--------|--------|-------------------------------|
 | SocialFeedTab | UI/Feed | ソーシャルフィード表示 | フォロー中ユーザーの達成・共有投稿を表示、無限スクロール、Realtime更新 |
 | FeedItem | UI/Feed | フィードアイテム表示 | 達成/共有投稿の表示、お祝いボタン、パーティクルエフェクト |
-| SocialNotificationsTab | UI/Notifications | 通知一覧表示 | お祝い・フォロー通知の表示、既読管理 |
+| SocialNotificationsTab | UI/Notifications | 通知一覧表示 | お祝い・フォロー通知の表示、既読管理、フォロー通知からのフォローバック |
 | UserSearch | UI/Search | ユーザー検索 | ユーザー名での検索、検索結果表示 |
 | FollowButton | UI/Action | フォローボタン | フォロー/アンフォロー切替 |
 | FollowStatsSection | UI/Stats | フォロー統計表示 | 自分のフォロー数・フォロワー数表示、Drawerでリスト表示 |
