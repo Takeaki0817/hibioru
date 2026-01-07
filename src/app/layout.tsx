@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { M_PLUS_1p } from "next/font/google";
+import { M_PLUS_Rounded_1c } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
@@ -9,9 +9,9 @@ import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { SkipLink } from "@/components/ui/skip-link";
 import { APP_CONFIG, ICON_CONFIG } from "@/lib/constants/app-config";
 
-const mPlus1p = M_PLUS_1p({
-  variable: "--font-m-plus-1p",
-  weight: ["400", "500", "700"],
+const mPlusRounded1c = M_PLUS_Rounded_1c({
+  variable: "--font-m-plus-rounded-1c",
+  weight: ["500", "700"],
   subsets: ["latin"],
   display: "swap",
   preload: false,
@@ -62,7 +62,7 @@ export default function RootLayout({
   return (
     <html lang="ja" suppressHydrationWarning>
       <body
-        className={`${mPlus1p.variable} antialiased`}
+        className={`${mPlusRounded1c.variable} font-sans antialiased font-medium`}
       >
         <SkipLink />
         <ThemeProvider>
