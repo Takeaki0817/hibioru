@@ -40,6 +40,8 @@ const { data, error } = await supabase
   .single()
 ```
 
+---
+
 ## Promise.allSettled
 
 副作用の並列実行時は必ず `await` してエラーログを出力。
@@ -57,21 +59,74 @@ await Promise.allSettled([
 })
 ```
 
+---
+
 ## TanStack Query
 
-### queryKey階層化
+### queryKeyファクトリー
 
-リソース種別を先頭に置き、関連クエリをまとめて無効化しやすくする。
+**必ず `src/lib/constants/query-keys.ts` のファクトリーを使用する。**
 
 ```typescript
-// 良い例: 階層的
-['entries', 'timeline', userId, cursor]
-['entries', 'calendar', userId, year, month]
-['entries', 'dates', userId]
+import { queryKeys } from '@/lib/constants/query-keys'
 
-// 避ける例: フラット
-['timeline', userId]
-['calendar', userId, year, month]
+// タイムライン
+useQuery({
+  queryKey: queryKeys.entries.timeline(userId, cursor),
+  queryFn: () => fetchTimeline(userId, cursor),
+})
+
+// カレンダー
+useQuery({
+  queryKey: queryKeys.entries.calendar(userId, year, month),
+  queryFn: () => fetchCalendar(userId, year, month),
+})
+
+// ソーシャルフィード
+useInfiniteQuery({
+  queryKey: queryKeys.social.feed(),
+  queryFn: ({ pageParam }) => fetchSocialFeed(pageParam),
+})
+```
+
+### 利用可能なqueryKeys
+
+```typescript
+// entries関連
+queryKeys.entries.all                           // ['entries']
+queryKeys.entries.timeline(userId, cursor)      // ['entries', 'timeline', userId, cursor]
+queryKeys.entries.calendar(userId, year, month) // ['entries', 'calendar', userId, year, month]
+queryKeys.entries.dates(userId)                 // ['entries', 'dates', userId]
+
+// notification関連
+queryKeys.notification.all                      // ['notification']
+queryKeys.notification.settings(userId)         // ['notification', 'settings', userId]
+
+// social関連
+queryKeys.social.all                            // ['social']
+queryKeys.social.feed(cursor?)                  // ['social', 'feed', cursor?]
+queryKeys.social.notifications(cursor?)         // ['social', 'notifications', cursor?]
+queryKeys.social.unreadCount()                  // ['social', 'unreadCount']
+queryKeys.social.followStatus(userId)           // ['social', 'followStatus', userId]
+queryKeys.social.followCounts(userId)           // ['social', 'followCounts', userId]
+queryKeys.social.userSearch(query)              // ['social', 'userSearch', query]
+queryKeys.social.profile(username)              // ['social', 'profile', username]
+queryKeys.social.followingIds()                 // ['social', 'followingIds']
+```
+
+### キャッシュ無効化
+
+階層的なキー構造により、関連クエリをまとめて無効化可能。
+
+```typescript
+// entries関連すべてを無効化
+queryClient.invalidateQueries({ queryKey: queryKeys.entries.all })
+
+// 特定ユーザーのタイムラインのみ無効化
+queryClient.invalidateQueries({ queryKey: queryKeys.entries.timeline(userId) })
+
+// social関連すべてを無効化
+queryClient.invalidateQueries({ queryKey: queryKeys.social.all })
 ```
 
 ### staleTime/gcTime設定
@@ -86,9 +141,18 @@ await Promise.allSettled([
 
 ```typescript
 useQuery({
-  queryKey: ['entries', 'timeline', userId],
+  queryKey: queryKeys.entries.timeline(userId),
   queryFn: fetchTimeline,
   staleTime: 10 * 60 * 1000, // 10分
   gcTime: 30 * 60 * 1000,    // 30分
 })
 ```
+
+---
+
+## 関連ファイル
+
+| ファイル | 用途 |
+|----------|------|
+| `src/lib/constants/query-keys.ts` | queryKeyファクトリー定義 |
+| `src/components/providers/QueryProvider.tsx` | QueryClient設定 |

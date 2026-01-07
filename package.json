@@ -20,6 +20,8 @@
     "db:diff": "supabase db diff",
     "db:types": "supabase gen types typescript --local > src/lib/types/database.generated.ts",
     "vapid:generate": "npx tsx scripts/generate-vapid-keys.ts",
+    "achievements:backfill": "npx tsx scripts/backfill-achievements.ts",
+    "achievements:backfill:dry-run": "npx tsx scripts/backfill-achievements.ts --dry-run",
     "prepare": "husky"
   },
   "dependencies": {

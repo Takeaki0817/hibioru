@@ -516,9 +516,39 @@
 
   /* ========================================
    * フォント
+   * M PLUS Rounded 1c - 丸みのある優しい印象
+   * ウェイト: Medium (500) / Bold (700)
    * ======================================== */
-  --font-sans: var(--font-m-plus-1p);
+  --font-sans: var(--font-m-plus-rounded-1c);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* ========================================
+   * フォントサイズ（最小12px、ベース16px）
+   * ======================================== */
+  --font-size-xs: 0.75rem;    /* 12px - 最小 */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px - ベース */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.25rem;    /* 20px */
+  --font-size-2xl: 1.5rem;    /* 24px */
+  --font-size-3xl: 1.875rem;  /* 30px */
+
+  /* ========================================
+   * 行の高さ（優しい雰囲気 - ゆったり）
+   * ======================================== */
+  --line-height-xs: 1.5;
+  --line-height-sm: 1.6;
+  --line-height-base: 1.8;   /* 本文はゆったり */
+  --line-height-lg: 1.7;
+  --line-height-xl: 1.5;
+  --line-height-2xl: 1.4;
+  --line-height-3xl: 1.3;
+
+  /* ========================================
+   * 文字間（優しい雰囲気 - 余裕のある間隔）
+   * ======================================== */
+  --letter-spacing-body: 0.02em;     /* 本文 */
+  --letter-spacing-heading: 0.03em;  /* 見出し */
 
   /* ========================================
    * カスタムスペーシング
@@ -588,10 +618,10 @@ main {
   letter-spacing: -0.02em;
 }
 
-/* 本文可読性向上 */
+/* 本文可読性向上（優しい雰囲気） */
 .body-text {
-  line-height: 1.7;
-  letter-spacing: 0.01em;
+  line-height: var(--line-height-base);       /* 1.8 - ゆったり */
+  letter-spacing: var(--letter-spacing-body); /* 0.02em - 余裕のある間隔 */
 }
 
 /* ========================================
