@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { CalendarDays, MessageCirclePlus, User, Check, type LucideIcon } from 'lucide-react'
+import { CalendarDays, MessageCirclePlus, Users, Check, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { buttonVariants, strongButtonVariants } from '@/lib/animations'
 
@@ -37,7 +37,7 @@ export function FooterNav({ centerButton }: FooterNavProps) {
     {
       href: '/social',
       label: 'ソーシャル',
-      icon: User,
+      icon: Users,
     },
   ]
 

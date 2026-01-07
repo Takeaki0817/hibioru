@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { User, Users, Bell } from 'lucide-react'
+import { Settings, Users, Bell } from 'lucide-react'
 import { useTabSwipe, type SocialTabValue } from '../hooks/use-tab-swipe'
 import { tabSlideTransition } from '@/lib/animations'
 
@@ -68,8 +68,8 @@ export function SocialTabs({
       {/* タブナビゲーション（絶対配置でコンテンツの上に重なる） */}
       <TabsList className="absolute top-0 left-0 right-0 z-10 w-full grid grid-cols-3 p-4 h-auto rounded-none bg-background/40 backdrop-blur-md">
         <TabsTrigger value="profile" className="flex items-center gap-1.5">
-          <User className="size-4" />
-          <span>プロフィール</span>
+          <Settings className="size-4" />
+          <span>設定</span>
         </TabsTrigger>
         <TabsTrigger value="social" className="flex items-center gap-1.5">
           <Users className="size-4" />
