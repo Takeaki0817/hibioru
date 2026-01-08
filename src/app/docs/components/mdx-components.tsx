@@ -18,11 +18,19 @@ import {
   Upload,
   Rocket,
   Bell,
+  BellRing,
   BookOpen,
   Zap,
   Check,
   ArrowRight,
   Circle,
+  Trophy,
+  UserPlus,
+  Newspaper,
+  PartyPopper,
+  Medal,
+  Share2,
+  Spool,
 } from 'lucide-react'
 
 // アイコン名からコンポーネントへのマッピング
@@ -36,6 +44,7 @@ const iconMap: Record<string, LucideIcon> = {
   upload: Upload,
   rocket: Rocket,
   bell: Bell,
+  'bell-ring': BellRing,
   'book-open': BookOpen,
   'help-circle': HelpCircle,
   zap: Zap,
@@ -43,6 +52,13 @@ const iconMap: Record<string, LucideIcon> = {
   'arrow-right': ArrowRight,
   circle: Circle,
   info: Info,
+  trophy: Trophy,
+  'user-plus': UserPlus,
+  newspaper: Newspaper,
+  'party-popper': PartyPopper,
+  medal: Medal,
+  'share-2': Share2,
+  spool: Spool,
 }
 
 /**
@@ -405,6 +421,8 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     RoadmapStatus,
     DocIcon,
     Table,
+    // アイコンコンポーネント（直接使用用）
+    Spool,
     ...components,
   }
 }
