@@ -6,6 +6,7 @@ import { DocsSidebar } from './components/docs-sidebar'
 import { TableOfContents, MobileTableOfContents } from './components/table-of-contents'
 import { DocsBreadcrumb } from './components/docs-breadcrumb'
 import { DocsPagination } from './components/docs-pagination'
+import { DocsBodyStyle } from './components/docs-body-style'
 import './docs.css'
 
 const mPlusRounded1c = M_PLUS_Rounded_1c({
@@ -33,6 +34,8 @@ export default function DocsLayout({
   return (
     <div className={`${mPlusRounded1c.variable} font-sans`}>
       <ThemeProvider>
+        {/* globals.cssのoverflow-hiddenを上書き */}
+        <DocsBodyStyle />
         <div className="docs-page min-h-screen bg-background">
           {/* Skip Link - アクセシビリティ: キーボードユーザー向け */}
           <a
@@ -44,7 +47,7 @@ export default function DocsLayout({
           <DocsHeader />
           <div className="mx-auto flex max-w-7xl items-start">
             {/* 左サイドバー - ナビゲーション（sticky固定） */}
-            <aside className="hidden lg:block lg:w-56 lg:shrink-0 lg:border-r lg:sticky lg:top-14 lg:self-start lg:max-h-[calc(100vh-3.5rem)] lg:overflow-y-auto">
+            <aside className="hidden lg:block lg:w-56 lg:shrink-0 lg:sticky lg:top-15 lg:self-start lg:max-h-[calc(100vh-3.75rem)] lg:overflow-y-auto">
               <DocsSidebar />
             </aside>
 
@@ -63,7 +66,7 @@ export default function DocsLayout({
             </main>
 
             {/* 右サイドバー - 目次（xl以上で表示、sticky固定） */}
-            <aside className="hidden xl:block xl:w-56 xl:shrink-0 xl:border-l xl:sticky xl:top-14 xl:self-start xl:max-h-[calc(100vh-3.5rem)] xl:overflow-y-auto">
+            <aside className="hidden xl:block xl:w-56 xl:shrink-0 xl:sticky xl:top-15 xl:self-start xl:max-h-[calc(100vh-3.75rem)] xl:overflow-y-auto">
               <TableOfContents />
             </aside>
           </div>

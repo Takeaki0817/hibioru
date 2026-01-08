@@ -1,7 +1,30 @@
 /* ドキュメントページ専用: グローバルのoverflow-hiddenをリセット */
-html:has(.docs-page),
-body:has(.docs-page) {
+/* stickyが機能するには、htmlのみがスクロールコンテナになる必要がある */
+/* クラスベースのセレクタ（useEffectで動的に追加） */
+html.docs-html {
   overflow: auto !important;
+  height: auto !important;
+}
+
+body.docs-body {
+  overflow: visible !important;
+  height: auto !important;
+}
+
+/* :has() セレクタ（フォールバック） */
+html:has(.docs-page) {
+  overflow: auto !important;
+  height: auto !important;
+}
+
+body:has(.docs-page) {
+  overflow: visible !important;
+  height: auto !important;
+}
+
+/* main要素のスクロール制御を解除（サイドバーのsticky動作に必要） */
+.docs-page main {
+  overflow: visible !important;
   height: auto !important;
 }
 
