@@ -8,7 +8,7 @@ export const metadata = {
 
 <ReadTime minutes={5} />
 
-## 🚀 クイックスタート
+## クイックスタート
 
 <SectionCard title="クイックスタート" variant="highlight">
   1. **Googleアカウントでログイン**
@@ -18,7 +18,7 @@ export const metadata = {
 
 ---
 
-## ✏️ 記録を作成する
+## 記録を作成する
 
 <Tip type="info">
 完璧な文章でなくてOK。絵文字1つでも立派な記録です。
@@ -41,7 +41,7 @@ export const metadata = {
 
 ---
 
-## 🔥 ストリークとほつれ
+## ストリークとほつれ
 
 <Tip type="info">
 ほつれは「サボり」ではなく「お守り」。休むことも継続の一部です。
@@ -63,21 +63,32 @@ export const metadata = {
 
 ---
 
-## 📅 カレンダーで振り返る
+## カレンダーで振り返る
 
 タイムライン上部のカレンダーアイコンをタップすると、月間カレンダーが表示されます。
 
 ### カレンダーの見方
 
-- 🟢 **緑色** - 記録がある日
-- ⭕ **点線** - ほつれを使った日
-- ⚪ **グレー** - 記録がない日
+<div className="space-y-2 my-4">
+  <div className="flex items-center gap-3">
+    <span className="size-4 rounded-full bg-emerald-500" />
+    <span className="text-sm">**緑色** - 記録がある日</span>
+  </div>
+  <div className="flex items-center gap-3">
+    <span className="size-4 rounded-full border-2 border-dashed border-emerald-500" />
+    <span className="text-sm">**点線** - ほつれを使った日</span>
+  </div>
+  <div className="flex items-center gap-3">
+    <span className="size-4 rounded-full bg-muted" />
+    <span className="text-sm">**グレー** - 記録がない日</span>
+  </div>
+</div>
 
 日付をタップすると、その日の記録にジャンプできます。
 
 ---
 
-## 🔔 通知を設定する
+## 通知を設定する
 
 ソーシャルページ（右下のアイコン）の「通知」タブから設定できます。
 
@@ -92,7 +103,7 @@ export const metadata = {
 
 ---
 
-## 📤 データをエクスポートする
+## データをエクスポートする
 
 ソーシャルページの「設定」タブにある「データエクスポート」から、記録をダウンロードできます。
 

@@ -1,7 +1,49 @@
 import type { MDXComponents } from 'mdx/types'
+import type { LucideIcon } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
-import { Link, Info, AlertTriangle, CheckCircle, HelpCircle, ChevronDown } from 'lucide-react'
+import {
+  Link,
+  Info,
+  AlertTriangle,
+  CheckCircle,
+  HelpCircle,
+  ChevronDown,
+  Sparkles,
+  Shield,
+  Flame,
+  ScrollText,
+  PenLine,
+  Calendar,
+  Upload,
+  Rocket,
+  Bell,
+  BookOpen,
+  Zap,
+  Check,
+  ArrowRight,
+  Circle,
+} from 'lucide-react'
+
+// アイコン名からコンポーネントへのマッピング
+const iconMap: Record<string, LucideIcon> = {
+  sparkles: Sparkles,
+  shield: Shield,
+  flame: Flame,
+  'scroll-text': ScrollText,
+  'pen-line': PenLine,
+  calendar: Calendar,
+  upload: Upload,
+  rocket: Rocket,
+  bell: Bell,
+  'book-open': BookOpen,
+  'help-circle': HelpCircle,
+  zap: Zap,
+  check: Check,
+  'arrow-right': ArrowRight,
+  circle: Circle,
+  info: Info,
+}
 
 /**
  * MDXカスタムコンポーネント
@@ -144,19 +186,21 @@ export function SectionCard({
 // 用語説明（折りたたみ式定義リスト）- クリック領域を改善
 interface GlossaryItemProps {
   term: string
-  emoji: string
+  icon: string
   children: React.ReactNode
 }
 
-export function GlossaryItem({ term, emoji, children }: GlossaryItemProps) {
+export function GlossaryItem({ term, icon, children }: GlossaryItemProps) {
+  const IconComponent = iconMap[icon] || Info
+
   return (
     <details className="group">
       <summary className="cursor-pointer list-none flex items-center gap-3 px-4 py-4 hover:bg-muted/50 transition-colors rounded-lg">
-        <span className="text-xl shrink-0">{emoji}</span>
+        <IconComponent className="size-5 shrink-0 text-primary" />
         <span className="flex-1 font-medium text-foreground">{term}</span>
         <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
       </summary>
-      <div className="px-4 pb-4 pl-14 text-sm text-muted-foreground">
+      <div className="px-4 pb-4 pl-12 text-sm text-muted-foreground">
         {children}
       </div>
     </details>
@@ -166,15 +210,17 @@ export function GlossaryItem({ term, emoji, children }: GlossaryItemProps) {
 // 用語カード（カードグリッド形式）
 interface GlossaryCardProps {
   term: string
-  emoji: string
+  icon: string
   children: React.ReactNode
 }
 
-export function GlossaryCard({ term, emoji, children }: GlossaryCardProps) {
+export function GlossaryCard({ term, icon, children }: GlossaryCardProps) {
+  const IconComponent = iconMap[icon] || Info
+
   return (
     <div className="group rounded-xl border bg-card p-4 hover:border-primary/30 transition-colors">
       <div className="flex items-center gap-3 mb-3">
-        <span className="text-2xl">{emoji}</span>
+        <IconComponent className="size-6 text-primary" />
         <h3 className="font-bold text-foreground">{term}</h3>
       </div>
       <div className="text-sm text-muted-foreground leading-relaxed">
@@ -192,13 +238,13 @@ interface FAQItemProps {
 
 export function FAQItem({ question, children }: FAQItemProps) {
   return (
-    <details className="group rounded-lg border bg-card p-4 transition-colors hover:border-primary/30 my-3">
-      <summary className="cursor-pointer list-none flex items-center gap-3">
+    <details className="group rounded-lg border bg-card transition-colors hover:border-primary/30 my-3">
+      <summary className="cursor-pointer list-none flex items-center gap-3 p-4">
         <HelpCircle className="size-5 shrink-0 text-primary" />
         <span className="flex-1 font-medium text-foreground">{question}</span>
         <ChevronDown className="size-4 text-muted-foreground transition-transform duration-200 group-open:rotate-180" />
       </summary>
-      <div className="mt-4 pl-8 text-sm text-muted-foreground border-l-2 border-primary/20">
+      <div className="px-4 pb-4 pl-12 text-sm text-muted-foreground border-l-2 border-primary/20 ml-4">
         {children}
       </div>
     </details>
@@ -230,22 +276,34 @@ interface RoadmapStatusProps {
   status: 'completed' | 'in-progress' | 'planned' | 'considering'
 }
 
-export function RoadmapStatus({ status }: RoadmapStatusProps) {
-  const styles = {
-    completed: { label: '完了', color: 'bg-success/20 text-success', icon: '✓' },
-    'in-progress': { label: '進行中', color: 'bg-primary/20 text-primary', icon: '→' },
-    planned: { label: '予定', color: 'bg-accent/20 text-accent-foreground', icon: '○' },
-    considering: { label: '検討中', color: 'bg-muted text-muted-foreground', icon: '?' },
-  }
+const roadmapStatusConfig = {
+  completed: { label: '完了', color: 'bg-success/20 text-success', Icon: Check },
+  'in-progress': { label: '進行中', color: 'bg-primary/20 text-primary', Icon: ArrowRight },
+  planned: { label: '予定', color: 'bg-accent/20 text-accent-foreground', Icon: Circle },
+  considering: { label: '検討中', color: 'bg-muted text-muted-foreground', Icon: HelpCircle },
+} as const
 
-  const { label, color, icon } = styles[status]
+export function RoadmapStatus({ status }: RoadmapStatusProps) {
+  const { label, color, Icon } = roadmapStatusConfig[status]
 
   return (
     <span className={cn('inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium', color)}>
-      <span>{icon}</span>
+      <Icon className="size-3" />
       {label}
     </span>
   )
+}
+
+// インラインアイコン（MDX内で直接使用）
+interface DocIconProps {
+  name: string
+  className?: string
+}
+
+export function DocIcon({ name, className }: DocIconProps) {
+  const IconComponent = iconMap[name] || Info
+
+  return <IconComponent className={cn('size-5', className)} />
 }
 
 /**
@@ -291,6 +349,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     FAQItem,
     VersionBadge,
     RoadmapStatus,
+    DocIcon,
     ...components,
   }
 }
