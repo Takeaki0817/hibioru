@@ -388,7 +388,7 @@ interface NotificationPayload {
   };
 }
 
-type NotificationType = 'main' | 'follow_up_1' | 'follow_up_2';
+type NotificationType = 'main_reminder' | 'chase_reminder';
 
 interface SendResult {
   subscriptionId: string;
@@ -432,18 +432,21 @@ interface NotificationMessage {
 }
 
 const MAIN_MESSAGES: NotificationMessage[] = [
-  { title: 'ヒビオル', body: '今日はどんな一日だった？' },
-  { title: 'ヒビオル', body: '一言だけでも残しておこう' },
+  { title: 'ヒビオル', body: '今考えてること、記録しよう！' },
+  { title: 'ヒビオル', body: '残しておきたいこと、ある？' },
+  { title: 'ヒビオル', body: '今の頭の中、書いておこう' },
+  { title: 'ヒビオル', body: 'ふと思ったこと、メモしておく？' },
+  { title: 'ヒビオル', body: '今日のひとこと、残しておこう' },
 ];
 
-const FOLLOW_UP_1_MESSAGES: NotificationMessage[] = [
-  { title: 'ヒビオル', body: 'まだ間に合うよ' },
-  { title: 'ヒビオル', body: '30秒で終わる' },
-];
-
-const FOLLOW_UP_2_MESSAGES: NotificationMessage[] = [
-  { title: 'ヒビオル', body: '今日の最後のチャンス' },
-  { title: 'ヒビオル', body: 'ほつれ使う？' },
+// 追いリマインド（chase_reminder）は最大5回まで、各回で異なる文言バリエーション
+const CHASE_REMINDER_MESSAGES: NotificationMessage[][] = [
+  // 1回目
+  [
+    { title: 'ヒビオル', body: '今日のこと、メモしておく？' },
+    { title: 'ヒビオル', body: 'ひとこと残しておこう' },
+  ],
+  // 2回目以降も同様に5段階まで定義
 ];
 ```
 
@@ -861,7 +864,7 @@ CREATE TRIGGER update_notification_settings_updated_at
 CREATE TABLE notification_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('main', 'follow_up_1', 'follow_up_2')),
+  type TEXT NOT NULL CHECK (type IN ('main_reminder', 'chase_reminder')),
   sent_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   result TEXT NOT NULL CHECK (result IN ('success', 'failed', 'skipped')),
   subscription_id UUID REFERENCES push_subscriptions(id) ON DELETE SET NULL,

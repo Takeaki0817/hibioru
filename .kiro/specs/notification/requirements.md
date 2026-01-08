@@ -35,7 +35,7 @@
 #### Acceptance Criteria
 1. When リマインドの設定時刻に達する and 該当リマインドが有効, the 通知サービス shall リマインド通知を全登録デバイスに送信する
 2. The 通知サービス shall 当日の記録有無に関わらず通知を送信する（記録済みでもスキップしない）
-3. When リマインド通知を送信する, the 通知サービス shall 「今日はどんな一日だった？」「一言だけでも残しておこう」のいずれかの文言を使用する
+3. When リマインド通知を送信する, the 通知サービス shall ADHD当事者に配慮した穏やかな文言（「今考えてること、記録しよう！」「残しておきたいこと、ある？」等）からランダムに選択して使用する
 4. When 通知を送信する, the 通知サービス shall notification_logsテーブルに送信記録（user_id, reminder_index, sent_at, result）を保存する
 5. If 通知の送信に失敗する, the 通知サービス shall notification_logsにresult: "failed"を記録する
 
