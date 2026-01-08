@@ -1,6 +1,10 @@
+import createMDX from '@next/mdx'
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // MDXファイルをページとして認識
+  pageExtensions: ['ts', 'tsx', 'mdx'],
+
   // React Compiler（自動メモ化によるパフォーマンス向上）
   reactCompiler: true,
 
@@ -52,4 +56,12 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
 };
 
-export default nextConfig;
+// MDXの設定
+const withMDX = createMDX({
+  options: {
+    remarkPlugins: [],
+    rehypePlugins: [],
+  },
+})
+
+export default withMDX(nextConfig);
