@@ -2,6 +2,7 @@
 
 import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { classifyAuthError, parseErrorParam } from '@/features/auth/errors'
 import type { AuthError } from '@/lib/types/auth'
@@ -115,6 +116,28 @@ function LoginContent() {
               </>
             )}
           </Button>
+
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            ログインすることで、
+            <Link
+              href="/docs/terms"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-foreground"
+            >
+              利用規約
+            </Link>
+            と
+            <Link
+              href="/docs/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-foreground"
+            >
+              プライバシーポリシー
+            </Link>
+            に同意したものとみなします。
+          </p>
         </div>
 
         <p className="mt-8 text-center text-xs text-muted-foreground/80">
