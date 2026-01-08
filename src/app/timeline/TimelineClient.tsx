@@ -128,13 +128,15 @@ function TimelineContent({
       />
 
       <main className="flex-1 overflow-hidden">
-        <TimelineList
+        <div className="container mx-auto max-w-2xl h-full">
+          <TimelineList
           userId={userId}
           initialDate={initialDate ? parsedInitialDate : undefined}
           onDateChange={handleScrollDateChange}
           scrollToDateRef={scrollToDateRef}
           loadAndScrollToDateRef={loadAndScrollToDateRef}
-        />
+          />
+        </div>
       </main>
 
       <MonthCalendar
