@@ -19,6 +19,7 @@ import { NotificationSettings } from '@/features/notification/components/notific
 import { AppearanceSection } from '@/features/social/components/appearance-section'
 import { ExportSection } from '@/features/social/components/export-section'
 import { FeedbackSection } from '@/features/social/components/feedback-section'
+import { LegalLinksSection } from '@/features/social/components/legal-links-section'
 import { LogoutButton } from '@/features/social/components/logout-button'
 import { DeleteAccountSection } from '@/features/social/components/delete-account-section'
 
@@ -104,6 +105,9 @@ export default async function SocialPage() {
 
       {/* フィードバックセクション */}
       <FeedbackSection />
+
+      {/* 法的情報セクション */}
+      <LegalLinksSection />
 
       {/* ログアウトボタン */}
       <div className="pt-2">
