@@ -57,11 +57,8 @@ const nextConfig: NextConfig = {
 };
 
 // MDXの設定
-const withMDX = createMDX({
-  options: {
-    remarkPlugins: [],
-    rehypePlugins: [],
-  },
-})
+// Note: Turbopackではremarkプラグイン（関数）をシリアライズできないため、
+// remark-gfmは使用しない。GFM機能（テーブル等）はMDXファイル内でHTMLを直接記述する。
+const withMDX = createMDX()
 
 export default withMDX(nextConfig);

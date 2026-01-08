@@ -306,6 +306,41 @@ export function DocIcon({ name, className }: DocIconProps) {
   return <IconComponent className={cn('size-5', className)} />
 }
 
+// テーブルコンポーネント（GFMの代替）
+interface TableProps {
+  headers: string[]
+  rows: string[][]
+}
+
+export function Table({ headers, rows }: TableProps) {
+  return (
+    <div className="mb-4 overflow-x-auto rounded-lg border border-border">
+      <table className="w-full border-collapse text-sm">
+        <thead className="bg-muted/50">
+          <tr className="border-b border-border">
+            {headers.map((header, i) => (
+              <th key={i} className="px-4 py-3 text-left font-semibold text-foreground">
+                {header}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, i) => (
+            <tr key={i} className="border-b border-border last:border-b-0">
+              {row.map((cell, j) => (
+                <td key={j} className="px-4 py-3 text-muted-foreground">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 /**
  * MDXコンポーネントのマッピング
  */
@@ -339,6 +374,25 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     code: ({ children }) => (
       <code className="rounded bg-muted px-1.5 py-0.5 text-sm">{children}</code>
     ),
+    // テーブル要素
+    table: ({ children }) => (
+      <div className="mb-4 overflow-x-auto rounded-lg border border-border">
+        <table className="w-full border-collapse text-sm">{children}</table>
+      </div>
+    ),
+    thead: ({ children }) => (
+      <thead className="bg-muted/50">{children}</thead>
+    ),
+    tbody: ({ children }) => <tbody>{children}</tbody>,
+    tr: ({ children }) => (
+      <tr className="border-b border-border last:border-b-0">{children}</tr>
+    ),
+    th: ({ children }) => (
+      <th className="px-4 py-3 text-left font-semibold text-foreground">{children}</th>
+    ),
+    td: ({ children }) => (
+      <td className="px-4 py-3 text-muted-foreground">{children}</td>
+    ),
     // カスタムコンポーネント
     ReadTime,
     Tip,
@@ -350,6 +404,7 @@ export function useMDXComponents(components: MDXComponents): MDXComponents {
     VersionBadge,
     RoadmapStatus,
     DocIcon,
+    Table,
     ...components,
   }
 }
