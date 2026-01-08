@@ -65,10 +65,7 @@
     "network": {
       "allowLocalBinding": true
     },
-    "excludedCommands": [
-      "docker",
-      "supabase"
-    ]
+    "excludedCommands": ["docker", "supabase", "pnpm", "npm", "npx"]
   },
   "alwaysThinkingEnabled": true
 }
