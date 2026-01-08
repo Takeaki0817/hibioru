@@ -1,10 +1,9 @@
 'use client'
 
-import { Suspense } from 'react'
 import Link from 'next/link'
 import { Logo } from '@/components/brand/logo'
 import { Button } from '@/components/ui/button'
-import { LogIn, Menu } from 'lucide-react'
+import { LogIn } from 'lucide-react'
 import { DocsMobileNav } from './docs-mobile-nav'
 
 /**
@@ -13,7 +12,7 @@ import { DocsMobileNav } from './docs-mobile-nav'
  */
 export function DocsHeader() {
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
+    <header className="sticky top-0 z-50 bg-background/60 backdrop-blur-xl shadow-sm">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-2">
           {/* モバイルナビゲーション */}
