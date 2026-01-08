@@ -14,6 +14,8 @@ const nextConfig: NextConfig = {
 
   // リモート画像の許可設定
   images: {
+    // ローカル開発時は画像最適化を無効化（プライベートIPへのアクセス制限を回避）
+    unoptimized: process.env.NODE_ENV === 'development',
     remotePatterns: [
       // Google OAuth アバター画像
       {
