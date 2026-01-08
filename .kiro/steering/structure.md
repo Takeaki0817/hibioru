@@ -1,13 +1,38 @@
 # プロジェクト構造
 
-詳細なアーキテクチャガイドは `docs/ARCHITECTURE.md` を参照。
+詳細なアーキテクチャガイドは `.claude/rules/architecture.md` を参照。
 
 ## 組織方針
 
 **Featuresベースアーキテクチャ + App Router標準構成**
 
 [bulletproof-react](https://github.com/alan2207/bulletproof-react) の設計思想を採用。
-機能ごとに独立したモジュール（api, components, hooks, types）を持つ。
+機能ごとに独立したモジュール（api, components, hooks, stores, types）を持つ。
+
+---
+
+## ディレクトリ構造
+
+```
+src/
+├── app/                      # Next.js App Router（ルーティング専用）
+├── features/                 # 機能単位モジュール
+│   ├── auth/                # 認証
+│   ├── entry/               # エントリ入力・編集
+│   ├── timeline/            # タイムライン表示
+│   ├── streak/              # ストリーク
+│   ├── hotsure/             # ほつれ
+│   ├── notification/        # プッシュ通知
+│   └── social/              # ソーシャル（プロフィール、フォロー、通知）
+├── components/              # 共有UIコンポーネント
+│   ├── layouts/
+│   ├── providers/
+│   └── ui/
+└── lib/                     # 共通ライブラリ
+    ├── supabase/
+    ├── constants/
+    └── types/
+```
 
 ---
 
@@ -22,6 +47,23 @@
 - **アプリケーション層** (`app/`): フィーチャーと共有パーツの両方を使用
 
 **クロスフィーチャーインポート禁止**: 機能間の依存が必要な場合は、アプリケーション層で統合。
+
+---
+
+## フィーチャー構造テンプレート
+
+```
+src/features/{feature}/
+├── api/                     # ビジネスロジック、Server Actions
+├── components/              # 機能固有コンポーネント
+├── hooks/                   # 機能固有フック
+├── stores/                  # Zustand ストア
+│   ├── {feature}-store.ts
+│   └── __tests__/           # ストアのテスト
+├── __tests__/               # テストファイル
+├── constants.ts             # 機能固有の定数
+└── types.ts                 # 型定義
+```
 
 ---
 

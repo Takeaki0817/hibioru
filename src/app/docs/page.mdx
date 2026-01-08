@@ -1,0 +1,105 @@
+export const metadata = {
+  title: 'はじめに',
+}
+
+# ヒビオルへようこそ
+
+ADHD当事者のための瞬間記録アプリ
+
+<ReadTime minutes={2} />
+
+---
+
+## ヒビオルとは？
+
+**ヒビオル**は、「日々」と「織る」を組み合わせた造語です。毎日の小さな記録を織り重ねていくように、あなたの思考や感情を気軽に記録できるアプリです。
+
+<Tip type="success">
+  ADHDの特性を考慮し、**最小限の操作**で記録できるよう設計されています。絵文字1つから投稿OK！
+</Tip>
+
+---
+
+## 主な機能
+
+<div className="grid gap-4 sm:grid-cols-2 my-6">
+  <div className="rounded-lg border bg-card p-4">
+    <div className="flex items-center gap-2 mb-2">
+      <DocIcon name="zap" className="text-primary" />
+      <span className="font-medium">瞬間記録</span>
+    </div>
+    <span className="text-sm text-muted-foreground">思いついた瞬間にサッと記録。長文も短文も、画像もOK。</span>
+  </div>
+
+  <div className="rounded-lg border bg-card p-4">
+    <div className="flex items-center gap-2 mb-2">
+      <DocIcon name="flame" className="text-primary" />
+      <span className="font-medium">ストリーク</span>
+    </div>
+    <span className="text-sm text-muted-foreground">Duolingo式の継続モチベーション。毎日の記録で連続日数がカウント。</span>
+  </div>
+
+  <div className="rounded-lg border bg-card p-4">
+    <div className="flex items-center gap-2 mb-2">
+      <DocIcon name="shield" className="text-primary" />
+      <span className="font-medium">ほつれ</span>
+    </div>
+    <span className="text-sm text-muted-foreground">週2回のスキップ機能。忙しい日も継続が途切れない安心設計。</span>
+  </div>
+
+  <div className="rounded-lg border bg-card p-4">
+    <div className="flex items-center gap-2 mb-2">
+      <DocIcon name="calendar" className="text-primary" />
+      <span className="font-medium">カレンダー</span>
+    </div>
+    <span className="text-sm text-muted-foreground">月間の記録を俯瞰。過去の自分を振り返るきっかけに。</span>
+  </div>
+</div>
+
+---
+
+## クイックスタート
+
+<div className="space-y-4">
+  <GuideStep number={1}>
+    **ログイン** - Googleアカウントでサインイン
+  </GuideStep>
+
+  <GuideStep number={2}>
+    **記録する** - 画面下部の「+」ボタンから新規記録
+  </GuideStep>
+
+  <GuideStep number={3}>
+    **続ける** - 毎日の記録でストリークを伸ばそう
+  </GuideStep>
+</div>
+
+---
+
+## 次のステップ
+
+<div className="grid gap-3 my-6">
+  <a href="/docs/guide" className="flex items-center gap-3 rounded-lg border bg-card p-4 hover:border-primary/50 transition-colors no-underline">
+    <DocIcon name="book-open" className="text-primary" />
+    <div>
+      <div className="font-medium text-foreground">使い方ガイド</div>
+      <div className="text-sm text-muted-foreground">基本的な操作方法を詳しく解説</div>
+    </div>
+  </a>
+
+  <a href="/docs/glossary" className="flex items-center gap-3 rounded-lg border bg-card p-4 hover:border-primary/50 transition-colors no-underline">
+    <DocIcon name="sparkles" className="text-primary" />
+    <div>
+      <div className="font-medium text-foreground">用語説明</div>
+      <div className="text-sm text-muted-foreground">ヒビオル独自の用語を解説</div>
+    </div>
+  </a>
+
+  <a href="/docs/faq" className="flex items-center gap-3 rounded-lg border bg-card p-4 hover:border-primary/50 transition-colors no-underline">
+    <DocIcon name="help-circle" className="text-primary" />
+    <div>
+      <div className="font-medium text-foreground">よくある質問</div>
+      <div className="text-sm text-muted-foreground">困ったときはこちら</div>
+    </div>
+  </a>
+</div>

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { PageLayout } from '@/components/layouts/page-layout'
+import { SocialHeader } from '@/features/social/components/social-header'
 import { SocialTabs } from '@/features/social/components/social-tabs'
 import { SocialFeedTab } from '@/features/social/components/social-feed-tab'
 import { SocialNotificationsTab } from '@/features/social/components/social-notifications-tab'
@@ -115,11 +116,8 @@ export default async function SocialPage() {
   )
 
   return (
-    <PageLayout>
-      <div className="container mx-auto p-4 max-w-2xl pb-6">
-        <h1 className="sr-only">ヒビオル</h1>
-        <h2 className="text-2xl font-bold mb-6">ソーシャル</h2>
-
+    <PageLayout header={<SocialHeader />} mainClassName="overflow-hidden">
+      <div className="container mx-auto max-w-2xl h-full">
         <SocialTabs
           profileContent={profileTabContent}
           socialFeedContent={<SocialFeedTab />}
