@@ -1,7 +1,6 @@
 'use client'
 
 import { useState } from 'react'
-import { Info } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FeatureCard } from '@/components/ui/feature-card'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -109,17 +108,6 @@ export function ExportSection() {
       >
         {isLoading ? 'エクスポート中...' : 'エクスポート'}
       </Button>
-
-      {/* 説明パネル */}
-      <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-        <div className="flex gap-2 text-xs text-muted-foreground leading-relaxed">
-          <Info aria-hidden="true" className="w-4 h-4 shrink-0 mt-0.5" />
-          <p>
-            記録データをファイルとしてダウンロードできます。
-            ChatGPTなどのAIに渡して、自分の行動パターンや傾向の分析に活用できます。
-          </p>
-        </div>
-      </div>
     </FeatureCard>
   )
 }

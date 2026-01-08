@@ -173,10 +173,3 @@ export const recordHighlightVariants: Variants = {
     transition: { duration: 1.5, repeat: Infinity },
   },
 }
-
-// === タブスライド（スワイプ切り替え用） ===
-export const tabSlideTransition: Transition = {
-  type: 'spring',
-  stiffness: 300,
-  damping: 30,
-}

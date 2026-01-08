@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { CalendarDays, MessageCirclePlus, Users, Check, type LucideIcon } from 'lucide-react'
+import { CalendarDays, MessageCirclePlus, User, Check, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { buttonVariants, strongButtonVariants } from '@/lib/animations'
 
@@ -37,13 +37,13 @@ export function FooterNav({ centerButton }: FooterNavProps) {
     {
       href: '/social',
       label: 'ソーシャル',
-      icon: Users,
+      icon: User,
     },
   ]
 
   return (
     <nav aria-label="メインナビゲーション" className="shrink-0 bg-background border-t border-border pb-safe">
-      <div className="mx-auto flex max-w-3xl items-center justify-around h-16">
+      <div className="mx-auto flex max-w-400 items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
           const Icon = item.icon
