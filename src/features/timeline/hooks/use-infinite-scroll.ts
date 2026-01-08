@@ -90,7 +90,7 @@ export function useInfiniteScroll({
         isLoadingMoreRef.current = false
       })
     },
-    [containerRef, dateRefs, displayedDates, allDates, hasMoreOlderDates, hasNextPage, fetchNextPage]
+    [containerRef, dateRefs, displayedDates, allDates, hasMoreOlderDates, hasNextPage, fetchNextPage, setDisplayedDateCount]
   )
 
   // 下端検出コールバック: 最新データを追加読み込み

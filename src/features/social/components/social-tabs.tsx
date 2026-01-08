@@ -1,11 +1,16 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo, useSyncExternalStore } from 'react'
 import { motion } from 'framer-motion'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Settings, Users, Bell } from 'lucide-react'
 import { useTabSwipe, type SocialTabValue } from '../hooks/use-tab-swipe'
 import { tabSlideTransition } from '@/lib/animations'
+
+// Hydration対応用
+const emptySubscribe = () => () => {}
+const getClientSnapshot = () => true
+const getServerSnapshot = () => false
 
 interface SocialTabsProps {
   profileContent: React.ReactNode
@@ -24,12 +29,9 @@ export function SocialTabs({
   notificationsContent,
 }: SocialTabsProps) {
   const [activeTab, setActiveTab] = useState<SocialTabValue>('profile')
-  const [mounted, setMounted] = useState(false)
 
   // Hydration mismatch回避: クライアント側でマウント後にTabsをレンダリング
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot)
 
   // スワイプハンドラー
   const { handlers, activeIndex } = useTabSwipe({

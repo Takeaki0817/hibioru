@@ -125,10 +125,15 @@ export function MobileTableOfContents() {
   const [isOpen, setIsOpen] = useState(false)
   const pathname = usePathname()
 
-  // ページ遷移時にリセット
-  useEffect(() => {
+  // ページ遷移時にリセット（レンダー中の状態調整パターン）
+  const [prevPathname, setPrevPathname] = useState(pathname)
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname)
     setIsOpen(false)
+  }
 
+  // 見出し取得（非同期で外部システムと同期）
+  useEffect(() => {
     const timer = setTimeout(() => {
       const article = document.querySelector('article')
       if (!article) return

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback, useSyncExternalStore } from 'react'
 
 interface UseNotificationPermissionReturn {
   isSupported: boolean
@@ -8,20 +8,37 @@ interface UseNotificationPermissionReturn {
   requestPermission: () => Promise<NotificationPermission>
 }
 
+// Notification APIのサポート検出（useSyncExternalStore用）
+const emptySubscribe = () => () => {}
+const getNotificationSupported = () =>
+  typeof window !== 'undefined' && 'Notification' in window
+const getNotificationPermission = (): NotificationPermission =>
+  typeof window !== 'undefined' && 'Notification' in window
+    ? Notification.permission
+    : 'default'
+const getServerSnapshot = () => false
+const getServerPermission = (): NotificationPermission => 'default'
+
 /**
  * ブラウザの通知サポート検出と権限管理を行うフック
  */
 export function useNotificationPermission(): UseNotificationPermissionReturn {
-  const [isSupported, setIsSupported] = useState(false)
-  const [permission, setPermission] = useState<NotificationPermission>('default')
+  // ブラウザ通知サポート検出（SSR安全）
+  const isSupported = useSyncExternalStore(
+    emptySubscribe,
+    getNotificationSupported,
+    getServerSnapshot
+  )
 
-  // ブラウザ通知サポート検出
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      setIsSupported(true)
-      setPermission(Notification.permission)
-    }
-  }, [])
+  // 初期権限値（SSR安全）
+  const initialPermission = useSyncExternalStore(
+    emptySubscribe,
+    getNotificationPermission,
+    getServerPermission
+  )
+
+  // 権限リクエスト後の更新用state
+  const [permission, setPermission] = useState<NotificationPermission>(initialPermission)
 
   // 通知権限をリクエスト
   const requestPermission = useCallback(async (): Promise<NotificationPermission> => {

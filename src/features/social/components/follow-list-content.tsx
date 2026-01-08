@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { Users, UserPlus } from 'lucide-react'
 import {
@@ -90,10 +90,17 @@ function FollowingList() {
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // 初回データ取得（useEffectなしで直接fetchを開始）
+  const [fetchStarted, setFetchStarted] = useState(false)
+
   const loadUsers = useCallback(async (cursor?: string) => {
-    setIsLoading(true)
-    setError(null)
+    // 追加読み込み時のみ明示的にローディング設定（初回は既にtrue）
+    if (cursor) {
+      setIsLoading(true)
+    }
     const result = await getFollowingList(cursor)
+    // 非同期コールバック内でのstate更新はOK
+    setError(null)
     setIsLoading(false)
 
     if (result.ok) {
@@ -109,9 +116,11 @@ function FollowingList() {
     }
   }, [])
 
-  useEffect(() => {
+  // 初回のみfetchを開始（レンダー中にstate更新を行い、非同期処理を開始）
+  if (!fetchStarted) {
+    setFetchStarted(true)
     loadUsers()
-  }, [loadUsers])
+  }
 
   if (isLoading && users.length === 0) {
     return <ListSkeleton />
@@ -175,10 +184,17 @@ function FollowerList() {
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
+  // 初回データ取得（useEffectなしで直接fetchを開始）
+  const [fetchStarted, setFetchStarted] = useState(false)
+
   const loadUsers = useCallback(async (cursor?: string) => {
-    setIsLoading(true)
-    setError(null)
+    // 追加読み込み時のみ明示的にローディング設定（初回は既にtrue）
+    if (cursor) {
+      setIsLoading(true)
+    }
     const result = await getFollowerList(cursor)
+    // 非同期コールバック内でのstate更新はOK
+    setError(null)
     setIsLoading(false)
 
     if (result.ok) {
@@ -194,9 +210,11 @@ function FollowerList() {
     }
   }, [])
 
-  useEffect(() => {
+  // 初回のみfetchを開始（レンダー中にstate更新を行い、非同期処理を開始）
+  if (!fetchStarted) {
+    setFetchStarted(true)
     loadUsers()
-  }, [loadUsers])
+  }
 
   if (isLoading && users.length === 0) {
     return <ListSkeleton />
