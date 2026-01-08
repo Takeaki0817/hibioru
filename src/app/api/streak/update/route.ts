@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { updateStreakOnEntry } from '@/features/streak/api/service'
+import { logger } from '@/lib/logger'
 
 export async function POST() {
   try {
@@ -18,7 +19,7 @@ export async function POST() {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: '認証が必要です' },
         { status: 401 }
       )
     }
@@ -27,8 +28,10 @@ export async function POST() {
     const result = await updateStreakOnEntry(user.id)
 
     if (!result.ok) {
+      // 内部エラーはログに記録、ユーザーには汎用メッセージを返す
+      logger.error('ストリーク更新エラー:', result.error)
       return NextResponse.json(
-        { error: result.error.message },
+        { error: '処理中にエラーが発生しました' },
         { status: 500 }
       )
     }
@@ -39,9 +42,10 @@ export async function POST() {
       longestStreak: result.value.longestStreak,
       isNewRecord: result.value.currentStreak === result.value.longestStreak && result.value.currentStreak > 0,
     }, { status: 200 })
-  } catch {
+  } catch (error) {
+    logger.error('ストリーク更新API予期せぬエラー:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: '処理中にエラーが発生しました' },
       { status: 500 }
     )
   }

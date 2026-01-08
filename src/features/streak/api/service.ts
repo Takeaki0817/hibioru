@@ -183,13 +183,18 @@ export async function hasEntryOnDate(
   try {
     const supabase = await createClient()
 
+    // 翌日の00:00:00を計算（23:59:59だと最後の1秒が漏れる）
+    const nextDay = new Date(`${date}T00:00:00+09:00`)
+    nextDay.setDate(nextDay.getDate() + 1)
+    const nextDayStr = nextDay.toISOString().split('T')[0]
+
     const { data, error } = await supabase
       .from('entries')
       .select('id')
       .eq('user_id', userId)
       .eq('is_deleted', false)
       .gte('created_at', `${date}T00:00:00+09:00`)
-      .lt('created_at', `${date}T23:59:59+09:00`)
+      .lt('created_at', `${nextDayStr}T00:00:00+09:00`)
       .limit(1)
 
     if (error) {
@@ -220,23 +225,32 @@ export async function getWeeklyRecords(
   userId: string
 ): Promise<Result<WeeklyRecords, StreakError>> {
   try {
+    // JST基準の今日の日付（YYYY-MM-DD形式）
     const today = getJSTToday()
-    const todayDate = new Date(`${today}T00:00:00+09:00`)
+    const [year, month, day] = today.split('-').map(Number)
+
+    // UTC日付オブジェクトを作成（タイムゾーンの影響を受けない純粋な日付計算）
+    const todayDateObj = new Date(Date.UTC(year, month - 1, day))
 
     // 今日の曜日（0=月曜, 6=日曜）
-    const dayOfWeek = (todayDate.getUTCDay() + 6) % 7
+    // getUTCDay()は0=日曜なので、(day + 6) % 7で月曜=0に変換
+    const dayOfWeek = (todayDateObj.getUTCDay() + 6) % 7
 
     // 今週の月曜日を計算
-    const mondayDate = new Date(todayDate)
-    mondayDate.setUTCDate(mondayDate.getUTCDate() - dayOfWeek)
+    const mondayDateObj = new Date(Date.UTC(year, month - 1, day - dayOfWeek))
 
     // 月〜日の7日分の日付配列を生成
     const weekDates: string[] = []
     for (let i = 0; i < 7; i++) {
-      const date = new Date(mondayDate)
+      const date = new Date(mondayDateObj)
       date.setUTCDate(date.getUTCDate() + i)
       weekDates.push(date.toISOString().split('T')[0])
     }
+
+    // 翌週月曜を計算（日曜日の翌日）
+    const nextMonday = new Date(`${weekDates[6]}T00:00:00+09:00`)
+    nextMonday.setDate(nextMonday.getDate() + 1)
+    const nextMondayStr = nextMonday.toISOString().split('T')[0]
 
     // エントリーとほつれ使用日を並列取得
     const supabase = await createClient()
@@ -248,7 +262,7 @@ export async function getWeeklyRecords(
         .eq('user_id', userId)
         .eq('is_deleted', false)
         .gte('created_at', `${weekDates[0]}T00:00:00+09:00`)
-        .lte('created_at', `${weekDates[6]}T23:59:59+09:00`),
+        .lt('created_at', `${nextMondayStr}T00:00:00+09:00`),
       // ほつれ使用日を取得
       supabase
         .from('streaks')
