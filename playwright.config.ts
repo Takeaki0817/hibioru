@@ -1,4 +1,8 @@
 import { defineConfig, devices } from '@playwright/test'
+import { loadEnvConfig } from '@next/env'
+
+// .env.localを読み込み（テストプロセス用）
+loadEnvConfig(process.cwd())
 
 /**
  * Playwright設定
