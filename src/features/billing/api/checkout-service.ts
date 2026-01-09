@@ -4,7 +4,7 @@ import 'server-only'
 
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/lib/logger'
+import { createSafeBillingError } from '../lib/error-handler'
 import { STRIPE_PRICE_IDS, HOTSURE_PACK_QUANTITY } from '../constants'
 import type { BillingResult, CheckoutResult } from '../types'
 
@@ -31,7 +31,7 @@ export async function createCheckoutSession(
     if (!user) {
       return {
         ok: false,
-        error: { code: 'UNAUTHORIZED', message: '認証が必要です' },
+        error: createSafeBillingError('UNAUTHORIZED'),
       }
     }
 
@@ -46,10 +46,7 @@ export async function createCheckoutSession(
     if (subscription?.plan_type !== 'free' && subscription?.plan_type !== null) {
       return {
         ok: false,
-        error: {
-          code: 'SUBSCRIPTION_EXISTS',
-          message: '既にプレミアムプランに加入しています',
-        },
+        error: createSafeBillingError('SUBSCRIPTION_EXISTS'),
       }
     }
 
@@ -61,7 +58,7 @@ export async function createCheckoutSession(
     if (!priceId) {
       return {
         ok: false,
-        error: { code: 'STRIPE_ERROR', message: '価格IDが設定されていません' },
+        error: createSafeBillingError('STRIPE_ERROR'),
       }
     }
 
@@ -100,16 +97,15 @@ export async function createCheckoutSession(
     if (!session.url) {
       return {
         ok: false,
-        error: { code: 'STRIPE_ERROR', message: 'Checkout URLの生成に失敗しました' },
+        error: createSafeBillingError('STRIPE_ERROR'),
       }
     }
 
     return { ok: true, value: { url: session.url } }
   } catch (error) {
-    logger.error('Checkout Session作成エラー', error)
     return {
       ok: false,
-      error: { code: 'STRIPE_ERROR', message: '決済ページの作成に失敗しました' },
+      error: createSafeBillingError('STRIPE_ERROR', error),
     }
   }
 }
@@ -130,7 +126,7 @@ export async function createHotsureCheckoutSession(): Promise<
     if (!user) {
       return {
         ok: false,
-        error: { code: 'UNAUTHORIZED', message: '認証が必要です' },
+        error: createSafeBillingError('UNAUTHORIZED'),
       }
     }
 
@@ -162,7 +158,7 @@ export async function createHotsureCheckoutSession(): Promise<
     if (!priceId) {
       return {
         ok: false,
-        error: { code: 'STRIPE_ERROR', message: '価格IDが設定されていません' },
+        error: createSafeBillingError('STRIPE_ERROR'),
       }
     }
 
@@ -191,7 +187,7 @@ export async function createHotsureCheckoutSession(): Promise<
     if (!session.url) {
       return {
         ok: false,
-        error: { code: 'STRIPE_ERROR', message: 'Checkout URLの生成に失敗しました' },
+        error: createSafeBillingError('STRIPE_ERROR'),
       }
     }
 
@@ -200,10 +196,9 @@ export async function createHotsureCheckoutSession(): Promise<
 
     return { ok: true, value: { url: session.url } }
   } catch (error) {
-    logger.error('ほつれCheckout Session作成エラー', error)
     return {
       ok: false,
-      error: { code: 'STRIPE_ERROR', message: '決済ページの作成に失敗しました' },
+      error: createSafeBillingError('STRIPE_ERROR', error),
     }
   }
 }

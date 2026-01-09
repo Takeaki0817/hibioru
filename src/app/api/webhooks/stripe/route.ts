@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logger } from '@/lib/logger'
-import type { PlanType } from '@/features/billing/types'
+import {
+  getPlanTypeFromPriceId,
+  isValidHotsurePurchase,
+  HOTSURE_PACK_QUANTITY,
+} from '@/features/billing/constants'
 
 // 遅延初期化（ビルド時のエラー回避）
 function getStripeClient() {
@@ -92,10 +96,9 @@ async function handleCheckoutComplete(
   }
 
   const userId = session.metadata?.user_id
-  const planType = session.metadata?.plan_type as PlanType | undefined
 
-  if (!userId || !planType) {
-    logger.warn('Missing metadata in checkout session', { sessionId: session.id })
+  if (!userId) {
+    logger.warn('Missing user_id in checkout session metadata', { sessionId: session.id })
     return
   }
 
@@ -111,11 +114,29 @@ async function handleCheckoutComplete(
   )) as Stripe.Subscription
 
   const firstItem = subscription.items.data[0]
+  const stripePriceId = firstItem?.price.id
+
+  if (!stripePriceId) {
+    logger.warn('Missing price ID in subscription', { subscriptionId })
+    return
+  }
+
+  // メタデータではなくStripe Price IDからプランタイプを判定
+  const planType = getPlanTypeFromPriceId(stripePriceId)
+
+  if (!planType) {
+    logger.error('Invalid price ID in subscription', {
+      subscriptionId,
+      stripePriceId,
+    })
+    return
+  }
+
   const { error } = await supabase.from('subscriptions').upsert({
     user_id: userId,
     stripe_customer_id: session.customer as string,
     stripe_subscription_id: subscription.id,
-    stripe_price_id: firstItem?.price.id ?? null,
+    stripe_price_id: stripePriceId,
     plan_type: planType,
     status: subscription.status,
     current_period_start: firstItem
@@ -211,7 +232,7 @@ async function handleHotsurePurchase(
   paymentIntent: Stripe.PaymentIntent
 ) {
   const userId = paymentIntent.metadata.user_id
-  const quantity = parseInt(paymentIntent.metadata.quantity || '2', 10)
+  const metadataQuantity = parseInt(paymentIntent.metadata.quantity || '2', 10)
 
   if (!userId) {
     logger.warn('Missing user_id in hotsure purchase', {
@@ -219,6 +240,19 @@ async function handleHotsurePurchase(
     })
     return
   }
+
+  // 支払額と数量の整合性を検証
+  if (!isValidHotsurePurchase(paymentIntent.amount, metadataQuantity)) {
+    logger.error('Invalid hotsure purchase: amount and quantity mismatch', {
+      paymentIntentId: paymentIntent.id,
+      amount: paymentIntent.amount,
+      metadataQuantity,
+    })
+    return
+  }
+
+  // 検証済みの数量を使用（メタデータではなくデフォルト値を使用）
+  const quantity = HOTSURE_PACK_QUANTITY
 
   // 購入履歴を作成
   const { error: purchaseError } = await supabase.from('hotsure_purchases').insert({

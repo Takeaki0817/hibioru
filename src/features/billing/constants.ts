@@ -61,3 +61,22 @@ export const HOTSURE_PACK_QUANTITY = 2 // 回分
 export function isPremiumPlan(planType: PlanType): boolean {
   return planType === 'premium_monthly' || planType === 'premium_yearly'
 }
+
+// Stripe Price IDからプランタイプを逆引き
+export function getPlanTypeFromPriceId(priceId: string): PlanType | null {
+  switch (priceId) {
+    case STRIPE_PRICE_IDS.PREMIUM_MONTHLY:
+      return 'premium_monthly'
+    case STRIPE_PRICE_IDS.PREMIUM_YEARLY:
+      return 'premium_yearly'
+    default:
+      return null
+  }
+}
+
+// ほつれパックの価格検証
+export function isValidHotsurePurchase(amount: number, quantity: number): boolean {
+  const expectedAmount = HOTSURE_PACK_PRICE * quantity
+  // Stripeは円の場合、金額をそのまま保存する（100円 = 100）
+  return amount === expectedAmount
+}

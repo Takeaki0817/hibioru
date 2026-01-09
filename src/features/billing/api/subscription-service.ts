@@ -3,7 +3,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/lib/logger'
+import { createSafeBillingError } from '../lib/error-handler'
 import type { BillingResult, Subscription, PlanType } from '../types'
 
 /**
@@ -15,6 +15,18 @@ export async function getSubscription(
   try {
     const supabase = await createClient()
 
+    // 認証チェック
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user || user.id !== userId) {
+      return {
+        ok: false,
+        error: createSafeBillingError('UNAUTHORIZED'),
+      }
+    }
+
     const { data, error } = await supabase
       .from('subscriptions')
       .select(
@@ -25,10 +37,9 @@ export async function getSubscription(
 
     if (error && error.code !== 'PGRST116') {
       // PGRST116 = 行が見つからない
-      logger.error('サブスクリプション取得エラー', error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: 'サブスクリプションの取得に失敗しました' },
+        error: createSafeBillingError('DB_ERROR', error),
       }
     }
 
@@ -58,10 +69,9 @@ export async function getSubscription(
       },
     }
   } catch (error) {
-    logger.error('サブスクリプション取得エラー', error)
     return {
       ok: false,
-      error: { code: 'DB_ERROR', message: 'サブスクリプションの取得に失敗しました' },
+      error: createSafeBillingError('DB_ERROR', error),
     }
   }
 }
@@ -72,6 +82,15 @@ export async function getSubscription(
 export async function getUserPlanType(userId: string): Promise<PlanType> {
   try {
     const supabase = await createClient()
+
+    // 認証チェック
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user || user.id !== userId) {
+      return 'free'
+    }
 
     const { data } = await supabase
       .from('subscriptions')
@@ -100,6 +119,18 @@ export async function createInitialSubscription(
   try {
     const supabase = await createClient()
 
+    // 認証チェック
+    const {
+      data: { user },
+    } = await supabase.auth.getUser()
+
+    if (!user || user.id !== userId) {
+      return {
+        ok: false,
+        error: createSafeBillingError('UNAUTHORIZED'),
+      }
+    }
+
     const { data, error } = await supabase
       .from('subscriptions')
       .upsert(
@@ -115,10 +146,9 @@ export async function createInitialSubscription(
       .single()
 
     if (error) {
-      logger.error('サブスクリプション作成エラー', error)
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: 'サブスクリプションの作成に失敗しました' },
+        error: createSafeBillingError('DB_ERROR', error),
       }
     }
 
@@ -144,10 +174,9 @@ export async function createInitialSubscription(
       },
     }
   } catch (error) {
-    logger.error('サブスクリプション作成エラー', error)
     return {
       ok: false,
-      error: { code: 'DB_ERROR', message: 'サブスクリプションの作成に失敗しました' },
+      error: createSafeBillingError('DB_ERROR', error),
     }
   }
 }
