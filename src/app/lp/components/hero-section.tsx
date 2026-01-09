@@ -49,7 +49,7 @@ export function HeroSection() {
 
         {/* サブテキスト */}
         <p className="mt-8 text-sm text-muted-foreground">
-          ADHD当事者が作った、続けることに特化したアプリ
+          ADHD当事者が20年の挫折を経て作った、続けることに特化したアプリ
         </p>
       </div>
     </section>

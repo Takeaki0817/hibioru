@@ -129,7 +129,9 @@ function LoginContent() {
               className="text-lg lg:text-xl text-muted-foreground mb-10 leading-relaxed"
               variants={slideUp}
             >
-              ADHD当事者のための瞬間記録アプリ
+              ADHD当事者が20年の挫折を経て作った
+              <br />
+              瞬間記録アプリ
             </motion.p>
 
             {/* 引用 - デスクトップのみ */}
@@ -137,11 +139,13 @@ function LoginContent() {
               className="hidden lg:flex items-start gap-4 pt-8 border-t border-primary/10"
               variants={slideUp}
             >
-              <div className="w-1 h-12 bg-primary/30 rounded-full" />
+              <div className="w-1 h-16 bg-primary/30 rounded-full" />
               <blockquote className="text-sm text-muted-foreground/70 leading-relaxed italic">
                 &ldquo;継続することが最大の目的。
                 <br />
-                立派な日記を書くことではない。&rdquo;
+                立派な日記を書くことではない。
+                <br />
+                絵文字1つ、一言だけでOK。&rdquo;
               </blockquote>
             </motion.div>
           </motion.div>
