@@ -42,8 +42,8 @@ export async function createCheckoutSession(
       .eq('user_id', user.id)
       .single()
 
-    // 既にプレミアムの場合はエラー
-    if (subscription?.plan_type !== 'free' && subscription?.plan_type !== null) {
+    // 既にプレミアムの場合はエラー（subscriptionが存在し、freeでない場合のみ）
+    if (subscription && subscription.plan_type !== 'free') {
       return {
         ok: false,
         error: createSafeBillingError('SUBSCRIPTION_EXISTS'),
@@ -72,12 +72,15 @@ export async function createCheckoutSession(
       customerId = customer.id
 
       // subscriptionsテーブル更新
-      await supabase.from('subscriptions').upsert({
-        user_id: user.id,
-        stripe_customer_id: customerId,
-        plan_type: 'free',
-        status: 'active',
-      })
+      await supabase.from('subscriptions').upsert(
+        {
+          user_id: user.id,
+          stripe_customer_id: customerId,
+          plan_type: 'free',
+          status: 'active',
+        },
+        { onConflict: 'user_id' }
+      )
     }
 
     // Checkout Session作成
@@ -146,12 +149,15 @@ export async function createHotsureCheckoutSession(): Promise<
       customerId = customer.id
 
       // subscriptionsテーブル更新
-      await supabase.from('subscriptions').upsert({
-        user_id: user.id,
-        stripe_customer_id: customerId,
-        plan_type: 'free',
-        status: 'active',
-      })
+      await supabase.from('subscriptions').upsert(
+        {
+          user_id: user.id,
+          stripe_customer_id: customerId,
+          plan_type: 'free',
+          status: 'active',
+        },
+        { onConflict: 'user_id' }
+      )
     }
 
     const priceId = STRIPE_PRICE_IDS.HOTSURE_PACK

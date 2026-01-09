@@ -132,20 +132,23 @@ async function handleCheckoutComplete(
     return
   }
 
-  const { error } = await supabase.from('subscriptions').upsert({
-    user_id: userId,
-    stripe_customer_id: session.customer as string,
-    stripe_subscription_id: subscription.id,
-    stripe_price_id: stripePriceId,
-    plan_type: planType,
-    status: subscription.status,
-    current_period_start: firstItem
-      ? new Date(firstItem.current_period_start * 1000).toISOString()
-      : null,
-    current_period_end: firstItem
-      ? new Date(firstItem.current_period_end * 1000).toISOString()
-      : null,
-  })
+  const { error } = await supabase.from('subscriptions').upsert(
+    {
+      user_id: userId,
+      stripe_customer_id: session.customer as string,
+      stripe_subscription_id: subscription.id,
+      stripe_price_id: stripePriceId,
+      plan_type: planType,
+      status: subscription.status,
+      current_period_start: firstItem
+        ? new Date(firstItem.current_period_start * 1000).toISOString()
+        : null,
+      current_period_end: firstItem
+        ? new Date(firstItem.current_period_end * 1000).toISOString()
+        : null,
+    },
+    { onConflict: 'user_id' }
+  )
 
   if (error) {
     logger.error('Failed to update subscription after checkout', error)
