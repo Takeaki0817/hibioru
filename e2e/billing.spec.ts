@@ -42,14 +42,9 @@ test.describe('未認証時の動作', () => {
 // ============================================
 // 2. プラン表示テスト (Requirement 1)
 // ============================================
-// 注意: /socialページはサーバーサイドで認証チェックが行われるため、
-// LocalStorageベースのセッションモックでは動作しません。
-// これらのテストは実際のSupabaseセッションが必要です。
+// E2Eテストモードでは認証バイパスが有効
+// サーバーを E2E_TEST_MODE=true で起動するか、playwrightが自動起動する
 test.describe('プラン表示（BillingSection）', () => {
-  test.skip(
-    () => !process.env.PLAYWRIGHT_AUTH_ENABLED,
-    '認証が必要なテスト: PLAYWRIGHT_AUTH_ENABLED=true かつ実際のSupabaseセッションで実行'
-  )
 
   test('無料プランユーザーで「無料プラン」バッジが表示される [Req1-AC1]', async ({ page }) => {
     await setupFreePlanUser(page)
@@ -190,10 +185,6 @@ test.describe('プラン選択ページ（認証不要）', () => {
 // 4. Checkout統合テスト (Requirement 3)
 // ============================================
 test.describe('Stripe Checkout統合', () => {
-  test.skip(
-    () => !process.env.PLAYWRIGHT_AUTH_ENABLED,
-    '認証が必要なテスト: PLAYWRIGHT_AUTH_ENABLED=true で実行'
-  )
 
   test('Checkout成功後に成功メッセージが表示される [Req3-AC4]', async ({ page }) => {
     await setupFreePlanUser(page)
@@ -224,10 +215,6 @@ test.describe('Stripe Checkout統合', () => {
 // 5. ほつれパック購入テスト (Requirement 7)
 // ============================================
 test.describe('ほつれパック購入', () => {
-  test.skip(
-    () => !process.env.PLAYWRIGHT_AUTH_ENABLED,
-    '認証が必要なテスト: PLAYWRIGHT_AUTH_ENABLED=true で実行'
-  )
 
   test('購入ボタンと価格が表示される [Req7-AC1]', async ({ page }) => {
     await setupFreePlanUser(page)
@@ -269,10 +256,6 @@ test.describe('ほつれパック購入', () => {
 // 6. 使用制限テスト (Requirement 6)
 // ============================================
 test.describe('使用制限管理', () => {
-  test.skip(
-    () => !process.env.PLAYWRIGHT_AUTH_ENABLED,
-    '認証が必要なテスト: PLAYWRIGHT_AUTH_ENABLED=true で実行'
-  )
 
   test('無料ユーザーで投稿上限に達した場合、残り0件と表示される [Req6-AC2]', async ({ page }) => {
     await setupFreePlanUser(page, { entryCount: 15 })

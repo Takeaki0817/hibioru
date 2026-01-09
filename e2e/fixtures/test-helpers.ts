@@ -1,5 +1,5 @@
 import { Page } from '@playwright/test'
-import type { LimitsResponse, PlanType } from '../../src/features/billing/types'
+import type { LimitsResponse } from '../../src/features/billing/types'
 
 /**
  * E2Eテスト用ヘルパー関数
@@ -16,40 +16,58 @@ export const TEST_USER = {
 /**
  * ローカルSupabaseのテストユーザーでログインセッションを設定
  * 注意: 実際の認証フローではなく、セッションを直接設定する
+ *
+ * サーバーサイド認証のため、LocalStorageとCookieの両方を設定する
  */
 export async function setupTestSession(page: Page, userId?: string) {
   const testUserId = userId || TEST_USER.id
 
-  // Supabase Auth形式のセッション情報を設定
-  await page.addInitScript((userId) => {
-    const mockSession = {
-      access_token: `test-access-token-${userId}`,
-      refresh_token: `test-refresh-token-${userId}`,
-      expires_in: 3600,
-      expires_at: Math.floor(Date.now() / 1000) + 3600,
-      token_type: 'bearer',
-      user: {
-        id: userId,
-        aud: 'authenticated',
-        role: 'authenticated',
-        email: 'e2e-test@example.com',
-        email_confirmed_at: new Date().toISOString(),
-        app_metadata: { provider: 'google' },
-        user_metadata: {
-          full_name: 'E2Eテストユーザー',
-          avatar_url: null,
-        },
-        created_at: new Date().toISOString(),
+  // セッション情報を作成
+  const mockSession = {
+    access_token: `test-access-token-${testUserId}`,
+    refresh_token: `test-refresh-token-${testUserId}`,
+    expires_in: 3600,
+    expires_at: Math.floor(Date.now() / 1000) + 3600,
+    token_type: 'bearer',
+    user: {
+      id: testUserId,
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: 'e2e-test@example.com',
+      email_confirmed_at: new Date().toISOString(),
+      app_metadata: { provider: 'google' },
+      user_metadata: {
+        full_name: 'E2Eテストユーザー',
+        avatar_url: null,
       },
-    }
+      created_at: new Date().toISOString(),
+    },
+  }
 
-    // Supabaseのローカルストレージキーを設定
-    // 形式: sb-{project-ref}-auth-token
-    localStorage.setItem(
-      'sb-127.0.0.1:54321-auth-token',
-      JSON.stringify(mockSession)
-    )
-  }, testUserId)
+  const sessionJson = JSON.stringify(mockSession)
+
+  // Cookie名（ローカルSupabase用）
+  // 形式: sb-{project-ref}-auth-token
+  const cookieName = 'sb-127-0-0-1-54321-auth-token'
+
+  // E2Eテスト用の認証バイパスCookieを設定
+  // middleware.tsでこのCookieを検出し、テスト環境のみ認証をスキップ
+  await page.context().addCookies([
+    {
+      name: 'e2e-test-user-id',
+      value: testUserId,
+      domain: 'localhost',
+      path: '/',
+      httpOnly: false,
+      secure: false,
+      sameSite: 'Lax',
+    },
+  ])
+
+  // クライアントサイド用のLocalStorageも設定
+  await page.addInitScript((session) => {
+    localStorage.setItem('sb-127.0.0.1:54321-auth-token', session)
+  }, sessionJson)
 }
 
 /**

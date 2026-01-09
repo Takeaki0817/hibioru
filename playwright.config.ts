@@ -54,5 +54,9 @@ export default defineConfig({
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
+    // E2Eテストモードを有効化（認証バイパス用）
+    env: {
+      E2E_TEST_MODE: 'true',
+    },
   },
 })

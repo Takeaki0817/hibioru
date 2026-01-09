@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getE2EMockUser } from '@/lib/supabase/e2e-auth'
 import { PageLayout } from '@/components/layouts/page-layout'
 import { SocialHeader } from '@/features/social/components/social-header'
 import { SocialTabs } from '@/features/social/components/social-tabs'
@@ -31,7 +32,12 @@ export const metadata: Metadata = {
 
 export default async function SocialPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+
+  // E2Eテストモードの場合はモックユーザーを使用
+  const e2eMockUser = await getE2EMockUser()
+  const { data: { user: realUser } } = await supabase.auth.getUser()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const user = e2eMockUser ?? realUser as any
 
   // 未認証ユーザーはログインページにリダイレクト
   if (!user) {
