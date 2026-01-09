@@ -199,22 +199,22 @@ export async function closeCalendar(page: Page) {
 // Billing機能テスト用ヘルパー
 // ============================================
 
-// Billingテスト用ユーザー
+// Billingテスト用ユーザー（UUID形式）
 export const BILLING_TEST_USERS = {
   free: {
-    id: 'billing-test-free-user',
+    id: '00000000-0000-4000-8000-000000000001',
     email: 'billing-free@test.example.com',
     displayName: 'Billing Free User',
   },
   premium: {
-    id: 'billing-test-premium-user',
+    id: '00000000-0000-4000-8000-000000000002',
     email: 'billing-premium@test.example.com',
     displayName: 'Billing Premium User',
     stripeCustomerId: 'cus_test_premium',
     stripeSubscriptionId: 'sub_test_premium',
   },
   canceled: {
-    id: 'billing-test-canceled-user',
+    id: '00000000-0000-4000-8000-000000000003',
     email: 'billing-canceled@test.example.com',
     displayName: 'Billing Canceled User',
     stripeCustomerId: 'cus_test_canceled',
@@ -413,3 +413,9 @@ export async function waitForPlansPage(page: Page) {
   await page.waitForSelector('[data-testid="plan-card-monthly"]', { timeout: 10000 })
   await page.waitForSelector('[data-testid="plan-card-yearly"]', { timeout: 10000 })
 }
+
+// ============================================
+// Stripe統合テスト用ヘルパー（再エクスポート）
+// ============================================
+// DB検証やWebhookテストで使用するヘルパーはstripe-helpers.tsからインポート
+// 例: import { getSubscription, getBonusHotsure } from './fixtures/stripe-helpers'
