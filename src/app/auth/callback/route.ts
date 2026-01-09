@@ -10,7 +10,7 @@ export async function GET(request: Request) {
 
   // ユーザーが認証をキャンセルした場合（エラーメッセージなしでログインページに戻す）
   if (error === 'access_denied' || errorDescription?.includes('cancel')) {
-    return NextResponse.redirect(`${origin}/login`)
+    return NextResponse.redirect(`${origin}/`)
   }
 
   // 認証コードがある場合、セッションに交換
@@ -23,5 +23,5 @@ export async function GET(request: Request) {
   }
 
   // その他のエラー時はログインページにリダイレクト（エラーメッセージあり）
-  return NextResponse.redirect(`${origin}/login?error=auth_failed`)
+  return NextResponse.redirect(`${origin}/?error=auth_failed`)
 }

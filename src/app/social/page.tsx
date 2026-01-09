@@ -34,7 +34,7 @@ export default async function SocialPage() {
 
   // 未認証ユーザーはログインページにリダイレクト
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   // ストリーク・ほつれ・通知設定・プロフィールを並列取得（パフォーマンス最適化）

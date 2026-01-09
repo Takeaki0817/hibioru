@@ -25,7 +25,7 @@ export function DocsHeader() {
           </Link>
         </div>
         <Button variant="default" size="sm" asChild>
-          <Link href="/login">
+          <Link href="/">
             <LogIn className="mr-1.5 size-4" />
             ログイン
           </Link>

@@ -30,7 +30,7 @@ export function HeroSection() {
         {/* CTA */}
         <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href="/login">βテストに参加する</Link>
+            <Link href="/">βテストに参加する</Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
             <a href="#features">機能を見る</a>
