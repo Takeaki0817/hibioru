@@ -1,4 +1,5 @@
 import { Page } from '@playwright/test'
+import type { LimitsResponse, PlanType } from '../../src/features/billing/types'
 
 /**
  * E2Eテスト用ヘルパー関数
@@ -174,4 +175,223 @@ export async function closeCalendar(page: Page) {
     await overlay.click()
     await page.waitForSelector('.rdp', { state: 'hidden', timeout: 5000 })
   }
+}
+
+// ============================================
+// Billing機能テスト用ヘルパー
+// ============================================
+
+// Billingテスト用ユーザー
+export const BILLING_TEST_USERS = {
+  free: {
+    id: 'billing-test-free-user',
+    email: 'billing-free@test.example.com',
+    displayName: 'Billing Free User',
+  },
+  premium: {
+    id: 'billing-test-premium-user',
+    email: 'billing-premium@test.example.com',
+    displayName: 'Billing Premium User',
+    stripeCustomerId: 'cus_test_premium',
+    stripeSubscriptionId: 'sub_test_premium',
+  },
+  canceled: {
+    id: 'billing-test-canceled-user',
+    email: 'billing-canceled@test.example.com',
+    displayName: 'Billing Canceled User',
+    stripeCustomerId: 'cus_test_canceled',
+  },
+}
+
+/**
+ * /api/billing/limits のモックレスポンス設定
+ * APIルートをインターセプトして指定のレスポンスを返す
+ */
+export async function mockBillingLimitsAPI(page: Page, response: Partial<LimitsResponse>) {
+  const defaultResponse: LimitsResponse = {
+    planType: 'free',
+    entryLimit: {
+      allowed: true,
+      current: 0,
+      limit: 15,
+      remaining: 15,
+      planType: 'free',
+    },
+    imageLimit: {
+      allowed: true,
+      current: 0,
+      limit: 5,
+      remaining: 5,
+      planType: 'free',
+    },
+    canceledAt: null,
+    currentPeriodEnd: null,
+  }
+
+  const mergedResponse = { ...defaultResponse, ...response }
+
+  await page.route('/api/billing/limits', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(mergedResponse),
+    })
+  })
+}
+
+/**
+ * 無料プランユーザーとしてセッション設定し、APIをモック
+ */
+export async function setupFreePlanUser(
+  page: Page,
+  options?: {
+    entryCount?: number
+    imageCount?: number
+  }
+) {
+  const entryCount = options?.entryCount ?? 0
+  const imageCount = options?.imageCount ?? 0
+
+  // セッション設定
+  await setupTestSession(page, BILLING_TEST_USERS.free.id)
+
+  // 制限APIモック
+  await mockBillingLimitsAPI(page, {
+    planType: 'free',
+    entryLimit: {
+      allowed: entryCount < 15,
+      current: entryCount,
+      limit: 15,
+      remaining: 15 - entryCount,
+      planType: 'free',
+    },
+    imageLimit: {
+      allowed: imageCount < 5,
+      current: imageCount,
+      limit: 5,
+      remaining: 5 - imageCount,
+      planType: 'free',
+    },
+    canceledAt: null,
+    currentPeriodEnd: null,
+  })
+}
+
+/**
+ * プレミアムプランユーザーとしてセッション設定し、APIをモック
+ */
+export async function setupPremiumPlanUser(
+  page: Page,
+  planType: 'premium_monthly' | 'premium_yearly' = 'premium_monthly'
+) {
+  // セッション設定
+  await setupTestSession(page, BILLING_TEST_USERS.premium.id)
+
+  // 次月の期限日
+  const nextMonth = new Date()
+  nextMonth.setMonth(nextMonth.getMonth() + 1)
+
+  // 制限APIモック
+  await mockBillingLimitsAPI(page, {
+    planType,
+    entryLimit: {
+      allowed: true,
+      current: 0,
+      limit: null,
+      remaining: null,
+      planType,
+    },
+    imageLimit: {
+      allowed: true,
+      current: 0,
+      limit: null,
+      remaining: null,
+      planType,
+    },
+    canceledAt: null,
+    currentPeriodEnd: nextMonth.toISOString(),
+  })
+}
+
+/**
+ * キャンセル済みプレミアムユーザーとしてセッション設定し、APIをモック
+ */
+export async function setupCanceledPlanUser(
+  page: Page,
+  periodEnd: Date = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+) {
+  // セッション設定
+  await setupTestSession(page, BILLING_TEST_USERS.canceled.id)
+
+  const canceledAt = new Date()
+  canceledAt.setDate(canceledAt.getDate() - 3) // 3日前にキャンセル
+
+  // 制限APIモック（キャンセル後も期限まではプレミアム機能利用可）
+  await mockBillingLimitsAPI(page, {
+    planType: 'premium_monthly',
+    entryLimit: {
+      allowed: true,
+      current: 0,
+      limit: null,
+      remaining: null,
+      planType: 'premium_monthly',
+    },
+    imageLimit: {
+      allowed: true,
+      current: 0,
+      limit: null,
+      remaining: null,
+      planType: 'premium_monthly',
+    },
+    canceledAt: canceledAt.toISOString(),
+    currentPeriodEnd: periodEnd.toISOString(),
+  })
+}
+
+/**
+ * Stripe Checkoutへのリダイレクトをインターセプト
+ * リダイレクト先URLを取得してリダイレクトを中断する
+ */
+export async function interceptStripeCheckout(page: Page): Promise<{ getRedirectUrl: () => string | null }> {
+  let redirectUrl: string | null = null
+
+  await page.route('**/checkout.stripe.com/**', async (route) => {
+    redirectUrl = route.request().url()
+    await route.abort()
+  })
+
+  return {
+    getRedirectUrl: () => redirectUrl,
+  }
+}
+
+/**
+ * Stripe Customer Portalへのリダイレクトをインターセプト
+ */
+export async function interceptStripePortal(page: Page): Promise<{ getRedirectUrl: () => string | null }> {
+  let redirectUrl: string | null = null
+
+  await page.route('**/billing.stripe.com/**', async (route) => {
+    redirectUrl = route.request().url()
+    await route.abort()
+  })
+
+  return {
+    getRedirectUrl: () => redirectUrl,
+  }
+}
+
+/**
+ * BillingSectionが表示されるまで待機
+ */
+export async function waitForBillingSection(page: Page) {
+  await page.waitForSelector('[data-testid="billing-section"]', { timeout: 10000 })
+}
+
+/**
+ * プラン選択ページの読み込み完了を待機
+ */
+export async function waitForPlansPage(page: Page) {
+  await page.waitForSelector('[data-testid="plan-card-monthly"]', { timeout: 10000 })
+  await page.waitForSelector('[data-testid="plan-card-yearly"]', { timeout: 10000 })
 }

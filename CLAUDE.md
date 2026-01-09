@@ -18,13 +18,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | カテゴリ | 技術 |
 |---------|------|
-| フレームワーク | Next.js 16 (App Router, Turbopack, React Compiler) |
+| フレームワーク | Next.js 16.1.1 (App Router, Turbopack, React Compiler) |
 | 言語 | TypeScript（strictモード、any禁止） |
 | スタイリング | Tailwind CSS v4 |
 | UI | shadcn/ui, Radix UI, Lucide Icons |
 | 状態管理 | Zustand（フィーチャー内 stores/） |
 | データフェッチ | TanStack Query |
 | バックエンド | Supabase (PostgreSQL, Auth, Storage, Edge Functions) |
+| 決済 | Stripe |
 | ホスティング | Vercel |
 
 ---
@@ -63,6 +64,7 @@ pnpm test                           # ユニットテスト（Jest）
 pnpm test:watch                     # ウォッチモード
 pnpm test:coverage                  # カバレッジ付き
 pnpm test -- path/to/file           # 単一ファイル実行
+pnpm test -- --testPathPattern=name # パターンマッチ実行
 pnpm exec playwright test           # E2Eテスト
 pnpm exec playwright test --ui      # E2E UIモード（デバッグ用）
 
@@ -71,6 +73,8 @@ pnpm db:types                       # 型定義生成
 pnpm db:migration:new <name>        # 新規マイグレーション
 pnpm db:push                        # リモートDBにマイグレーション適用
 pnpm db:pull                        # リモートDBからスキーマ取得
+pnpm db:diff                        # スキーマ差分確認
+pnpm db:reset                       # ローカルDBリセット
 pnpm db:backup                      # リモートDBバックアップ
 ```
 
@@ -96,7 +100,7 @@ src/
 └── lib/          # 共通ライブラリ
 ```
 
-**機能一覧**: auth, entry, hotsure, notification, social, streak, timeline
+**機能一覧**: auth, billing, entry, hotsure, notification, social, streak, timeline
 
 → 詳細: `.claude/rules/architecture.md`
 

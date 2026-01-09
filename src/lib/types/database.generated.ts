@@ -252,6 +252,44 @@ export type Database = {
           },
         ]
       }
+      hotsure_purchases: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          quantity: number
+          status: string
+          stripe_payment_intent_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          quantity?: number
+          status?: string
+          stripe_payment_intent_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          quantity?: number
+          status?: string
+          stripe_payment_intent_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hotsure_purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_logs: {
         Row: {
           created_at: string
@@ -432,6 +470,7 @@ export type Database = {
       }
       streaks: {
         Row: {
+          bonus_hotsure: number
           current_streak: number
           hotsure_remaining: number
           hotsure_used_dates: string[]
@@ -441,6 +480,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          bonus_hotsure?: number
           current_streak?: number
           hotsure_remaining?: number
           hotsure_used_dates?: string[]
@@ -450,6 +490,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          bonus_hotsure?: number
           current_streak?: number
           hotsure_remaining?: number
           hotsure_used_dates?: string[]
@@ -461,6 +502,59 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "streaks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          canceled_at: string | null
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_type: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_price_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          canceled_at?: string | null
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_type?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_price_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
             referencedRelation: "users"

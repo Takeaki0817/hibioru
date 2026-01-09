@@ -57,6 +57,32 @@ export function isoToJSTDateString(isoString: string): string {
 }
 
 /**
+ * JST基準で指定月の開始・終了時刻を取得（UTC）
+ * @param referenceDate 基準日時（デフォルト: 現在時刻）
+ * @returns start: 当月1日0:00:00のUTC、end: 翌月1日0:00:00のUTC
+ */
+export function getJSTMonthBounds(
+  referenceDate: Date = new Date()
+): { start: Date; end: Date } {
+  // JSTでの現在時刻を計算
+  const jstNow = new Date(referenceDate.getTime() + JST_OFFSET_MS)
+  const year = jstNow.getUTCFullYear()
+  const month = jstNow.getUTCMonth()
+
+  // JSTでの当月1日0:00を計算
+  const jstMonthStart = new Date(Date.UTC(year, month, 1, 0, 0, 0, 0))
+
+  // JSTでの翌月1日0:00を計算
+  const jstNextMonthStart = new Date(Date.UTC(year, month + 1, 1, 0, 0, 0, 0))
+
+  // UTCに戻す（JSTオフセット分を引く）
+  const startUtc = new Date(jstMonthStart.getTime() - JST_OFFSET_MS)
+  const endUtc = new Date(jstNextMonthStart.getTime() - JST_OFFSET_MS)
+
+  return { start: startUtc, end: endUtc }
+}
+
+/**
  * 日時文字列を「○分前」「○時間前」などの相対表示に変換
  * @param dateString ISO 8601形式などの日時文字列
  * @returns 相対時間の文字列

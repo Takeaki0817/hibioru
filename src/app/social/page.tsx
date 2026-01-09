@@ -22,6 +22,7 @@ import { FeedbackSection } from '@/features/social/components/feedback-section'
 import { LegalLinksSection } from '@/features/social/components/legal-links-section'
 import { LogoutButton } from '@/features/social/components/logout-button'
 import { DeleteAccountSection } from '@/features/social/components/delete-account-section'
+import { BillingSection } from '@/features/billing/components/billing-section'
 
 export const metadata: Metadata = {
   title: 'ソーシャル - ヒビオル',
@@ -99,6 +100,9 @@ export default async function SocialPage() {
 
       {/* 外観設定セクション */}
       <AppearanceSection />
+
+      {/* プラン・お支払いセクション */}
+      <BillingSection />
 
       {/* データエクスポートセクション */}
       <ExportSection />

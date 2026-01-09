@@ -49,4 +49,11 @@ export const queryKeys = {
     followingIds: () =>
       [...queryKeys.social.all, 'followingIds'] as const,
   },
+
+  // billing関連（課金・サブスクリプション）
+  billing: {
+    all: ['billing'] as const,
+    subscription: () => [...queryKeys.billing.all, 'subscription'] as const,
+    limits: () => [...queryKeys.billing.all, 'limits'] as const,
+  },
 } as const

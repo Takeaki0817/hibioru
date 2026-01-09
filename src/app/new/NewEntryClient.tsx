@@ -25,7 +25,7 @@ export function NewEntryClient({ userId }: NewEntryClientProps) {
 
   return (
     <PageLayout
-      header={<EntryHeader title="記録" />}
+      header={<EntryHeader />}
       footer={
         <FooterNav
           centerButton={{
