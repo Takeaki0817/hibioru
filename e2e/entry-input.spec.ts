@@ -18,15 +18,15 @@ import {
 // 未認証テスト（認証不要）
 // ========================================
 test.describe('未認証時の動作', () => {
-  test('未認証で/newにアクセス→/loginにリダイレクト', async ({ page }) => {
+  test('未認証で/newにアクセス→/にリダイレクト', async ({ page }) => {
     await page.goto('/new')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL('/')
     await expect(page.getByText('ヒビオル')).toBeVisible()
   })
 
-  test('未認証で/edit/[id]にアクセス→/loginにリダイレクト', async ({ page }) => {
+  test('未認証で/edit/[id]にアクセス→/にリダイレクト', async ({ page }) => {
     await page.goto('/edit/test-entry-id')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL('/')
   })
 })
 

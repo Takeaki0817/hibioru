@@ -11,7 +11,7 @@ import { setupTestSession, TEST_USER, waitForPageLoad } from './fixtures/test-he
 // ========================================
 test.describe('ログイン機能', () => {
   test('ログイン画面の基本UI表示 [Req2-AC1,2]', async ({ page }) => {
-    await page.goto('/login')
+    await page.goto('/')
 
     // サービス名とキャッチコピー
     await expect(page.getByText('ヒビオル')).toBeVisible()
@@ -28,7 +28,7 @@ test.describe('ログイン機能', () => {
   })
 
   test('Googleボタンのアクセシビリティ [Req2-AC3]', async ({ page }) => {
-    await page.goto('/login')
+    await page.goto('/')
 
     const googleButton = page.getByRole('button', { name: /Google/i })
 
@@ -45,7 +45,7 @@ test.describe('ログイン機能', () => {
     await page.goto('/auth/callback?error=access_denied')
 
     // ログインページにリダイレクト
-    await expect(page).toHaveURL('/login')
+    await expect(page).toHaveURL('/')
 
     // エラーメッセージは表示されない
     await expect(page.getByText(/ログインできませんでした/)).not.toBeVisible()
@@ -89,23 +89,23 @@ test.describe('認証状態管理', () => {
 
     // 再認証なしでタイムラインが表示される
     await expect(page).toHaveURL('/timeline')
-    await expect(page).not.toHaveURL(/\/login/)
+    await expect(page).toHaveURL('/timeline')
   })
 
   test('有効なセッションで保護ページアクセス [Req4-AC2]', async ({ page }) => {
     // タイムライン
     await page.goto('/timeline')
     await waitForPageLoad(page)
-    await expect(page).not.toHaveURL(/\/login/)
+    await expect(page).toHaveURL('/timeline')
 
     // ソーシャル
     await page.goto('/social')
     await waitForPageLoad(page)
-    await expect(page).not.toHaveURL(/\/login/)
+    await expect(page).toHaveURL('/social')
   })
 
-  test('認証済みで/loginアクセス→/timelineにリダイレクト [Req7-AC3]', async ({ page }) => {
-    await page.goto('/login')
+  test('認証済みで/アクセス→/timelineにリダイレクト [Req7-AC3]', async ({ page }) => {
+    await page.goto('/')
     await expect(page).toHaveURL('/timeline')
   })
 })
@@ -137,7 +137,7 @@ test.describe('ログアウト機能', () => {
     await expect(page.getByRole('button', { name: /ログアウト/i })).toBeVisible()
   })
 
-  test('ログアウト実行→/loginにリダイレクト [Req5-AC2,3]', async ({ page }) => {
+  test('ログアウト実行→/にリダイレクト [Req5-AC2,3]', async ({ page }) => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
@@ -146,11 +146,11 @@ test.describe('ログアウト機能', () => {
     await logoutButton.click()
 
     // ログインページにリダイレクト
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL('/')
 
     // 再度保護ページにアクセスできない
     await page.goto('/timeline')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL('/')
   })
 })
 
@@ -159,14 +159,14 @@ test.describe('ログアウト機能', () => {
 // ========================================
 test.describe('エラーハンドリング', () => {
   test('エラーパラメータでエラーメッセージ表示 [Req6-AC1]', async ({ page }) => {
-    await page.goto('/login?error=auth_failed')
+    await page.goto('/?error=auth_failed')
 
     // エラーメッセージが表示される
     await expect(page.getByText(/ログインできませんでした/)).toBeVisible()
   })
 
   test('再試行ボタンでエラークリア [Req6-AC4]', async ({ page }) => {
-    await page.goto('/login?error=auth_failed')
+    await page.goto('/?error=auth_failed')
 
     // エラーメッセージが表示される
     await expect(page.getByText(/ログインできませんでした/)).toBeVisible()
@@ -183,7 +183,7 @@ test.describe('エラーハンドリング', () => {
 
   test('アプリがクラッシュせずに動作 [Req6-AC3]', async ({ page }) => {
     // 不正なエラーパラメータ
-    await page.goto('/login?error=unknown_error_type_xyz')
+    await page.goto('/?error=unknown_error_type_xyz')
 
     // ページが正常に表示される（クラッシュしない）
     await expect(page.getByText('ヒビオル')).toBeVisible()
@@ -195,35 +195,35 @@ test.describe('エラーハンドリング', () => {
 // 5. ルート保護 (Requirement 7)
 // ========================================
 test.describe('ルート保護', () => {
-  test('未認証で保護ページ→/loginにリダイレクト [Req7-AC1]', async ({ page }) => {
+  test('未認証で保護ページ→/にリダイレクト [Req7-AC1]', async ({ page }) => {
     // タイムライン
     await page.goto('/timeline')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL('/')
 
     // ソーシャル
     await page.goto('/social')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL('/')
 
     // 新規投稿
     await page.goto('/new')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL('/')
   })
 
   test('公開パスはリダイレクトされない [Req7-AC2]', async ({ page }) => {
-    // ログイン
-    await page.goto('/login')
-    await expect(page).toHaveURL(/\/login/)
+    // ログイン（ルート）
+    await page.goto('/')
+    await expect(page).toHaveURL('/')
     await expect(page.getByText('ヒビオル')).toBeVisible()
 
     // オフライン
     await page.goto('/offline')
-    await expect(page).not.toHaveURL(/\/login/)
+    await expect(page).not.toHaveURL('/')
 
     // LP（存在確認）
     const lpResponse = await page.goto('/lp', { waitUntil: 'domcontentloaded' })
     // LPページが存在すればリダイレクトされない
     if (lpResponse?.ok()) {
-      await expect(page).not.toHaveURL(/\/login/)
+      await expect(page).toHaveURL('/lp')
     }
   })
 })
@@ -329,7 +329,7 @@ test.describe('アカウント削除', () => {
 test.describe('レスポンシブデザイン', () => {
   test('モバイルビューポートで正しく表示', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 })
-    await page.goto('/login')
+    await page.goto('/')
 
     await expect(page.getByText('ヒビオル')).toBeVisible()
     await expect(page.getByRole('button', { name: /Google/i })).toBeVisible()
@@ -337,7 +337,7 @@ test.describe('レスポンシブデザイン', () => {
 
   test('タブレットビューポートで正しく表示', async ({ page }) => {
     await page.setViewportSize({ width: 768, height: 1024 })
-    await page.goto('/login')
+    await page.goto('/')
 
     await expect(page.getByText('ヒビオル')).toBeVisible()
     await expect(page.getByRole('button', { name: /Google/i })).toBeVisible()
@@ -345,7 +345,7 @@ test.describe('レスポンシブデザイン', () => {
 
   test('デスクトップビューポートで正しく表示', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 720 })
-    await page.goto('/login')
+    await page.goto('/')
 
     await expect(page.getByText('ヒビオル')).toBeVisible()
     await expect(page.getByRole('button', { name: /Google/i })).toBeVisible()
