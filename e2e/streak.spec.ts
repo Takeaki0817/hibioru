@@ -16,8 +16,9 @@ import { setupTestSession, TEST_USER, waitForPageLoad } from './fixtures/test-he
 test.describe('未認証時の動作', () => {
   test('未認証で/socialにアクセス→/にリダイレクト', async ({ page }) => {
     await page.goto('/social')
+    await waitForPageLoad(page)
     await expect(page).toHaveURL('/')
-    await expect(page.getByText('ヒビオル')).toBeVisible()
+    await expect(page.getByRole('img', { name: 'ヒビオル' })).toBeVisible()
   })
 })
 

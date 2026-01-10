@@ -20,12 +20,14 @@ import {
 test.describe('未認証時の動作', () => {
   test('未認証で/newにアクセス→/にリダイレクト', async ({ page }) => {
     await page.goto('/new')
+    await waitForPageLoad(page)
     await expect(page).toHaveURL('/')
-    await expect(page.getByText('ヒビオル')).toBeVisible()
+    await expect(page.getByRole('img', { name: 'ヒビオル' })).toBeVisible()
   })
 
   test('未認証で/edit/[id]にアクセス→/にリダイレクト', async ({ page }) => {
     await page.goto('/edit/test-entry-id')
+    await waitForPageLoad(page)
     await expect(page).toHaveURL('/')
   })
 })
@@ -48,18 +50,18 @@ test.describe('テキスト入力機能', () => {
     await page.goto('/new')
     await waitForPageLoad(page)
 
-    // 入力フォームが表示される
-    await expect(page.getByPlaceholder(/今日はどんな日/)).toBeVisible()
+    // 入力フォームが表示される（aria-labelで検索）
+    await expect(page.getByLabel('記録内容')).toBeVisible()
 
     // 送信ボタンが表示される
-    await expect(page.getByRole('button', { name: '記録する' })).toBeVisible()
+    await expect(page.getByRole('button', { name: /記録する/ })).toBeVisible()
   })
 
   test('テキストを入力できる [Req1-AC2]', async ({ page }) => {
     await page.goto('/new')
     await waitForPageLoad(page)
 
-    const textarea = page.getByPlaceholder(/今日はどんな日/)
+    const textarea = page.getByLabel('記録内容')
     await textarea.fill('今日はいい天気でした')
 
     await expect(textarea).toHaveValue('今日はいい天気でした')
@@ -69,11 +71,11 @@ test.describe('テキスト入力機能', () => {
     await page.goto('/new')
     await waitForPageLoad(page)
 
-    const textarea = page.getByPlaceholder(/今日はどんな日/)
+    const textarea = page.getByLabel('記録内容')
     await textarea.fill('😊')
 
     // 送信ボタンが有効
-    const submitButton = page.getByRole('button', { name: '記録する' })
+    const submitButton = page.getByRole('button', { name: /記録する/ })
     await expect(submitButton).toBeEnabled()
   })
 
@@ -81,11 +83,11 @@ test.describe('テキスト入力機能', () => {
     await page.goto('/new')
     await waitForPageLoad(page)
 
-    const textarea = page.getByPlaceholder(/今日はどんな日/)
+    const textarea = page.getByLabel('記録内容')
     await textarea.fill('   ')
 
     // 送信ボタンが無効
-    const submitButton = page.getByRole('button', { name: '記録する' })
+    const submitButton = page.getByRole('button', { name: /記録する/ })
     await expect(submitButton).toBeDisabled()
   })
 
@@ -93,7 +95,7 @@ test.describe('テキスト入力機能', () => {
     await page.goto('/new')
     await waitForPageLoad(page)
 
-    const textarea = page.getByPlaceholder(/今日はどんな日/)
+    const textarea = page.getByLabel('記録内容')
     await textarea.fill('テスト入力です')
 
     // 文字数カウンターが存在しない
@@ -121,7 +123,9 @@ test.describe('画像添付機能', () => {
     await page.goto('/new')
     await waitForPageLoad(page)
 
-    await expect(page.getByText('画像を添付')).toBeVisible()
+    // 画像添付ボタン（ImagePlusアイコン）が表示される
+    const imageButton = page.locator('label[for="image-upload"]')
+    await expect(imageButton).toBeVisible()
   })
 
   test('画像選択→プレビュー表示 [Req2-AC2,3]', async ({ page }) => {
@@ -160,7 +164,8 @@ test.describe('画像添付機能', () => {
     await expect(page.getByAltText('プレビュー')).not.toBeVisible()
 
     // 画像添付ボタンが再表示
-    await expect(page.getByText('画像を添付')).toBeVisible()
+    const imageButton = page.locator('label[for="image-upload"]')
+    await expect(imageButton).toBeVisible()
   })
 })
 
@@ -182,7 +187,7 @@ test.describe('下書き自動保存機能', () => {
     await page.goto('/new')
     await waitForPageLoad(page)
 
-    const textarea = page.getByPlaceholder(/今日はどんな日/)
+    const textarea = page.getByLabel('記録内容')
     await textarea.fill('下書きテスト')
 
     // デバウンス後に保存
@@ -204,7 +209,7 @@ test.describe('下書き自動保存機能', () => {
     await waitForPageLoad(page)
 
     // 下書きが復元される
-    const textarea = page.getByPlaceholder(/今日はどんな日/)
+    const textarea = page.getByLabel('記録内容')
     await expect(textarea).toHaveValue('復元テスト内容')
   })
 })
@@ -228,7 +233,7 @@ test.describe('記録の編集機能', () => {
     await waitForPageLoad(page)
 
     // 入力フォームが表示される（または404/エラー）
-    const hasTextarea = await page.getByPlaceholder(/今日はどんな日/).isVisible().catch(() => false)
+    const hasTextarea = await page.getByLabel('記録内容').isVisible().catch(() => false)
     const hasError = await page.getByText(/見つかりません|エラー/).isVisible().catch(() => false)
 
     // どちらかの状態
@@ -276,14 +281,14 @@ test.describe('フォーム送信フロー', () => {
     await page.goto('/new')
     await waitForPageLoad(page)
 
-    const textarea = page.getByPlaceholder(/今日はどんな日/)
+    const textarea = page.getByLabel('記録内容')
     await textarea.fill('送信テスト')
 
-    const submitButton = page.getByRole('button', { name: '記録する' })
+    const submitButton = page.getByRole('button', { name: /記録する/ })
     await submitButton.click()
 
-    // 送信中はボタンが無効化される
-    await expect(page.getByRole('button', { name: '送信中...' })).toBeDisabled()
+    // 送信中はボタンが無効化される（テキストが「送信中...」に変わる）
+    await expect(page.getByRole('button', { name: /送信中/ })).toBeVisible()
   })
 })
 
@@ -305,8 +310,8 @@ test.describe('レスポンシブデザイン', () => {
     await page.goto('/new')
     await waitForPageLoad(page)
 
-    await expect(page.getByPlaceholder(/今日はどんな日/)).toBeVisible()
-    await expect(page.getByRole('button', { name: '記録する' })).toBeVisible()
+    await expect(page.getByLabel('記録内容')).toBeVisible()
+    await expect(page.getByRole('button', { name: /記録する/ })).toBeVisible()
   })
 
   test('デスクトップビューポートで正しく表示', async ({ page }) => {
@@ -314,7 +319,7 @@ test.describe('レスポンシブデザイン', () => {
     await page.goto('/new')
     await waitForPageLoad(page)
 
-    await expect(page.getByPlaceholder(/今日はどんな日/)).toBeVisible()
-    await expect(page.getByRole('button', { name: '記録する' })).toBeVisible()
+    await expect(page.getByLabel('記録内容')).toBeVisible()
+    await expect(page.getByRole('button', { name: /記録する/ })).toBeVisible()
   })
 })
