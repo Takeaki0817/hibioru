@@ -15,6 +15,24 @@ function getStripeClient() {
   })
 }
 
+// アプリURLを取得（Vercel自動環境変数対応）
+function getAppUrl(): string {
+  // 明示的に設定されている場合
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL
+  }
+  // Vercel本番環境
+  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
+    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  }
+  // Vercelプレビュー環境
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`
+  }
+  // ローカル開発
+  return 'http://localhost:3000'
+}
+
 /**
  * サブスクリプション用Checkout Session作成
  */
@@ -22,20 +40,13 @@ export async function createCheckoutSession(
   planType: 'premium_monthly' | 'premium_yearly'
 ): Promise<BillingResult<CheckoutResult>> {
   try {
-    console.log('[Checkout] Starting checkout session creation', { planType })
-    console.log('[Checkout] STRIPE_SECRET_KEY exists:', !!process.env.STRIPE_SECRET_KEY)
-    console.log('[Checkout] STRIPE_PRICE_IDS:', JSON.stringify(STRIPE_PRICE_IDS))
-
     const stripe = getStripeClient()
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
-    console.log('[Checkout] User:', user?.id)
-
     if (!user) {
-      console.log('[Checkout] ERROR: No user')
       return {
         ok: false,
         error: createSafeBillingError('UNAUTHORIZED'),
@@ -49,11 +60,8 @@ export async function createCheckoutSession(
       .eq('user_id', user.id)
       .single()
 
-    console.log('[Checkout] Existing subscription:', subscription)
-
     // 既にプレミアムの場合はエラー（subscriptionが存在し、freeでない場合のみ）
     if (subscription && subscription.plan_type !== 'free') {
-      console.log('[Checkout] ERROR: Subscription exists')
       return {
         ok: false,
         error: createSafeBillingError('SUBSCRIPTION_EXISTS'),
@@ -65,10 +73,7 @@ export async function createCheckoutSession(
         ? STRIPE_PRICE_IDS.PREMIUM_MONTHLY
         : STRIPE_PRICE_IDS.PREMIUM_YEARLY
 
-    console.log('[Checkout] Price ID:', priceId)
-
     if (!priceId) {
-      console.log('[Checkout] ERROR: No price ID')
       return {
         ok: false,
         error: createSafeBillingError('STRIPE_ERROR'),
@@ -77,16 +82,12 @@ export async function createCheckoutSession(
 
     // Stripe Customer取得または作成
     let customerId = subscription?.stripe_customer_id
-    console.log('[Checkout] Existing customerId:', customerId)
-
     if (!customerId) {
-      console.log('[Checkout] Creating new customer...')
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: { supabase_user_id: user.id },
       })
       customerId = customer.id
-      console.log('[Checkout] New customerId:', customerId)
 
       // subscriptionsテーブル更新
       await supabase.from('subscriptions').upsert(
@@ -100,7 +101,6 @@ export async function createCheckoutSession(
       )
     }
 
-    console.log('[Checkout] Creating checkout session...')
     // Checkout Session作成
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -108,18 +108,15 @@ export async function createCheckoutSession(
       mode: 'subscription',
       locale: 'ja',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/social?checkout=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/social?checkout=canceled`,
+      success_url: `${getAppUrl()}/social?checkout=success`,
+      cancel_url: `${getAppUrl()}/social?checkout=canceled`,
       metadata: {
         user_id: user.id,
         plan_type: planType,
       },
     })
 
-    console.log('[Checkout] Session created:', session.id, session.url)
-
     if (!session.url) {
-      console.log('[Checkout] ERROR: No session URL')
       return {
         ok: false,
         error: createSafeBillingError('STRIPE_ERROR'),
@@ -128,7 +125,6 @@ export async function createCheckoutSession(
 
     return { ok: true, value: { url: session.url } }
   } catch (error) {
-    console.log('[Checkout] CATCH ERROR:', error)
     return {
       ok: false,
       error: createSafeBillingError('STRIPE_ERROR', error),
@@ -223,8 +219,8 @@ export async function createHotsureCheckoutSession(): Promise<
       locale: 'ja',
       submit_type: 'pay',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/social?hotsure_purchase=success`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/social?hotsure_purchase=canceled`,
+      success_url: `${getAppUrl()}/social?hotsure_purchase=success`,
+      cancel_url: `${getAppUrl()}/social?hotsure_purchase=canceled`,
       metadata: {
         user_id: user.id,
         type: 'hotsure_purchase',
