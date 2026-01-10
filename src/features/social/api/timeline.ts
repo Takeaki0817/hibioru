@@ -3,6 +3,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { createSafeError } from '@/lib/error-handler'
 import type { SocialFeedItem, SocialResult, SocialFeedResult, AchievementType } from '../types'
 import { SOCIAL_PAGINATION } from '../constants'
 
@@ -31,7 +32,7 @@ export async function getSocialFeed(cursor?: string): Promise<SocialResult<Socia
     if (followingError) {
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: followingError.message },
+        error: createSafeError('DB_ERROR', followingError),
       }
     }
 
@@ -90,7 +91,7 @@ export async function getSocialFeed(cursor?: string): Promise<SocialResult<Socia
     if (achievementsError) {
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: achievementsError.message },
+        error: createSafeError('DB_ERROR', achievementsError),
       }
     }
 
@@ -179,10 +180,7 @@ export async function getSocialFeed(cursor?: string): Promise<SocialResult<Socia
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }

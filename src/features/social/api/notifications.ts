@@ -3,6 +3,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { createSafeError } from '@/lib/error-handler'
 import type {
   SocialNotificationItem,
   SocialResult,
@@ -62,7 +63,7 @@ export async function getSocialNotifications(
     if (notificationsError) {
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: notificationsError.message },
+        error: createSafeError('DB_ERROR', notificationsError),
       }
     }
 
@@ -110,10 +111,7 @@ export async function getSocialNotifications(
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
+      error: createSafeError('DB_ERROR', error),
     }
   }
 }

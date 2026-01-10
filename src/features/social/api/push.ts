@@ -4,6 +4,7 @@ import 'server-only'
 
 import { createAdminClient } from '@/lib/supabase/admin'
 import { sendToAllDevices } from '@/lib/push/sender'
+import { logger } from '@/lib/logger'
 import type { AchievementType } from '../types'
 import { getAchievementMessage } from '../constants'
 
@@ -52,7 +53,7 @@ export async function sendCelebrationPushNotification(
 
     await sendToAllDevices(toUserId, payload)
   } catch (error) {
-    console.error('お祝いプッシュ通知送信エラー:', error)
+    logger.error('お祝いプッシュ通知送信エラー', error)
   }
 }
 
@@ -83,6 +84,6 @@ export async function sendFollowPushNotification(
 
     await sendToAllDevices(toUserId, payload)
   } catch (error) {
-    console.error('フォロープッシュ通知送信エラー:', error)
+    logger.error('フォロープッシュ通知送信エラー', error)
   }
 }

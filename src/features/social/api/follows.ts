@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logger } from '@/lib/logger'
 import { createSafeError } from '@/lib/error-handler'
+import { rateLimits, checkRateLimit, getRateLimitErrorMessage } from '@/lib/rate-limit'
 import type { FollowCounts, PublicUserInfo, SocialResult, PaginatedResult } from '../types'
 import { SOCIAL_PAGINATION } from '../constants'
 import { sendFollowPushNotification } from './push'
@@ -23,6 +24,15 @@ export async function followUser(targetUserId: string): Promise<SocialResult<voi
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
+      }
+    }
+
+    // レート制限チェック
+    const rateCheck = await checkRateLimit(rateLimits.follow, userData.user.id)
+    if (!rateCheck.success) {
+      return {
+        ok: false,
+        error: { code: 'RATE_LIMITED', message: getRateLimitErrorMessage(rateCheck.resetAt) },
       }
     }
 
@@ -102,6 +112,15 @@ export async function unfollowUser(targetUserId: string): Promise<SocialResult<v
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
+      }
+    }
+
+    // レート制限チェック
+    const rateCheck = await checkRateLimit(rateLimits.follow, userData.user.id)
+    if (!rateCheck.success) {
+      return {
+        ok: false,
+        error: { code: 'RATE_LIMITED', message: getRateLimitErrorMessage(rateCheck.resetAt) },
       }
     }
 

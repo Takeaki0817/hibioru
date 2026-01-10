@@ -116,6 +116,7 @@ export interface SocialError {
     | 'USERNAME_TAKEN'
     | 'INVALID_USERNAME'
     | 'INVALID_DISPLAY_NAME'
+    | 'RATE_LIMITED'
   message: string
 }
 

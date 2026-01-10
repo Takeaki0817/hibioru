@@ -5,6 +5,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
 import { createSafeError } from '@/lib/error-handler'
+import { rateLimits, checkRateLimit, getRateLimitErrorMessage } from '@/lib/rate-limit'
 import type { PublicUserInfo, SocialResult, UpdateProfileInput } from '../types'
 import {
   validateUsername,
@@ -181,6 +182,15 @@ export async function updateProfile(
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
+      }
+    }
+
+    // レート制限チェック
+    const rateCheck = await checkRateLimit(rateLimits.profileUpdate, userData.user.id)
+    if (!rateCheck.success) {
+      return {
+        ok: false,
+        error: { code: 'RATE_LIMITED', message: getRateLimitErrorMessage(rateCheck.resetAt) },
       }
     }
 
