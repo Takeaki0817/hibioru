@@ -22,13 +22,20 @@ export async function createCheckoutSession(
   planType: 'premium_monthly' | 'premium_yearly'
 ): Promise<BillingResult<CheckoutResult>> {
   try {
+    console.log('[Checkout] Starting checkout session creation', { planType })
+    console.log('[Checkout] STRIPE_SECRET_KEY exists:', !!process.env.STRIPE_SECRET_KEY)
+    console.log('[Checkout] STRIPE_PRICE_IDS:', JSON.stringify(STRIPE_PRICE_IDS))
+
     const stripe = getStripeClient()
     const supabase = await createClient()
     const {
       data: { user },
     } = await supabase.auth.getUser()
 
+    console.log('[Checkout] User:', user?.id)
+
     if (!user) {
+      console.log('[Checkout] ERROR: No user')
       return {
         ok: false,
         error: createSafeBillingError('UNAUTHORIZED'),
@@ -42,8 +49,11 @@ export async function createCheckoutSession(
       .eq('user_id', user.id)
       .single()
 
+    console.log('[Checkout] Existing subscription:', subscription)
+
     // 既にプレミアムの場合はエラー（subscriptionが存在し、freeでない場合のみ）
     if (subscription && subscription.plan_type !== 'free') {
+      console.log('[Checkout] ERROR: Subscription exists')
       return {
         ok: false,
         error: createSafeBillingError('SUBSCRIPTION_EXISTS'),
@@ -55,7 +65,10 @@ export async function createCheckoutSession(
         ? STRIPE_PRICE_IDS.PREMIUM_MONTHLY
         : STRIPE_PRICE_IDS.PREMIUM_YEARLY
 
+    console.log('[Checkout] Price ID:', priceId)
+
     if (!priceId) {
+      console.log('[Checkout] ERROR: No price ID')
       return {
         ok: false,
         error: createSafeBillingError('STRIPE_ERROR'),
