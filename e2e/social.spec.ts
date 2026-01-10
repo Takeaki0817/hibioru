@@ -15,8 +15,9 @@ import { setupTestSession, TEST_USER, waitForPageLoad } from './fixtures/test-he
 test.describe('未認証時の動作', () => {
   test('未認証で/socialにアクセス→/にリダイレクト', async ({ page }) => {
     await page.goto('/social')
+    await waitForPageLoad(page)
     await expect(page).toHaveURL('/')
-    await expect(page.getByText('ヒビオル')).toBeVisible()
+    await expect(page.getByRole('img', { name: 'ヒビオル' })).toBeVisible()
   })
 })
 
@@ -37,10 +38,10 @@ test.describe('プロフィール管理', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     // アバターまたは表示名が表示される
@@ -57,10 +58,10 @@ test.describe('プロフィール管理', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     // 編集ボタンまたは編集可能な表示名フィールドを探す
@@ -83,10 +84,10 @@ test.describe('プロフィール管理', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     // ユーザー名フィールドを探す
@@ -103,10 +104,10 @@ test.describe('プロフィール管理', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     // ユーザー名入力フィールドを探す
@@ -130,17 +131,21 @@ test.describe('プロフィール管理', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // 検索タブまたは検索フィールドを探す
-    const searchTab = page.getByRole('tab', { name: /検索/i })
+    // 「みんな」タブに検索機能がある
+    const socialTab = page.getByRole('tab', { name: /みんな/i })
+    if (await socialTab.isVisible()) {
+      await socialTab.click()
+      await waitForPageLoad(page)
+    }
+
     const searchInput = page.getByRole('searchbox')
     const searchField = page.getByPlaceholder(/検索|ユーザー名/i)
 
-    const hasSearchTab = await searchTab.isVisible().catch(() => false)
     const hasSearchInput = await searchInput.isVisible().catch(() => false)
     const hasSearchField = await searchField.isVisible().catch(() => false)
 
     // 検索機能が存在
-    expect(hasSearchTab || hasSearchInput || hasSearchField).toBeTruthy()
+    expect(hasSearchInput || hasSearchField).toBeTruthy()
   })
 })
 
@@ -161,10 +166,10 @@ test.describe('フォロー機能', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     // フォロー数表示を確認
@@ -180,10 +185,10 @@ test.describe('フォロー機能', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブでは自分をフォローするボタンがない
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブでは自分をフォローするボタンがない
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     // 自分のプロフィールにはフォローボタンがない
@@ -207,16 +212,16 @@ test.describe('ソーシャルフィード', () => {
     await setupTestSession(page, TEST_USER.id)
   })
 
-  test('フィードタブが表示される [Req3-AC1]', async ({ page }) => {
+  test('みんなタブが表示される [Req3-AC1]', async ({ page }) => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // フィードタブを探す
-    const feedTab = page.getByRole('tab', { name: /フィード|タイムライン/i })
-    const isVisible = await feedTab.isVisible().catch(() => false)
+    // 「みんな」タブを探す
+    const socialTab = page.getByRole('tab', { name: /みんな/i })
+    const isVisible = await socialTab.isVisible().catch(() => false)
 
     if (isVisible) {
-      await expect(feedTab).toBeVisible()
+      await expect(socialTab).toBeVisible()
     }
   })
 
@@ -224,10 +229,10 @@ test.describe('ソーシャルフィード', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // フィードタブを選択
-    const feedTab = page.getByRole('tab', { name: /フィード/i })
-    if (await feedTab.isVisible()) {
-      await feedTab.click()
+    // 「みんな」タブを選択
+    const socialTab = page.getByRole('tab', { name: /みんな/i })
+    if (await socialTab.isVisible()) {
+      await socialTab.click()
       await waitForPageLoad(page)
     }
 
@@ -246,10 +251,10 @@ test.describe('ソーシャルフィード', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // フィードタブを選択
-    const feedTab = page.getByRole('tab', { name: /フィード/i })
-    if (await feedTab.isVisible()) {
-      await feedTab.click()
+    // 「みんな」タブを選択
+    const socialTab = page.getByRole('tab', { name: /みんな/i })
+    if (await socialTab.isVisible()) {
+      await socialTab.click()
       await waitForPageLoad(page)
     }
 
@@ -262,10 +267,10 @@ test.describe('ソーシャルフィード', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // フィードタブを選択
-    const feedTab = page.getByRole('tab', { name: /フィード/i })
-    if (await feedTab.isVisible()) {
-      await feedTab.click()
+    // 「みんな」タブを選択
+    const socialTab = page.getByRole('tab', { name: /みんな/i })
+    if (await socialTab.isVisible()) {
+      await socialTab.click()
       await waitForPageLoad(page)
     }
 
@@ -342,10 +347,10 @@ test.describe('お祝い機能', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // フィードタブを選択
-    const feedTab = page.getByRole('tab', { name: /フィード/i })
-    if (await feedTab.isVisible()) {
-      await feedTab.click()
+    // 「みんな」タブを選択
+    const socialTab = page.getByRole('tab', { name: /みんな/i })
+    if (await socialTab.isVisible()) {
+      await socialTab.click()
       await waitForPageLoad(page)
     }
 
@@ -365,10 +370,10 @@ test.describe('お祝い機能', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // フィードタブを選択
-    const feedTab = page.getByRole('tab', { name: /フィード/i })
-    if (await feedTab.isVisible()) {
-      await feedTab.click()
+    // 「みんな」タブを選択
+    const socialTab = page.getByRole('tab', { name: /みんな/i })
+    if (await socialTab.isVisible()) {
+      await socialTab.click()
       await waitForPageLoad(page)
     }
 
@@ -455,10 +460,10 @@ test.describe('アカウント管理', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     // ログアウトボタンを探す
@@ -470,10 +475,10 @@ test.describe('アカウント管理', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     // ページを下にスクロール

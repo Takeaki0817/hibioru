@@ -16,8 +16,9 @@ import { setupTestSession, TEST_USER, waitForPageLoad } from './fixtures/test-he
 test.describe('未認証時の動作', () => {
   test('未認証で/socialにアクセス→/にリダイレクト', async ({ page }) => {
     await page.goto('/social')
+    await waitForPageLoad(page)
     await expect(page).toHaveURL('/')
-    await expect(page.getByText('ヒビオル')).toBeVisible()
+    await expect(page.getByRole('img', { name: 'ヒビオル' })).toBeVisible()
   })
 })
 
@@ -38,10 +39,10 @@ test.describe('通知設定UI', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     // ページを下にスクロール
@@ -60,10 +61,10 @@ test.describe('通知設定UI', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
@@ -86,10 +87,10 @@ test.describe('通知設定UI', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
@@ -107,10 +108,10 @@ test.describe('通知設定UI', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
@@ -146,10 +147,10 @@ test.describe('通知購読管理', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
@@ -177,10 +178,10 @@ test.describe('通知購読管理', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
@@ -213,10 +214,10 @@ test.describe('通知状態表示', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     // 通知状態の表示を確認
@@ -240,10 +241,10 @@ test.describe('通知状態表示', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
@@ -276,10 +277,10 @@ test.describe('レスポンシブデザイン', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     const mainContent = page.locator('main')
@@ -291,10 +292,10 @@ test.describe('レスポンシブデザイン', () => {
     await page.goto('/social')
     await waitForPageLoad(page)
 
-    // プロフィールタブを選択
-    const profileTab = page.getByRole('tab', { name: /プロフィール/i })
-    if (await profileTab.isVisible()) {
-      await profileTab.click()
+    // 設定タブを選択（デフォルトで選択されている）
+    const settingsTab = page.getByRole('tab', { name: /設定/i })
+    if (await settingsTab.isVisible()) {
+      await settingsTab.click()
     }
 
     const mainContent = page.locator('main')
