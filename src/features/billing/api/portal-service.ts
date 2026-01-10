@@ -2,6 +2,7 @@
 
 import 'server-only'
 
+import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
@@ -12,6 +13,23 @@ function getStripeClient() {
   return new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2025-12-15.clover',
   })
+}
+
+// アプリURLを取得（リクエストヘッダーから動的に取得）
+async function getAppUrl(): Promise<string> {
+  // 明示的に設定されている場合
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL
+  }
+  // リクエストヘッダーからホストを取得
+  const headersList = await headers()
+  const host = headersList.get('host')
+  if (host) {
+    const protocol = host.includes('localhost') ? 'http' : 'https'
+    return `${protocol}://${host}`
+  }
+  // フォールバック
+  return 'http://localhost:3000'
 }
 
 /**
@@ -48,9 +66,10 @@ export async function createPortalSession(): Promise<BillingResult<CheckoutResul
       }
     }
 
+    const appUrl = await getAppUrl()
     const session = await stripe.billingPortal.sessions.create({
       customer: subscription.stripe_customer_id,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/social`,
+      return_url: `${appUrl}/social`,
       locale: 'ja',
     })
 
