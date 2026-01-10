@@ -49,7 +49,7 @@ export function DateHeader({
 
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background shadow-sm">
-      <div className="mx-auto flex h-20 max-w-3xl items-center justify-between px-2.5 md:px-4">
+      <div className="mx-auto flex h-20 max-w-400 items-center justify-between px-2.5 md:px-4">
         {/* 左: ロゴ */}
         <h1 className="text-foreground">
           <Logo size="sm" />
