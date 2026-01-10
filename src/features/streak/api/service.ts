@@ -30,6 +30,7 @@ export async function getStreakInfo(
           longestStreak: 0,
           lastEntryDate: null,
           hotsureRemaining: 2,
+          bonusHotsure: 0,
           hotsureUsedCount: 0
         }
         return { ok: true, value: initialStreak }
@@ -45,6 +46,7 @@ export async function getStreakInfo(
       longest_streak: number
       last_entry_date: string | null
       hotsure_remaining: number
+      bonus_hotsure: number
       hotsure_used_dates: string[]
     }
 
@@ -55,6 +57,7 @@ export async function getStreakInfo(
         longestStreak: streakData.longest_streak,
         lastEntryDate: streakData.last_entry_date,
         hotsureRemaining: streakData.hotsure_remaining,
+        bonusHotsure: streakData.bonus_hotsure ?? 0,
         hotsureUsedCount: streakData.hotsure_used_dates?.length || 0
       }
     }
@@ -98,6 +101,7 @@ export async function updateStreakOnEntry(
       longest_streak: number
       last_entry_date: string | null
       hotsure_remaining: number
+      bonus_hotsure: number
       hotsure_used_dates: string[]
     } | null
 
@@ -110,6 +114,7 @@ export async function updateStreakOnEntry(
           longestStreak: streakData.longest_streak,
           lastEntryDate: streakData.last_entry_date,
           hotsureRemaining: streakData.hotsure_remaining,
+          bonusHotsure: streakData.bonus_hotsure ?? 0,
           hotsureUsedCount: streakData.hotsure_used_dates?.length || 0
         }
       }
@@ -149,6 +154,7 @@ export async function updateStreakOnEntry(
       longest_streak: number
       last_entry_date: string | null
       hotsure_remaining: number
+      bonus_hotsure: number
       hotsure_used_dates: string[]
     }
 
@@ -159,6 +165,7 @@ export async function updateStreakOnEntry(
         longestStreak: updated.longest_streak,
         lastEntryDate: updated.last_entry_date,
         hotsureRemaining: updated.hotsure_remaining,
+        bonusHotsure: updated.bonus_hotsure ?? 0,
         hotsureUsedCount: updated.hotsure_used_dates?.length || 0
       }
     }

@@ -9,6 +9,7 @@ export interface StreakInfo {
   longestStreak: number
   lastEntryDate: string | null
   hotsureRemaining: number
+  bonusHotsure: number
   hotsureUsedCount: number
 }
 

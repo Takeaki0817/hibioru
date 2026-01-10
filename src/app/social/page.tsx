@@ -55,7 +55,10 @@ export default async function SocialPage() {
   const stats = {
     currentStreak: streakResult.ok ? streakResult.value.currentStreak : 0,
     longestStreak: streakResult.ok ? streakResult.value.longestStreak : 0,
-    hotsureRemaining: streakResult.ok ? streakResult.value.hotsureRemaining : 2,
+    // 無料配分（hotsureRemaining）+ 購入分（bonusHotsure）の合計
+    hotsureRemaining: streakResult.ok
+      ? streakResult.value.hotsureRemaining + streakResult.value.bonusHotsure
+      : 2,
     hotsureMax: 2,
   }
   const weeklyRecords = weeklyResult.ok ? weeklyResult.value.entries : undefined
