@@ -6,6 +6,7 @@
 
 import { logger } from './logger'
 import type { SocialError } from '@/features/social/types'
+import type { EntryError } from '@/features/entry/types'
 
 /**
  * エラーコードに対応する安全なユーザー向けメッセージ
@@ -33,6 +34,9 @@ const SAFE_ERROR_MESSAGES: Record<SocialError['code'], string> = {
 
   // 表示名関連
   INVALID_DISPLAY_NAME: '表示名が無効です',
+
+  // レート制限
+  RATE_LIMITED: 'リクエストが多すぎます。しばらくしてから再度お試しください',
 
   // データベース
   DB_ERROR: '処理中にエラーが発生しました。しばらくしてから再度お試しください',
@@ -69,5 +73,40 @@ export function wrapUnknownError(error: unknown): SocialError {
   return {
     code: 'DB_ERROR', // 汎用的なエラーとして扱う
     message: SAFE_ERROR_MESSAGES.DB_ERROR,
+  }
+}
+
+// ============================================================
+// Entry機能用のエラーハンドリング
+// ============================================================
+
+/**
+ * Entryエラーコードに対応する安全なユーザー向けメッセージ
+ */
+const SAFE_ENTRY_ERROR_MESSAGES: Record<EntryError['code'], string> = {
+  NOT_FOUND: '記録が見つかりませんでした',
+  EDIT_EXPIRED: '編集可能期間（24時間）を過ぎています',
+  UNAUTHORIZED: '認証が必要です。再度ログインしてください',
+  DB_ERROR: '処理中にエラーが発生しました。しばらくしてから再度お試しください',
+  EMPTY_CONTENT: '内容を入力してください',
+  LIMIT_EXCEEDED: '本日の投稿上限に達しました',
+  IMAGE_LIMIT_EXCEEDED: '今月の画像上限に達しました',
+  RATE_LIMITED: 'リクエストが多すぎます。しばらくしてから再度お試しください',
+}
+
+/**
+ * 内部エラーを安全なEntry向けエラーに変換
+ */
+export function createSafeEntryError(
+  code: EntryError['code'],
+  internalError?: unknown
+): EntryError {
+  if (internalError) {
+    logger.error(`[Entry:${code}]`, internalError)
+  }
+
+  return {
+    code,
+    message: SAFE_ENTRY_ERROR_MESSAGES[code],
   }
 }

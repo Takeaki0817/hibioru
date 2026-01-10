@@ -4,6 +4,9 @@ import 'server-only'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
+import { createSafeEntryError } from '@/lib/error-handler'
+import { rateLimits, checkRateLimit, getRateLimitErrorMessage } from '@/lib/rate-limit'
 import type { EntryInsert, EntryUpdate } from '@/lib/types/database'
 import type { Entry, CreateEntryInput, UpdateEntryInput, EntryError, Result } from '../types'
 import { isEditable } from '../utils'
@@ -14,6 +17,7 @@ import {
   deleteSharedEntryAchievement,
   touchSharedEntryAchievement,
 } from '@/features/social/api/achievements'
+import { checkEntryLimit, checkImageLimit } from '@/features/billing/api/plan-limits'
 
 /**
  * 新規エントリを作成
@@ -44,6 +48,55 @@ export async function createEntry(
       }
     }
 
+    // レート制限チェック
+    const rateCheck = await checkRateLimit(rateLimits.entryCreate, userData.user.id)
+    if (!rateCheck.success) {
+      return {
+        ok: false,
+        error: { code: 'RATE_LIMITED', message: getRateLimitErrorMessage(rateCheck.resetAt) }
+      }
+    }
+
+    // 投稿制限チェック
+    const entryLimitResult = await checkEntryLimit(userData.user.id)
+    if (!entryLimitResult.ok) {
+      logger.error('投稿制限チェック失敗', entryLimitResult.error)
+      return {
+        ok: false,
+        error: { code: 'DB_ERROR', message: '制限チェックに失敗しました' }
+      }
+    }
+    if (!entryLimitResult.value.allowed) {
+      return {
+        ok: false,
+        error: {
+          code: 'LIMIT_EXCEEDED',
+          message: `本日の投稿上限（${entryLimitResult.value.limit}件）に達しました`
+        }
+      }
+    }
+
+    // 画像制限チェック（画像付きの場合）
+    if (input.imageUrls && input.imageUrls.length > 0) {
+      const imageLimitResult = await checkImageLimit(userData.user.id)
+      if (!imageLimitResult.ok) {
+        logger.error('画像制限チェック失敗', imageLimitResult.error)
+        return {
+          ok: false,
+          error: { code: 'DB_ERROR', message: '制限チェックに失敗しました' }
+        }
+      }
+      if (!imageLimitResult.value.allowed) {
+        return {
+          ok: false,
+          error: {
+            code: 'IMAGE_LIMIT_EXCEEDED',
+            message: `今月の画像上限（${imageLimitResult.value.limit}枚）に達しました`
+          }
+        }
+      }
+    }
+
     const insertData: EntryInsert = {
       user_id: userData.user.id,
       content: input.content,
@@ -60,7 +113,7 @@ export async function createEntry(
     if (error) {
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: error.message }
+        error: createSafeEntryError('DB_ERROR', error)
       }
     }
 
@@ -79,9 +132,9 @@ export async function createEntry(
     ]).then((results) => {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          console.error(
-            `並列処理[${index}]失敗:`,
-            result.reason instanceof Error ? result.reason.message : result.reason
+          logger.error(
+            `並列処理[${index}]失敗`,
+            result.reason instanceof Error ? result.reason : result.reason
           )
         }
       })
@@ -95,10 +148,7 @@ export async function createEntry(
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー'
-      }
+      error: createSafeEntryError('DB_ERROR', error)
     }
   }
 }
@@ -145,7 +195,7 @@ export async function updateEntry(
     if (error) {
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: error.message }
+        error: createSafeEntryError('DB_ERROR', error)
       }
     }
 
@@ -159,7 +209,7 @@ export async function updateEntry(
         id,
         true
       ).catch((err) => {
-        console.error('達成チェック失敗:', err instanceof Error ? err.message : err)
+        logger.error('達成チェック失敗', err)
       })
     } else if (getResult.value.is_shared && !input.isShared) {
       // 共有→非共有: 達成レコードを削除
@@ -167,7 +217,7 @@ export async function updateEntry(
         getResult.value.user_id,
         id
       ).catch((err) => {
-        console.error('達成削除失敗:', err instanceof Error ? err.message : err)
+        logger.error('達成削除失敗', err)
       })
     } else if (getResult.value.is_shared && input.isShared) {
       // 共有状態を維持したまま内容を編集: achievements の updated_at を更新
@@ -176,7 +226,7 @@ export async function updateEntry(
         getResult.value.user_id,
         id
       ).catch((err) => {
-        console.error('達成touch失敗:', err instanceof Error ? err.message : err)
+        logger.error('達成touch失敗', err)
       })
     }
 
@@ -188,10 +238,7 @@ export async function updateEntry(
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー'
-      }
+      error: createSafeEntryError('DB_ERROR', error)
     }
   }
 }
@@ -218,7 +265,7 @@ export async function deleteEntry(id: string): Promise<Result<void, EntryError>>
     if (error) {
       return {
         ok: false,
-        error: { code: 'DB_ERROR', message: error.message }
+        error: createSafeEntryError('DB_ERROR', error)
       }
     }
 
@@ -228,7 +275,7 @@ export async function deleteEntry(id: string): Promise<Result<void, EntryError>>
         getResult.value.user_id,
         id
       ).catch((err) => {
-        console.error('達成削除失敗:', err instanceof Error ? err.message : err)
+        logger.error('達成削除失敗', err)
       })
     }
 
@@ -240,10 +287,7 @@ export async function deleteEntry(id: string): Promise<Result<void, EntryError>>
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー'
-      }
+      error: createSafeEntryError('DB_ERROR', error)
     }
   }
 }
@@ -265,7 +309,7 @@ export async function getEntry(id: string): Promise<Result<Entry, EntryError>> {
     if (error) {
       return {
         ok: false,
-        error: { code: 'NOT_FOUND', message: '記録が見つかりません' }
+        error: createSafeEntryError('NOT_FOUND', error)
       }
     }
 
@@ -273,10 +317,7 @@ export async function getEntry(id: string): Promise<Result<Entry, EntryError>> {
   } catch (error) {
     return {
       ok: false,
-      error: {
-        code: 'DB_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー'
-      }
+      error: createSafeEntryError('DB_ERROR', error)
     }
   }
 }

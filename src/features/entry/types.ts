@@ -45,6 +45,9 @@ export type EntryError =
   | { code: 'UNAUTHORIZED'; message: string }
   | { code: 'DB_ERROR'; message: string }
   | { code: 'EMPTY_CONTENT'; message: string }
+  | { code: 'LIMIT_EXCEEDED'; message: string }
+  | { code: 'IMAGE_LIMIT_EXCEEDED'; message: string }
+  | { code: 'RATE_LIMITED'; message: string }
 
 export type ImageError =
   | { code: 'COMPRESSION_FAILED'; message: string }
