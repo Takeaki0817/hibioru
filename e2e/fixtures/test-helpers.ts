@@ -23,7 +23,7 @@ const SUPABASE_ANON_KEY =
  * Supabase REST APIを使用してログインし、セッションを設定
  * Node.js側でAPIを呼び出し、結果をブラウザに注入する
  */
-export async function setupTestSession(page: Page, userId?: string) {
+export async function setupTestSession(page: Page, _userId?: string) {
   // Node.js側でSupabase REST APIを呼び出してログイン
   const loginResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
     method: 'POST',
@@ -281,6 +281,8 @@ export async function mockBillingLimitsAPI(page: Page, response: Partial<LimitsR
     },
     canceledAt: null,
     currentPeriodEnd: null,
+    hotsureRemaining: 2,
+    bonusHotsure: 0,
   }
 
   const mergedResponse = { ...defaultResponse, ...response }

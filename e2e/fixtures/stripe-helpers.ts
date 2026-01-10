@@ -1,7 +1,7 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
 import { createClient } from '@supabase/supabase-js'
-import type { Database } from '../../src/lib/types/database'
+import type { Database } from '../../src/lib/types/database.generated'
 import Stripe from 'stripe'
 
 const execAsync = promisify(exec)
