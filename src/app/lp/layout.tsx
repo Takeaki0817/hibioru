@@ -12,9 +12,31 @@ const mPlus1p = M_PLUS_1p({
 })
 
 export const metadata: Metadata = {
-  title: 'ヒビオル - 日々を織る思考記録アプリ | βテスト参加募集',
+  title: 'ヒビオル - 「続かない」を終わりにする思考記録アプリ',
   description:
-    '1日の中での心の動きを記録する思考記録アプリ。絵文字1つから始められる、継続しやすい記録習慣。ADHD当事者が作った、続けることに特化したアプリです。',
+    'ADHDの開発者が20年の挫折を経て作った、絵文字1つから始められる記録アプリ。Duolingo式の継続支援で「続けること」に特化。完全無料、今すぐ始められます。',
+  keywords: [
+    'ヒビオル',
+    '思考記録',
+    '日記アプリ',
+    'ADHD',
+    '継続',
+    'ストリーク',
+    '筆記開示',
+    '瞬間記録',
+  ],
+  openGraph: {
+    title: 'ヒビオル - 「続かない」を終わりにする思考記録アプリ',
+    description:
+      'ADHDの開発者が20年の挫折を経て作った、絵文字1つから始められる記録アプリ。',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ヒビオル - 「続かない」を終わりにする思考記録アプリ',
+    description:
+      'ADHDの開発者が20年の挫折を経て作った、絵文字1つから始められる記録アプリ。',
+  },
 }
 
 export default function LPLayout({
