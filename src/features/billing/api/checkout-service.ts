@@ -2,6 +2,7 @@
 
 import 'server-only'
 
+import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createSafeBillingError } from '../lib/error-handler'
@@ -15,21 +16,20 @@ function getStripeClient() {
   })
 }
 
-// アプリURLを取得（Vercel自動環境変数対応）
-function getAppUrl(): string {
+// アプリURLを取得（リクエストヘッダーから動的に取得）
+async function getAppUrl(): Promise<string> {
   // 明示的に設定されている場合
   if (process.env.NEXT_PUBLIC_APP_URL) {
     return process.env.NEXT_PUBLIC_APP_URL
   }
-  // Vercel本番環境
-  if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-    return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+  // リクエストヘッダーからホストを取得
+  const headersList = await headers()
+  const host = headersList.get('host')
+  if (host) {
+    const protocol = host.includes('localhost') ? 'http' : 'https'
+    return `${protocol}://${host}`
   }
-  // Vercelプレビュー環境
-  if (process.env.VERCEL_URL) {
-    return `https://${process.env.VERCEL_URL}`
-  }
-  // ローカル開発
+  // フォールバック
   return 'http://localhost:3000'
 }
 
@@ -102,14 +102,15 @@ export async function createCheckoutSession(
     }
 
     // Checkout Session作成
+    const appUrl = await getAppUrl()
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
       mode: 'subscription',
       locale: 'ja',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${getAppUrl()}/social?checkout=success`,
-      cancel_url: `${getAppUrl()}/social?checkout=canceled`,
+      success_url: `${appUrl}/social?checkout=success`,
+      cancel_url: `${appUrl}/social?checkout=canceled`,
       metadata: {
         user_id: user.id,
         plan_type: planType,
@@ -212,6 +213,7 @@ export async function createHotsureCheckoutSession(): Promise<
     }
 
     // Checkout Session作成（単発決済）
+    const appUrl = await getAppUrl()
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       payment_method_types: ['card'],
@@ -219,8 +221,8 @@ export async function createHotsureCheckoutSession(): Promise<
       locale: 'ja',
       submit_type: 'pay',
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${getAppUrl()}/social?hotsure_purchase=success`,
-      cancel_url: `${getAppUrl()}/social?hotsure_purchase=canceled`,
+      success_url: `${appUrl}/social?hotsure_purchase=success`,
+      cancel_url: `${appUrl}/social?hotsure_purchase=canceled`,
       metadata: {
         user_id: user.id,
         type: 'hotsure_purchase',
