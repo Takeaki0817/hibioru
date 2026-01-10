@@ -7,6 +7,7 @@ import 'server-only'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { logger } from '@/lib/logger'
 import type { Result } from '@/lib/types/result'
 import { ok, err } from '@/lib/types/result'
 
@@ -67,7 +68,7 @@ export async function deleteAccount(): Promise<Result<void, DeleteAccountError>>
 
       if (storageError) {
         // Storage削除失敗は警告のみ、処理は続行
-        console.error('Storage deletion failed:', storageError)
+        logger.warn('Storage deletion failed', storageError)
       }
     }
 
@@ -76,7 +77,7 @@ export async function deleteAccount(): Promise<Result<void, DeleteAccountError>>
       await adminClient.auth.admin.deleteUser(user.id)
 
     if (deleteError) {
-      console.error('User deletion failed:', deleteError)
+      logger.error('User deletion failed', deleteError)
       return err({ code: 'DELETE_ERROR', message: 'アカウント削除に失敗しました' })
     }
 
@@ -90,7 +91,7 @@ export async function deleteAccount(): Promise<Result<void, DeleteAccountError>>
 
     return ok(undefined)
   } catch (error) {
-    console.error('deleteAccount error:', error)
+    logger.error('deleteAccount error', error)
     return err({ code: 'UNKNOWN', message: '予期しないエラーが発生しました' })
   }
 }

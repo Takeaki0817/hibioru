@@ -250,10 +250,27 @@ export async function deleteEntry(id: string): Promise<Result<void, EntryError>>
   try {
     const supabase = await createClient()
 
+    // 認証チェック
+    const { data: userData } = await supabase.auth.getUser()
+    if (!userData.user) {
+      return {
+        ok: false,
+        error: { code: 'UNAUTHORIZED', message: '認証が必要です' }
+      }
+    }
+
     // 削除前にエントリ情報を取得（共有状態確認のため）
     const getResult = await getEntry(id)
     if (!getResult.ok) {
       return getResult
+    }
+
+    // 権限チェック: 自分のエントリのみ削除可能
+    if (getResult.value.user_id !== userData.user.id) {
+      return {
+        ok: false,
+        error: { code: 'FORBIDDEN', message: 'このエントリを削除する権限がありません' }
+      }
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

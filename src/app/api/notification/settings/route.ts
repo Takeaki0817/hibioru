@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 import { getNotificationSettings, updateNotificationSettings } from '@/features/notification/api/service'
 
 /**
@@ -29,8 +30,9 @@ export async function GET() {
 
     return NextResponse.json(result.value, { status: 200 })
   } catch (error) {
+    logger.error('通知設定取得エラー', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : '不明なエラー' },
+      { error: '通知設定の取得に失敗しました' },
       { status: 500 }
     )
   }
@@ -65,8 +67,9 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json(result.value, { status: 200 })
   } catch (error) {
+    logger.error('通知設定更新エラー', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : '不明なエラー' },
+      { error: '通知設定の更新に失敗しました' },
       { status: 500 }
     )
   }

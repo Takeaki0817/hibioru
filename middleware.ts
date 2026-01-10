@@ -27,12 +27,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // E2Eテスト環境用バイパス
-  // NODE_ENV=test/development または E2E_TEST_MODE=true の場合のみ有効
-  // 開発環境でも有効にすることでE2Eテスト実行を容易にする
+  // NODE_ENV=test または E2E_TEST_MODE=true の場合のみ有効
+  // 注意: development環境では通常の認証フローを使用
   const isTestEnv =
-    process.env.NODE_ENV === 'test' ||
-    process.env.NODE_ENV === 'development' ||
-    process.env.E2E_TEST_MODE === 'true'
+    process.env.NODE_ENV === 'test' || process.env.E2E_TEST_MODE === 'true'
   const e2eTestUserId = request.cookies.get('e2e-test-user-id')?.value
 
   if (isTestEnv && e2eTestUserId) {
