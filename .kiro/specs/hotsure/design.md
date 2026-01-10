@@ -61,7 +61,8 @@
 
 | カラム | 型 | デフォルト | 説明 |
 |--------|-----|----------|------|
-| `hotsure_remaining` | INTEGER | 2 | ほつれ残数（0-2） |
+| `hotsure_remaining` | INTEGER | 2 | 無料配分のほつれ残数（0-2）。毎週月曜にリセット |
+| `bonus_hotsure` | INTEGER | 0 | 購入したほつれの残数。リセット対象外 |
 | `hotsure_used_dates` | DATE[] | {} | 使用日の配列（YYYY-MM-DD） |
 
 ### 型定義
@@ -264,14 +265,18 @@ process_daily_streak (毎日0:00 JST)
     │      │      │
     │      │      └─ なし → ほつれ消費を試行
     │      │              │
-    │      │              ├─ 消費成功 → ストリーク維持
+    │      │              ├─ hotsure_remaining > 0 → 無料配分を消費
     │      │              │
-    │      │              └─ 消費失敗（残数0）→ ストリークリセット
+    │      │              ├─ bonus_hotsure > 0 → 購入分を消費
+    │      │              │
+    │      │              └─ 両方0 → ストリークリセット
     │      │
     │      └─ 次のユーザーへ
     │
     └─ batch_logsに結果記録
 ```
+
+**消費優先順位**: 無料配分（hotsure_remaining）→ 購入分（bonus_hotsure）
 
 ### 週次リセット
 

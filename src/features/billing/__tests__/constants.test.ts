@@ -3,6 +3,7 @@ import {
   PLAN_INFO,
   HOTSURE_PACK_PRICE,
   HOTSURE_PACK_QUANTITY,
+  HOTSURE_MAX_TOTAL,
   isPremiumPlan,
 } from '../constants'
 import type { PlanType } from '../types'
@@ -67,9 +68,13 @@ describe('billing/constants', () => {
   })
 
   describe('HOTSURE_PACK', () => {
-    it('ほつれパックは120円で2回分', () => {
+    it('ほつれパックは120円で1回分', () => {
       expect(HOTSURE_PACK_PRICE).toBe(120)
-      expect(HOTSURE_PACK_QUANTITY).toBe(2)
+      expect(HOTSURE_PACK_QUANTITY).toBe(1)
+    })
+
+    it('ほつれ上限は2個', () => {
+      expect(HOTSURE_MAX_TOTAL).toBe(2)
     })
   })
 

@@ -62,6 +62,9 @@ export interface LimitsResponse {
   // キャンセル済みサブスクリプション情報
   canceledAt: string | null // ISO 8601形式
   currentPeriodEnd: string | null // ISO 8601形式
+  // ほつれ残高
+  hotsureRemaining: number // 無料配分の残り
+  bonusHotsure: number // 購入分の残り
 }
 
 // 購入結果
@@ -77,6 +80,7 @@ export type BillingErrorCode =
   | 'SUBSCRIPTION_EXISTS'
   | 'INVALID_PLAN'
   | 'CUSTOMER_NOT_FOUND'
+  | 'HOTSURE_LIMIT_EXCEEDED'
 
 export interface BillingError {
   code: BillingErrorCode

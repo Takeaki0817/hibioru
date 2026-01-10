@@ -16,7 +16,16 @@ import { usePlanLimits } from '../hooks/use-plan-limits'
 const PREMIUM_BENEFITS = ['投稿数無制限', '画像添付無制限']
 
 export function BillingSection() {
-  const { planType, entryLimit, imageLimit, canceledAt, currentPeriodEnd, isLoading: isLimitsLoading } = usePlanLimits()
+  const {
+    planType,
+    entryLimit,
+    imageLimit,
+    canceledAt,
+    currentPeriodEnd,
+    totalHotsure,
+    canPurchaseHotsure,
+    isLoading: isLimitsLoading,
+  } = usePlanLimits()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -155,15 +164,20 @@ export function BillingSection() {
               <p className="text-xs text-muted-foreground mt-1">
                 {HOTSURE_PACK_QUANTITY}回分のほつれを¥{HOTSURE_PACK_PRICE}で購入できます
               </p>
+              {!isLimitsLoading && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  現在の残高: {totalHotsure}/2
+                </p>
+              )}
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={handleHotsurePurchase}
-              disabled={isLoading}
+              disabled={isLoading || !canPurchaseHotsure}
               data-testid="purchase-hotsure-btn"
             >
-              購入
+              {canPurchaseHotsure ? '購入' : '上限'}
             </Button>
           </div>
         </div>

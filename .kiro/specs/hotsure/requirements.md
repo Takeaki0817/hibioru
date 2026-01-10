@@ -5,9 +5,10 @@
 
 ## Non-Goals
 - 手動でのほつれ消費（ボタンを押して意図的に使う機能）
-- ほつれの購入・課金機能
 - ほつれ数の個人設定（固定で週2回）
 - ほつれ使用の取り消し
+
+※ほつれの購入・課金機能は billing 機能で実装済み
 
 ## Requirements
 
@@ -29,6 +30,8 @@
 3. When ほつれを消費する, the システム shall 消費日をhotsure_used_datesに追加する
 4. When ほつれが消費される, the システム shall 当日の記録がなくてもcurrent_streakを維持する
 5. If ほつれの残りがない, the システム shall current_streakを0にリセットする
+6. When hotsure_remainingが0でbonus_hotsure > 0の場合, the システム shall bonus_hotsureを1消費してストリークを維持する
+7. The システム shall 消費優先順位を「無料配分（hotsure_remaining）→ 購入分（bonus_hotsure）」とする
 
 ### Requirement 3: 同時実行制御
 **Objective:** システムとして、ほつれ消費時の同時実行を防止したい。これにより、二重消費や不整合を防げる。

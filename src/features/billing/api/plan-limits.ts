@@ -147,11 +147,18 @@ export async function getPlanLimits(
   userId: string
 ): Promise<BillingResult<LimitsResponse>> {
   try {
-    // サブスクリプション情報と制限チェックを並列実行
-    const [subscriptionResult, entryResult, imageResult] = await Promise.all([
+    const supabase = await createClient()
+
+    // サブスクリプション情報、制限チェック、ほつれ残高を並列実行
+    const [subscriptionResult, entryResult, imageResult, streakResult] = await Promise.all([
       getSubscription(userId),
       checkEntryLimit(userId),
       checkImageLimit(userId),
+      supabase
+        .from('streaks')
+        .select('hotsure_remaining, bonus_hotsure')
+        .eq('user_id', userId)
+        .single(),
     ])
 
     const subscription = subscriptionResult.ok ? subscriptionResult.value : null
@@ -161,6 +168,10 @@ export async function getPlanLimits(
     const canceledAt = subscription?.canceledAt?.toISOString() ?? null
     const currentPeriodEnd = subscription?.currentPeriodEnd?.toISOString() ?? null
 
+    // ほつれ残高
+    const hotsureRemaining = streakResult.data?.hotsure_remaining ?? 0
+    const bonusHotsure = streakResult.data?.bonus_hotsure ?? 0
+
     return {
       ok: true,
       value: {
@@ -169,6 +180,8 @@ export async function getPlanLimits(
         imageLimit: imageResult.ok ? imageResult.value : null,
         canceledAt,
         currentPeriodEnd,
+        hotsureRemaining,
+        bonusHotsure,
       },
     }
   } catch (error) {

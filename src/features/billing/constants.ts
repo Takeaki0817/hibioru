@@ -55,7 +55,10 @@ export const PLAN_INFO: Record<PlanType, PlanInfo> = {
 
 // ほつれ単発価格
 export const HOTSURE_PACK_PRICE = 120 // 円
-export const HOTSURE_PACK_QUANTITY = 2 // 回分
+export const HOTSURE_PACK_QUANTITY = 1 // 回分
+
+// ほつれ上限（無料配分 + 購入分の合計）
+export const HOTSURE_MAX_TOTAL = 2
 
 // プレミアムプランかどうか判定
 export function isPremiumPlan(planType: PlanType): boolean {

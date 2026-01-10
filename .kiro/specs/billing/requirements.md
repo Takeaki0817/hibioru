@@ -16,9 +16,9 @@ ADHDユーザー向けアプリの設計原則「無料で十分使えること�
 
 ### ほつれパック
 
-| 商品 | 価格 | 内容 |
-|------|------|------|
-| ほつれパック | 120円 | ほつれ2回分 |
+| 商品 | 価格 | 内容 | 上限 |
+|------|------|------|------|
+| ほつれパック | 120円 | ほつれ1回分 | 合計2個まで |
 
 ## Requirements
 
@@ -108,10 +108,12 @@ ADHDユーザー向けアプリの設計原則「無料で十分使えること�
 
 1. When ユーザーがほつれパック購入ボタンをクリックした場合, the Checkout Service shall 単発決済モードでStripe Checkoutセッションを作成する
 2. When ほつれ購入のCheckoutセッションを作成した場合, the Checkout Service shall メタデータに購入タイプ「hotsure_purchase」と数量を含める
-3. When ほつれ購入の決済が成功した場合, the Webhook Handler shall ユーザーのbonus_hotsureに2を加算する
+3. When ほつれ購入の決済が成功した場合, the Webhook Handler shall ユーザーのbonus_hotsureに1を加算する
 4. When ほつれ購入の決済が成功した場合, the Webhook Handler shall hotsure_purchasesテーブルに購入履歴を作成する
 5. When ほつれ購入が成功した場合, the Checkout Service shall `/social?hotsure_purchase=success` にリダイレクトする
 6. When ユーザーがほつれ購入をキャンセルした場合, the Checkout Service shall `/social?hotsure_purchase=canceled` にリダイレクトする
+7. If ユーザーのほつれ残高（hotsure_remaining + bonus_hotsure）が2以上の場合, then the Checkout Service shall エラー「ほつれは2個以上持てません」を返す
+8. The Billing Section shall 現在のほつれ残高と購入可否を表示し、上限時はボタンを無効化する
 
 ### Requirement 8: エラーハンドリングとセキュリティ
 
