@@ -166,19 +166,34 @@ async function handleSubscriptionUpdate(
   subscription: Stripe.Subscription
 ) {
   const firstItem = subscription.items.data[0]
+  const stripePriceId = firstItem?.price.id
+
+  // プラン変更時のplan_type更新
+  const planType = stripePriceId ? getPlanTypeFromPriceId(stripePriceId) : null
+
+  // キャンセル日時の決定:
+  // - 即時キャンセル: canceled_at が設定される
+  // - 期間終了時キャンセル: cancel_at が設定される（canceled_at は null）
+  const canceledAt = subscription.canceled_at
+    ? new Date(subscription.canceled_at * 1000).toISOString()
+    : subscription.cancel_at
+      ? new Date(subscription.cancel_at * 1000).toISOString()
+      : null
+
   const { error } = await supabase
     .from('subscriptions')
     .update({
       status: subscription.status,
+      // プラン変更時にprice_idとplan_typeも更新
+      ...(stripePriceId && { stripe_price_id: stripePriceId }),
+      ...(planType && { plan_type: planType }),
       current_period_start: firstItem
         ? new Date(firstItem.current_period_start * 1000).toISOString()
         : null,
       current_period_end: firstItem
         ? new Date(firstItem.current_period_end * 1000).toISOString()
         : null,
-      canceled_at: subscription.canceled_at
-        ? new Date(subscription.canceled_at * 1000).toISOString()
-        : null,
+      canceled_at: canceledAt,
     })
     .eq('stripe_subscription_id', subscription.id)
 
@@ -187,7 +202,13 @@ async function handleSubscriptionUpdate(
     throw error
   }
 
-  logger.info('Subscription updated', { subscriptionId: subscription.id })
+  logger.info('Subscription updated', {
+    subscriptionId: subscription.id,
+    status: subscription.status,
+    planType,
+    cancelAtPeriodEnd: subscription.cancel_at_period_end,
+    canceledAt,
+  })
 }
 
 /**
