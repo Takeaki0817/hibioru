@@ -2,16 +2,28 @@
 
 import 'server-only'
 
+import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { authActionClient } from '@/lib/safe-action'
 import { logger } from '@/lib/logger'
 import { createSafeError } from '@/lib/error-handler'
 import { rateLimits, checkRateLimit, getRateLimitErrorMessage } from '@/lib/rate-limit'
-import type { PublicUserInfo, SocialResult, UpdateProfileInput } from '../types'
+import type { PublicUserInfo, SocialResult } from '../types'
 import {
   validateUsername,
   validateDisplayName,
   sanitizeDisplayName,
 } from '../constants'
+
+// 入力スキーマ
+const checkUsernameSchema = z.object({
+  username: z.string().min(1),
+})
+
+const updateProfileSchema = z.object({
+  username: z.string().optional(),
+  displayName: z.string().optional(),
+})
 
 /**
  * ユーザーIDでプロフィールを取得
@@ -115,105 +127,76 @@ export async function getMyProfile(): Promise<SocialResult<PublicUserInfo>> {
 }
 
 /**
+ * ユーザー名の利用可能性をチェック（内部ユーティリティ）
+ */
+async function checkUsernameAvailabilityInternal(
+  userId: string,
+  username: string
+): Promise<{ available: boolean } | null> {
+  const supabase = await createClient()
+
+  // 自分以外で同じusernameを持つユーザーがいるかチェック
+  const { data, error } = await supabase
+    .from('users')
+    .select('id')
+    .eq('username', username)
+    .neq('id', userId)
+    .maybeSingle()
+
+  if (error) {
+    logger.error('ユーザー名重複チェック失敗', error)
+    return null
+  }
+
+  return { available: data === null }
+}
+
+/**
  * ユーザー名の利用可能性をチェック
  */
-export async function checkUsernameAvailability(
-  username: string
-): Promise<SocialResult<{ available: boolean }>> {
-  try {
+export const checkUsernameAvailability = authActionClient
+  .inputSchema(checkUsernameSchema)
+  .action(async ({ parsedInput: { username }, ctx: { user } }) => {
     // バリデーション
     const validation = validateUsername(username)
     if (!validation.valid) {
-      return {
-        ok: false,
-        error: { code: 'INVALID_USERNAME', message: validation.error! },
-      }
+      throw new Error(validation.error!)
     }
 
-    const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
-
-    if (!userData.user) {
-      return {
-        ok: false,
-        error: { code: 'UNAUTHORIZED', message: '未認証です' },
-      }
+    const result = await checkUsernameAvailabilityInternal(user.id, username)
+    if (result === null) {
+      throw new Error('確認中にエラーが発生しました')
     }
 
-    // 自分以外で同じusernameを持つユーザーがいるかチェック
-    const { data, error } = await supabase
-      .from('users')
-      .select('id')
-      .eq('username', username)
-      .neq('id', userData.user.id)
-      .maybeSingle()
-
-    if (error) {
-      logger.error('ユーザー名重複チェック失敗', error)
-      return {
-        ok: false,
-        error: createSafeError('DB_ERROR', error),
-      }
-    }
-
-    return {
-      ok: true,
-      value: { available: data === null },
-    }
-  } catch (error) {
-    return {
-      ok: false,
-      error: createSafeError('DB_ERROR', error),
-    }
-  }
-}
+    return result
+  })
 
 /**
  * プロフィールを更新
  */
-export async function updateProfile(
-  input: UpdateProfileInput
-): Promise<SocialResult<PublicUserInfo>> {
-  try {
-    const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
-
-    if (!userData.user) {
-      return {
-        ok: false,
-        error: { code: 'UNAUTHORIZED', message: '未認証です' },
-      }
-    }
-
+export const updateProfile = authActionClient
+  .inputSchema(updateProfileSchema)
+  .action(async ({ parsedInput: input, ctx: { user, supabase } }) => {
     // レート制限チェック
-    const rateCheck = await checkRateLimit(rateLimits.profileUpdate, userData.user.id)
+    const rateCheck = await checkRateLimit(rateLimits.profileUpdate, user.id)
     if (!rateCheck.success) {
-      return {
-        ok: false,
-        error: { code: 'RATE_LIMITED', message: getRateLimitErrorMessage(rateCheck.resetAt) },
-      }
+      throw new Error(getRateLimitErrorMessage(rateCheck.resetAt))
     }
 
     // usernameが指定されている場合はバリデーション
     if (input.username) {
       const validation = validateUsername(input.username)
       if (!validation.valid) {
-        return {
-          ok: false,
-          error: { code: 'INVALID_USERNAME', message: validation.error! },
-        }
+        throw new Error(validation.error!)
       }
 
       // 利用可能性チェック
-      const availabilityResult = await checkUsernameAvailability(input.username)
-      if (!availabilityResult.ok) {
-        return availabilityResult as SocialResult<PublicUserInfo>
+      const availabilityResult = await checkUsernameAvailabilityInternal(user.id, input.username)
+      if (availabilityResult === null) {
+        throw new Error('ユーザー名の確認に失敗しました')
       }
-      if (!availabilityResult.value.available) {
-        return {
-          ok: false,
-          error: { code: 'USERNAME_TAKEN', message: 'このユーザーIDは既に使用されています' },
-        }
+      if (!availabilityResult.available) {
+        throw new Error('このユーザーIDは既に使用されています')
       }
     }
 
@@ -221,10 +204,7 @@ export async function updateProfile(
     if (input.displayName !== undefined) {
       const displayNameValidation = validateDisplayName(input.displayName)
       if (!displayNameValidation.valid) {
-        return {
-          ok: false,
-          error: { code: 'INVALID_DISPLAY_NAME', message: displayNameValidation.error! },
-        }
+        throw new Error(displayNameValidation.error!)
       }
     }
 
@@ -239,45 +219,34 @@ export async function updateProfile(
     }
 
     if (Object.keys(updateData).length === 0) {
-      // 更新するものがない場合は現在のプロフィールを返す
-      return getProfileById(userData.user.id)
+      // 更新するものがない場合は現在のプロフィールを取得して返す
+      const profileResult = await getProfileById(user.id)
+      if (!profileResult.ok) {
+        throw new Error('プロフィールの取得に失敗しました')
+      }
+      return profileResult.value
     }
 
     const { data, error } = await supabase
       .from('users')
       .update(updateData)
-      .eq('id', userData.user.id)
+      .eq('id', user.id)
       .select('id, username, display_name, avatar_url')
       .single()
 
     if (error) {
       // ユニーク制約違反の場合
       if (error.code === '23505') {
-        return {
-          ok: false,
-          error: createSafeError('USERNAME_TAKEN'),
-        }
+        throw new Error('このユーザーIDは既に使用されています')
       }
       logger.error('プロフィール更新失敗', error)
-      return {
-        ok: false,
-        error: createSafeError('DB_ERROR', error),
-      }
+      throw new Error('プロフィールの更新に失敗しました')
     }
 
     return {
-      ok: true,
-      value: {
-        id: data.id,
-        username: data.username,
-        displayName: data.display_name,
-        avatarUrl: data.avatar_url,
-      },
-    }
-  } catch (error) {
-    return {
-      ok: false,
-      error: createSafeError('DB_ERROR', error),
-    }
-  }
-}
+      id: data.id,
+      username: data.username,
+      displayName: data.display_name,
+      avatarUrl: data.avatar_url,
+    } as PublicUserInfo
+  })

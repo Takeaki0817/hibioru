@@ -2,12 +2,12 @@
 
 import 'server-only'
 
+import { z } from 'zod'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
-import { createClient } from '@/lib/supabase/server'
-import { createSafeBillingError } from '../lib/error-handler'
+import { authActionClient } from '@/lib/safe-action'
 import { STRIPE_PRICE_IDS, HOTSURE_PACK_QUANTITY } from '../constants'
-import type { BillingResult, CheckoutResult } from '../types'
+import type { CheckoutResult } from '../types'
 
 // 遅延初期化（ビルド時のエラー回避）
 function getStripeClient() {
@@ -33,25 +33,18 @@ async function getAppUrl(): Promise<string> {
   return 'http://localhost:3000'
 }
 
+// 入力スキーマ
+const checkoutSchema = z.object({
+  planType: z.enum(['premium_monthly', 'premium_yearly']),
+})
+
 /**
  * サブスクリプション用Checkout Session作成
  */
-export async function createCheckoutSession(
-  planType: 'premium_monthly' | 'premium_yearly'
-): Promise<BillingResult<CheckoutResult>> {
-  try {
+export const createCheckoutSession = authActionClient
+  .inputSchema(checkoutSchema)
+  .action(async ({ parsedInput: { planType }, ctx: { user, supabase } }): Promise<CheckoutResult> => {
     const stripe = getStripeClient()
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return {
-        ok: false,
-        error: createSafeBillingError('UNAUTHORIZED'),
-      }
-    }
 
     // 既存のサブスクリプションを確認
     const { data: subscription } = await supabase
@@ -62,10 +55,7 @@ export async function createCheckoutSession(
 
     // 既にプレミアムの場合はエラー（subscriptionが存在し、freeでない場合のみ）
     if (subscription && subscription.plan_type !== 'free') {
-      return {
-        ok: false,
-        error: createSafeBillingError('SUBSCRIPTION_EXISTS'),
-      }
+      throw new Error('既にプレミアムプランに加入しています')
     }
 
     const priceId =
@@ -74,10 +64,7 @@ export async function createCheckoutSession(
         : STRIPE_PRICE_IDS.PREMIUM_YEARLY
 
     if (!priceId) {
-      return {
-        ok: false,
-        error: createSafeBillingError('STRIPE_ERROR'),
-      }
+      throw new Error('価格情報の取得に失敗しました')
     }
 
     // Stripe Customer取得または作成
@@ -118,63 +105,38 @@ export async function createCheckoutSession(
     })
 
     if (!session.url) {
-      return {
-        ok: false,
-        error: createSafeBillingError('STRIPE_ERROR'),
-      }
+      throw new Error('チェックアウトセッションの作成に失敗しました')
     }
 
-    return { ok: true, value: { url: session.url } }
-  } catch (error) {
-    return {
-      ok: false,
-      error: createSafeBillingError('STRIPE_ERROR', error),
-    }
-  }
-}
+    return { url: session.url }
+  })
 
 /**
  * ほつれ購入用Checkout Session作成（単発決済）
  */
-export async function createHotsureCheckoutSession(): Promise<
-  BillingResult<CheckoutResult>
-> {
-  try {
+export const createHotsureCheckoutSession = authActionClient.action(
+  async ({ ctx: { user, supabase } }): Promise<CheckoutResult> => {
     const stripe = getStripeClient()
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return {
-        ok: false,
-        error: createSafeBillingError('UNAUTHORIZED'),
-      }
-    }
 
     // ほつれ残高チェック: 合計2個以上は購入不可（RPC関数でFOR UPDATEロック）
-    const { data: purchaseCheckData, error: checkError } = await supabase
-      .rpc('check_hotsure_purchase_allowed', { p_user_id: user.id })
+    const { data: purchaseCheckData, error: checkError } = await supabase.rpc(
+      'check_hotsure_purchase_allowed',
+      { p_user_id: user.id }
+    )
 
     if (checkError) {
-      return {
-        ok: false,
-        error: createSafeBillingError('STRIPE_ERROR', checkError),
-      }
+      throw new Error('ほつれ残高の確認に失敗しました')
     }
 
     // RPC関数の戻り値を型アサーション
-    const purchaseCheck = purchaseCheckData as { allowed: boolean; current: number; message?: string } | null
+    const purchaseCheck = purchaseCheckData as {
+      allowed: boolean
+      current: number
+      message?: string
+    } | null
 
     if (!purchaseCheck?.allowed) {
-      return {
-        ok: false,
-        error: {
-          code: 'HOTSURE_LIMIT_EXCEEDED',
-          message: purchaseCheck?.message ?? 'ほつれは2個以上持てません',
-        },
-      }
+      throw new Error(purchaseCheck?.message ?? 'ほつれは2個以上持てません')
     }
 
     // 既存のサブスクリプションを確認してcustomer_idを取得
@@ -206,10 +168,7 @@ export async function createHotsureCheckoutSession(): Promise<
 
     const priceId = STRIPE_PRICE_IDS.HOTSURE_PACK
     if (!priceId) {
-      return {
-        ok: false,
-        error: createSafeBillingError('STRIPE_ERROR'),
-      }
+      throw new Error('価格情報の取得に失敗しました')
     }
 
     // Checkout Session作成（単発決済）
@@ -238,20 +197,12 @@ export async function createHotsureCheckoutSession(): Promise<
     })
 
     if (!session.url) {
-      return {
-        ok: false,
-        error: createSafeBillingError('STRIPE_ERROR'),
-      }
+      throw new Error('チェックアウトセッションの作成に失敗しました')
     }
 
     // 購入履歴を pending で作成（Webhookで completed に更新）
     // session.payment_intentはnullの可能性があるため、後でWebhookで処理
 
-    return { ok: true, value: { url: session.url } }
-  } catch (error) {
-    return {
-      ok: false,
-      error: createSafeBillingError('STRIPE_ERROR', error),
-    }
+    return { url: session.url }
   }
-}
+)

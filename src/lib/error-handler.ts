@@ -87,6 +87,7 @@ const SAFE_ENTRY_ERROR_MESSAGES: Record<EntryError['code'], string> = {
   NOT_FOUND: '記録が見つかりませんでした',
   EDIT_EXPIRED: '編集可能期間（24時間）を過ぎています',
   UNAUTHORIZED: '認証が必要です。再度ログインしてください',
+  FORBIDDEN: 'この記録へのアクセス権限がありません',
   DB_ERROR: '処理中にエラーが発生しました。しばらくしてから再度お試しください',
   EMPTY_CONTENT: '内容を入力してください',
   LIMIT_EXCEEDED: '本日の投稿上限に達しました',

@@ -36,8 +36,8 @@ export function DeleteAccountSection() {
 
       const result = await deleteAccount()
 
-      if (!result.ok) {
-        setError(result.error.message)
+      if (result.serverError) {
+        setError(result.serverError)
         setIsLoading(false)
         return
       }

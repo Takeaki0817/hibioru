@@ -10,7 +10,7 @@ import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
 import { SuccessOverlay } from './success-overlay'
 import { ImagePreviewGrid } from './image-preview-grid'
-import { createEntry, updateEntry, deleteEntry } from '@/features/entry/api/service'
+import { createEntry, updateEntry, deleteEntry } from '@/features/entry/api/actions'
 import { uploadImage } from '@/features/entry/api/image-service'
 import { saveDraft, loadDraft, clearDraft } from '@/features/entry/api/draft-storage'
 import { MotionButton } from '@/components/ui/motion-button'
@@ -202,10 +202,14 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
       const result =
         mode === 'create'
           ? await createEntry({ content, imageUrls: imageUrls.length > 0 ? imageUrls : null, isShared })
-          : await updateEntry(initialEntry!.id, { content, imageUrls: imageUrls.length > 0 ? imageUrls : null, isShared })
+          : await updateEntry({ id: initialEntry!.id, content, imageUrls: imageUrls.length > 0 ? imageUrls : null, isShared })
 
-      if (!result.ok) {
-        submitError(result.error.message)
+      if (result.serverError) {
+        submitError(result.serverError)
+        return
+      }
+      if (!result.data) {
+        submitError('エラーが発生しました')
         return
       }
 
@@ -243,10 +247,10 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
     deleteStart()
 
     try {
-      const result = await deleteEntry(initialEntry.id)
+      const result = await deleteEntry({ id: initialEntry.id })
 
-      if (!result.ok) {
-        deleteError(result.error.message)
+      if (result.serverError) {
+        deleteError(result.serverError)
         return
       }
 

@@ -55,9 +55,11 @@ export function useFollow({
   // フォロー/アンフォロー mutation
   const mutation = useMutation({
     mutationFn: async (newState: boolean) => {
-      const result = newState ? await followUser(userId) : await unfollowUser(userId)
-      if (!result.ok) {
-        throw new Error(result.error.message)
+      const result = newState
+        ? await followUser({ targetUserId: userId })
+        : await unfollowUser({ targetUserId: userId })
+      if (result.serverError) {
+        throw new Error(result.serverError)
       }
       return newState
     },

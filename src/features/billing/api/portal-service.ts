@@ -4,9 +4,8 @@ import 'server-only'
 
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
-import { createClient } from '@/lib/supabase/server'
-import { logger } from '@/lib/logger'
-import type { BillingResult, CheckoutResult } from '../types'
+import { authActionClient } from '@/lib/safe-action'
+import type { CheckoutResult } from '../types'
 
 // 遅延初期化（ビルド時のエラー回避）
 function getStripeClient() {
@@ -35,20 +34,9 @@ async function getAppUrl(): Promise<string> {
 /**
  * Customer Portal Session作成（サブスクリプション管理用）
  */
-export async function createPortalSession(): Promise<BillingResult<CheckoutResult>> {
-  try {
+export const createPortalSession = authActionClient.action(
+  async ({ ctx: { user, supabase } }): Promise<CheckoutResult> => {
     const stripe = getStripeClient()
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return {
-        ok: false,
-        error: { code: 'UNAUTHORIZED', message: '認証が必要です' },
-      }
-    }
 
     const { data: subscription } = await supabase
       .from('subscriptions')
@@ -57,13 +45,7 @@ export async function createPortalSession(): Promise<BillingResult<CheckoutResul
       .single()
 
     if (!subscription?.stripe_customer_id) {
-      return {
-        ok: false,
-        error: {
-          code: 'CUSTOMER_NOT_FOUND',
-          message: 'Stripe顧客情報が見つかりません',
-        },
-      }
+      throw new Error('Stripe顧客情報が見つかりません')
     }
 
     const appUrl = await getAppUrl()
@@ -73,12 +55,6 @@ export async function createPortalSession(): Promise<BillingResult<CheckoutResul
       locale: 'ja',
     })
 
-    return { ok: true, value: { url: session.url } }
-  } catch (error) {
-    logger.error('Portal Session作成エラー', error)
-    return {
-      ok: false,
-      error: { code: 'STRIPE_ERROR', message: 'ポータルの作成に失敗しました' },
-    }
+    return { url: session.url }
   }
-}
+)
