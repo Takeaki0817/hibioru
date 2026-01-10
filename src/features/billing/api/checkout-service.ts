@@ -5,7 +5,7 @@ import 'server-only'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
 import { createSafeBillingError } from '../lib/error-handler'
-import { STRIPE_PRICE_IDS, HOTSURE_PACK_QUANTITY, HOTSURE_MAX_TOTAL } from '../constants'
+import { STRIPE_PRICE_IDS, HOTSURE_PACK_QUANTITY } from '../constants'
 import type { BillingResult, CheckoutResult } from '../types'
 
 // 遅延初期化（ビルド時のエラー回避）
@@ -134,20 +134,26 @@ export async function createHotsureCheckoutSession(): Promise<
       }
     }
 
-    // ほつれ残高チェック: 合計2個以上は購入不可
-    const { data: streak } = await supabase
-      .from('streaks')
-      .select('hotsure_remaining, bonus_hotsure')
-      .eq('user_id', user.id)
-      .single()
+    // ほつれ残高チェック: 合計2個以上は購入不可（RPC関数でFOR UPDATEロック）
+    const { data: purchaseCheckData, error: checkError } = await supabase
+      .rpc('check_hotsure_purchase_allowed', { p_user_id: user.id })
 
-    const totalHotsure = (streak?.hotsure_remaining ?? 0) + (streak?.bonus_hotsure ?? 0)
-    if (totalHotsure >= HOTSURE_MAX_TOTAL) {
+    if (checkError) {
+      return {
+        ok: false,
+        error: createSafeBillingError('STRIPE_ERROR', checkError),
+      }
+    }
+
+    // RPC関数の戻り値を型アサーション
+    const purchaseCheck = purchaseCheckData as { allowed: boolean; current: number; message?: string } | null
+
+    if (!purchaseCheck?.allowed) {
       return {
         ok: false,
         error: {
           code: 'HOTSURE_LIMIT_EXCEEDED',
-          message: 'ほつれは2個以上持てません',
+          message: purchaseCheck?.message ?? 'ほつれは2個以上持てません',
         },
       }
     }

@@ -15,6 +15,7 @@ const SAFE_ERROR_MESSAGES: Record<BillingErrorCode, string> = {
   SUBSCRIPTION_EXISTS: '既にサブスクリプションが存在します',
   INVALID_PLAN: '無効なプランが指定されました',
   CUSTOMER_NOT_FOUND: '顧客情報が見つかりませんでした',
+  HOTSURE_LIMIT_EXCEEDED: 'ほつれは2個以上持てません',
 }
 
 /**
