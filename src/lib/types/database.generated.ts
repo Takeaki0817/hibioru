@@ -416,6 +416,27 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          action_type: string
+          created_at: string | null
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action_type: string
+          created_at?: string | null
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action_type?: string
+          created_at?: string | null
+          id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       social_notifications: {
         Row: {
           achievement_id: string | null
@@ -594,6 +615,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_hotsure_purchase_allowed: {
+        Args: { p_user_id: string }
+        Returns: Json
+      }
+      check_rate_limit: {
+        Args: {
+          p_action_type: string
+          p_limit: number
+          p_user_id: string
+          p_window_seconds: number
+        }
+        Returns: Json
+      }
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       consume_hotsure: { Args: { p_user_id: string }; Returns: Json }
       process_daily_streak: { Args: never; Returns: Json }
       reset_hotsure_weekly: { Args: never; Returns: Json }

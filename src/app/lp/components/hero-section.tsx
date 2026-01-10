@@ -40,7 +40,7 @@ export function HeroSection() {
             </p>
 
             {/* CTA */}
-            <div className="flex flex-col items-center gap-4 sm:flex-row lg:justify-start">
+            <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:justify-start">
               <Button
                 asChild
                 size="lg"
