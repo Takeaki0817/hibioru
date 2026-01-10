@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, HelpCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface FAQItemProps {
@@ -13,160 +13,119 @@ interface FAQItemProps {
 
 function FAQItem({ question, answer, isOpen, onClick }: FAQItemProps) {
   return (
-    <div className="rounded-lg border bg-card">
+    <div className="glass-card overflow-hidden rounded-xl">
       <button
         onClick={onClick}
-        className="flex w-full items-start justify-between gap-4 p-5 text-left transition-colors hover:bg-muted/30"
+        className="flex w-full items-start justify-between gap-4 p-5 text-left transition-colors hover:bg-primary/5"
       >
-        <span className="font-medium text-card-foreground">{question}</span>
+        <span className="font-medium text-foreground">{question}</span>
         <ChevronDown
           className={cn(
-            'size-5 shrink-0 text-muted-foreground transition-transform',
+            'size-5 shrink-0 text-primary transition-transform duration-300',
             isOpen && 'rotate-180'
           )}
         />
       </button>
-      {isOpen && (
-        <div className="border-t px-5 pb-5 pt-4">
-          <p className="text-sm text-muted-foreground">{answer}</p>
+      <div
+        className={cn(
+          'grid transition-all duration-300',
+          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        )}
+      >
+        <div className="overflow-hidden">
+          <div className="border-t border-border/50 px-5 pb-5 pt-4">
+            <p className="text-sm leading-relaxed text-muted-foreground">{answer}</p>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
 
+const faqs = [
+  {
+    question: '本当に無料で使えますか？',
+    answer:
+      '基本機能は完全無料でご利用いただけます。将来的にプレミアム機能を追加する可能性はありますが、記録・継続・振り返りの基本機能は無料のまま提供し続けます。',
+  },
+  {
+    question: 'データはどこに保存されますか？',
+    answer:
+      'データはクラウド（Supabase）に安全に保存されます。万が一に備え、定期的なデータエクスポートをおすすめします。ソーシャルページからJSON/Markdown形式でエクスポートできます。',
+  },
+  {
+    question: 'プライバシーは守られますか？',
+    answer:
+      '記録内容は本人以外には公開されません。「共有」を選択した投稿のみ、フォロワーに公開されます。開発者がデータを閲覧することもありません。安心してご利用ください。',
+  },
+  {
+    question: 'ほつれはいつ補充されますか？',
+    answer:
+      'ほつれは毎週月曜日の0:00（日本時間）に2回分補充されます。繰り越しはできません。使い切った状態で記録がない日があると、継続記録がリセットされます。',
+  },
+  {
+    question: '通知が届かない場合は？',
+    answer:
+      'ソーシャルページで通知機能がオンになっているか確認してください。また、ブラウザの通知許可設定もご確認ください。それでも届かない場合は、フィードバック機能からご連絡ください。',
+  },
+  {
+    question: '記録の編集・削除はできますか？',
+    answer:
+      '記録の編集は作成から24時間以内のみ可能です。タイムラインで記録をタップすると編集画面に移動します。削除は編集画面からいつでも行えます。',
+  },
+  {
+    question: 'なぜDM機能がないのですか？',
+    answer:
+      'ADHDの方は返信義務感がストレスになりやすく、記録に集中できなくなる可能性があります。ヒビオルは「自分の記録」に集中できる環境を優先しているため、DM機能は意図的に実装していません。',
+  },
+  {
+    question: 'なぜフォロワー数が非表示なのですか？',
+    answer:
+      'フォロワー数の比較は、報酬系を余分に刺激しストレスの原因になります。ヒビオルでは「継続」にのみ報酬を与える設計としているため、フォロワー数は本人にのみ表示し、他者には非公開としています。',
+  },
+]
+
 export function FAQSection() {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
 
-  const faqs = [
-    {
-      question: 'βテスト版とは何ですか？',
-      answer:
-        '正式リリース前のテスト版です。βテスト中のため、予告なく仕様が変更される場合があります。不具合が発生した場合はフィードバックからご連絡ください。',
-    },
-    {
-      question: '記録したデータはどこに保存されますか？',
-      answer:
-        'データはクラウド（Supabase）に保存されます。万が一に備え、定期的にデータエクスポートをおすすめします。ソーシャルページからJSON/Markdown形式でエクスポートできます。',
-    },
-    {
-      question: 'プライバシーは守られますか？',
-      answer:
-        '記録内容は本人以外には公開されません。開発者がデータを閲覧することはありません。安心してご利用ください。',
-    },
-    {
-      question: 'PWAとは何ですか？インストールは必要ですか？',
-      answer:
-        'PWA（Progressive Web App）は、Webブラウザから利用できるアプリです。アプリのインストールは不要ですが、ホーム画面に追加することでアプリのように使用できます。',
-    },
-    {
-      question: 'どのデバイスから使えますか？',
-      answer:
-        'スマートフォン、タブレット、PCなど、Webブラウザがあるデバイスならどこからでもアクセスできます。データはデバイス間で自動同期されます。',
-    },
-    {
-      question: 'ほつれはいつ補充されますか？',
-      answer:
-        'ほつれは毎週月曜日の0:00に2回分補充されます。繰り越しはできません。使い切った状態で記録がない日があると、継続記録がリセットされます。',
-    },
-    {
-      question: '通知が届かない場合はどうすればいいですか？',
-      answer:
-        'ソーシャルページで通知機能がオンになっているか確認してください。また、ブラウザの通知許可設定もご確認ください。それでも届かない場合はフィードバックからご連絡ください。',
-    },
-    {
-      question: '投稿や画像に制限はありますか？',
-      answer:
-        'βテスト版では、1日あたり投稿20件まで、画像5枚までの制限があります。また、1つの投稿に添付できる画像は最大2枚です。制限は毎日0:00（JST）にリセットされます。',
-    },
-    {
-      question: '記録を編集・削除できますか？',
-      answer:
-        '記録の編集は作成から24時間以内のみ可能です。タイムラインで記録をタップすると編集画面に移動します。24時間を過ぎた記録は編集できませんのでご注意ください。削除は編集画面から行えます。',
-    },
-    {
-      question: 'アカウントを削除したい場合は？',
-      answer:
-        'ソーシャルページの「アカウント削除」から削除できます。確認のため「delete」と入力する必要があります。削除すると、すべての記録・画像・設定が完全に削除され、復元できません。',
-    },
-    {
-      question: 'フィードバックはどこから送れますか？',
-      answer:
-        'ログイン後、ソーシャルページの「フィードバックを送る」ボタンからGoogleフォームにアクセスできます。ご意見・ご感想をお待ちしております。',
-    },
-    {
-      question: 'なぜDM機能がないのですか？',
-      answer:
-        'ADHDの方は返信義務感がストレスになりやすく、記録に集中できなくなる可能性があります。ヒビオルは「自分の記録」に集中できる環境を優先しているため、DM機能は意図的に実装していません。',
-    },
-    {
-      question: 'なぜフォロワー数が表示されないのですか？',
-      answer:
-        'フォロワー数の比較は、ADHDの報酬系を余分に刺激し、ストレスの原因になります。ヒビオルでは「継続」にのみ報酬を与える設計としているため、フォロワー数は本人にのみ表示し、他者には非公開としています。',
-    },
-  ]
-
-  const notices = [
-    {
-      title: 'なぜこのアプリを作ったのか',
-      content:
-        '開発者自身がADHDの気質により、過去20年間、日記やログの継続に失敗してきました。「書かなきゃ」と思っても、いざ開くと書けない。気づいたら数日空いて、やる気がなくなる。何も成果がない日や落ち込んだときなど、記録に残したくないときに止まってしまう。この経験から、続けやすさに特化したアプリを作りました。',
-    },
-  ]
-
   return (
-    <section className="px-4 py-16 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-4xl">
-        {/* FAQ */}
-        <div className="mb-16">
-          <div className="mb-8 text-center">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              よくある質問
-            </h2>
-          </div>
+    <section className="relative overflow-hidden px-4 py-20 sm:px-6 lg:px-8">
+      {/* 背景装飾 */}
+      <div className="floating-orb floating-orb-primary animate-float-slow absolute -right-32 top-20 h-64 w-64" />
 
-          <div className="space-y-3">
-            {faqs.map((faq, index) => (
-              <FAQItem
-                key={index}
-                question={faq.question}
-                answer={faq.answer}
-                isOpen={openIndex === index}
-                onClick={() => setOpenIndex(openIndex === index ? null : index)}
-              />
-            ))}
+      <div className="relative z-10 mx-auto max-w-3xl">
+        {/* セクションヘッダー */}
+        <div className="section-header">
+          <div className="mb-4 flex justify-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10">
+              <HelpCircle className="h-7 w-7 text-primary" />
+            </div>
           </div>
+          <h2>
+            よくある
+            <span className="gradient-text">質問</span>
+          </h2>
         </div>
 
-        {/* 注意事項 */}
-        <div>
-          <div className="mb-8 text-center">
-            <h2 className="mb-4 text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
-              開発者からのメッセージ
-            </h2>
-          </div>
-
-          <div className="space-y-6">
-            {notices.map((notice, index) => (
-              <div
-                key={index}
-                className="rounded-lg border bg-card p-6 shadow-sm"
-              >
-                <h3 className="mb-3 text-lg font-semibold text-card-foreground">
-                  {notice.title}
-                </h3>
-                <p className="text-sm leading-relaxed text-muted-foreground">
-                  {notice.content}
-                </p>
-              </div>
-            ))}
-          </div>
+        {/* FAQリスト */}
+        <div className="space-y-3">
+          {faqs.map((faq, index) => (
+            <FAQItem
+              key={index}
+              question={faq.question}
+              answer={faq.answer}
+              isOpen={openIndex === index}
+              onClick={() => setOpenIndex(openIndex === index ? null : index)}
+            />
+          ))}
         </div>
 
-        {/* フッター */}
-        <div className="mt-16 border-t pt-8 text-center">
+        {/* 追加の質問への誘導 */}
+        <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 ヒビオル. All rights reserved.
+            他にご質問がありましたら、アプリ内の
+            <span className="font-medium text-foreground">フィードバック機能</span>
+            からお問い合わせください。
           </p>
         </div>
       </div>
