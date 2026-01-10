@@ -157,9 +157,6 @@ export function TimelineList({
     onDateChange,
   })
 
-  // isLoadingMore の参照（loadAndScrollToDate で使用）
-  const isLoadingMore = isLoadingMoreRef
-
   // 日付divへスクロール
   const scrollToDate = useCallback((date: Date) => {
     const dateKey = format(date, 'yyyy-MM-dd')
@@ -217,11 +214,11 @@ export function TimelineList({
 
       // ヘルパー: 過去方向に先読み目標まで読み込む
       const prefetchToPast = async (goalDateStr: string) => {
-        if (isLoadingMore.current) return
+        if (isLoadingMoreRef.current) return
         const oldestDate = allDates[0]
         if (!oldestDate || goalDateStr >= oldestDate || !hasNextPage) return
 
-        isLoadingMore.current = true
+        isLoadingMoreRef.current = true
         let attempts = 0
         const maxAttempts = 20
 
@@ -234,7 +231,7 @@ export function TimelineList({
           const found = await waitForDomElement(goalDateStr, 100)
           if (found) break
         }
-        isLoadingMore.current = false
+        isLoadingMoreRef.current = false
       }
 
       // 既に読み込み済みの場合
@@ -283,7 +280,7 @@ export function TimelineList({
       }
       // 未来方向の読み込みが必要（通常は発生しない）
       else if (targetDateStr > newestDate && hasPreviousPage) {
-        isLoadingMore.current = true
+        isLoadingMoreRef.current = true
 
         let attempts = 0
         const maxAttempts = 20
@@ -303,7 +300,7 @@ export function TimelineList({
           }
         }
 
-        isLoadingMore.current = false
+        isLoadingMoreRef.current = false
 
         // 最終確認してからスクロール
         await waitForDomElement(targetDateStr, 300)
@@ -321,6 +318,7 @@ export function TimelineList({
       fetchPreviousPage,
       scrollToDate,
       waitForDomElement,
+      isLoadingMoreRef,
     ]
   )
 

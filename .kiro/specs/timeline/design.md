@@ -11,7 +11,6 @@
 ### Goals
 
 - 日付ベースのナビゲーション（カルーセル・カレンダー選択）による直感的な操作
-- 仮想スクロールによる大量投稿の効率的な表示
 - 日付とスクロール位置の双方向同期による一貫したUX
 - 継続記録の視覚化（●記録、━━継続線、🧵ほつれ、◎今日）
 
@@ -39,7 +38,6 @@ graph TB
         MonthCalendar[MonthCalendar]
         TimelineList[TimelineList]
         EntryCard[EntryCard]
-        ContextMenu[ContextMenu]
     end
 
     subgraph Hooks
@@ -68,7 +66,6 @@ graph TB
     TimelinePage --> TimelineList
     DateHeader --> DateCarousel
     TimelineList --> EntryCard
-    EntryCard --> ContextMenu
 
     DateCarousel --> useDateCarousel
     DateCarousel --> useAllEntryDates
@@ -101,8 +98,6 @@ graph TB
 | Frontend | Next.js 15 (App Router) | ページルーティング、Server Components | RSCでの初期データフェッチ |
 | UI Framework | React 19 | コンポーネント構築 | Server/Client Component分離 |
 | State/Data | TanStack Query v5 | 無限スクロール、キャッシュ管理 | `useInfiniteQuery`使用 |
-| Virtualization | TanStack Virtual v3 | 仮想スクロール | `useVirtualizer`使用 |
-| Gesture | react-swipeable v7 | スワイプジェスチャー検出 | タッチ・マウス両対応 |
 | Calendar | react-day-picker v9 | 月カレンダー表示 | shadcn/uiベース |
 | Styling | Tailwind CSS v3 | スタイリング | レスポンシブ対応 |
 | Backend | Supabase | データベース、認証 | PostgreSQL |
@@ -176,12 +171,12 @@ sequenceDiagram
 
 | Requirement | Summary | Components | Interfaces | Flows |
 |-------------|---------|------------|------------|-------|
-| 1.1 | 左スワイプで前日へ移動 | DateHeader | useSwipeNavigation | - |
-| 1.2 | 右スワイプで翌日へ移動 | DateHeader | useSwipeNavigation | - |
+| 1.1 | カルーセルで日付を選択 | DateHeader, DateCarousel | useDateCarousel, useAllEntryDates | - |
+| 1.2 | 選択日付位置へスクロール | DateCarousel | useScrollSync | - |
 | 1.3 | カレンダーアイコンで月カレンダー展開 | DateHeader, MonthCalendar | - | カレンダー日付選択フロー |
 | 1.4 | カレンダーで日付選択時スクロール | MonthCalendar | useScrollSync | カレンダー日付選択フロー |
 | 2.1 | 新しい順で投稿表示 | TimelineList | useTimeline | 初期ロードフロー |
-| 2.2 | 日付をまたいで連続スクロール | TimelineList | useTimeline, useVirtualizer | スクロール・日付同期フロー |
+| 2.2 | 日付をまたいで連続スクロール | TimelineList | useTimeline | スクロール・日付同期フロー |
 | 2.3 | 日付境界でスナップアニメーション | TimelineList | useScrollSync | スクロール・日付同期フロー |
 | 2.4 | 初期表示で今日の最終投稿位置 | TimelinePage | useTimeline | 初期ロードフロー |
 | 3.1 | スクロール中に日付ヘッダー同期 | DateHeader, TimelineList | useScrollSync | スクロール・日付同期フロー |
@@ -189,28 +184,27 @@ sequenceDiagram
 | 4.1 | 投稿なし日をスキップ | TimelineList | useTimeline | - |
 | 4.2 | ほつれ使用日に🧵マーク表示 | DateHeader, MonthCalendar | useCalendarData | - |
 | 5.1 | タップで編集ページへ遷移 | EntryCard | - | - |
-| 5.2 | 長押しでコンテキストメニュー表示 | EntryCard, ContextMenu | - | - |
 | 6.1 | 記録日に●マーク表示 | MonthCalendar | useCalendarData | - |
 | 6.2 | 連続記録日に━━継続線表示 | MonthCalendar | useCalendarData | - |
 | 6.3 | ほつれ使用日に🧵マーク表示 | MonthCalendar | useCalendarData | - |
 | 6.4 | 今日を◎マークで強調 | MonthCalendar | - | - |
 | 6.5 | カレンダー外タップで閉じる | MonthCalendar | - | - |
 | 7.1 | レスポンシブ対応 | 全コンポーネント | - | - |
-| 7.2 | 仮想スクロールでパフォーマンス維持 | TimelineList | useVirtualizer | - |
-| 7.3 | エラー時リトライオプション表示 | TimelineList | useTimeline | - |
+| 7.2 | エラー時リトライオプション表示 | TimelineList | useTimeline | - |
 
 ## Components and Interfaces
 
 | Component | Domain/Layer | Intent | Req Coverage | Key Dependencies | Contracts |
 |-----------|--------------|--------|--------------|------------------|-----------|
 | TimelinePage | Pages | メインページのエントリーポイント | 2.4 | useTimeline (P0) | - |
-| DateHeader | UI/Navigation | 日付表示とナビゲーション | 1.1, 1.2, 1.3, 3.1, 3.2, 4.2 | useSwipeNavigation (P0), useScrollSync (P0) | State |
+| DateHeader | UI/Navigation | 日付表示とナビゲーション | 1.1, 1.2, 1.3, 3.1, 3.2, 4.2 | useDateCarousel (P0), useScrollSync (P0) | State |
+| DateCarousel | UI/Navigation | 日付選択カルーセル | 1.1, 1.2 | useDateCarousel (P0), useAllEntryDates (P0) | State |
 | MonthCalendar | UI/Calendar | 月カレンダー表示 | 1.4, 6.1, 6.2, 6.3, 6.4, 6.5 | useCalendarData (P0) | State |
-| TimelineList | UI/List | 投稿一覧の仮想スクロール表示 | 2.1, 2.2, 2.3, 4.1, 7.2, 7.3 | useTimeline (P0), useScrollSync (P0) | State |
-| EntryCard | UI/Card | 個別投稿の表示 | 5.1, 5.2 | - | - |
-| ContextMenu | UI/Overlay | 長押しメニュー | 5.2 | - | - |
-| useTimeline | Hooks/Data | 投稿データの取得・ページネーション | 2.1, 2.2, 2.4, 4.1, 7.3 | TanStack Query (P0), Supabase (P0) | Service |
-| useSwipeNavigation | Hooks/Gesture | スワイプジェスチャー検出 | 1.1, 1.2 | react-swipeable (P0) | Service |
+| TimelineList | UI/List | 投稿一覧のスクロール表示 | 2.1, 2.2, 2.3, 4.1, 7.2 | useTimeline (P0), useScrollSync (P0) | State |
+| EntryCard | UI/Card | 個別投稿の表示 | 5.1 | - | - |
+| useTimeline | Hooks/Data | 投稿データの取得・ページネーション | 2.1, 2.2, 2.4, 4.1, 7.2 | TanStack Query (P0), Supabase (P0) | Service |
+| useDateCarousel | Hooks/Navigation | 日付カルーセルの状態管理 | 1.1, 1.2 | useAllEntryDates (P0) | Service |
+| useAllEntryDates | Hooks/Data | 全記録日付の取得 | 1.1, 1.2 | TanStack Query (P0), Supabase (P0) | Service |
 | useScrollSync | Hooks/Sync | スクロール位置と日付の同期 | 2.3, 3.1, 3.2 | - | Service, State |
 | useCalendarData | Hooks/Data | カレンダー表示用データ取得 | 4.2, 6.1, 6.2, 6.3 | TanStack Query (P0), Supabase (P0) | Service |
 

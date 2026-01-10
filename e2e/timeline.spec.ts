@@ -10,9 +10,9 @@ import { setupTestSession, TEST_USER, waitForPageLoad } from './fixtures/test-he
 // 未認証テスト（認証不要）
 // ========================================
 test.describe('未認証時の動作', () => {
-  test('未認証で/timelineにアクセス→/loginにリダイレクト', async ({ page }) => {
+  test('未認証で/timelineにアクセス→/にリダイレクト', async ({ page }) => {
     await page.goto('/timeline')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL('/')
     await expect(page.getByText('ヒビオル')).toBeVisible()
   })
 

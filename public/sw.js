@@ -37,6 +37,7 @@ const STATIC_ASSETS = [
 // キャッシュ対象外のパターン
 const CACHE_EXCLUDE_PATTERNS = [
   /^\/api\//,           // APIリクエスト
+  /^\/docs\//,          // ドキュメントページ（PWA対象外）
   /supabase/,           // Supabaseリクエスト
   /\/_next\/webpack/,   // Webpack HMR
   /\/sw\.js$/,          // Service Worker自体

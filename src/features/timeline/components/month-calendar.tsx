@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useMemo } from 'react'
 import { DayPicker, type DayButtonProps } from 'react-day-picker'
 import { ja } from 'date-fns/locale'
 import { ChevronLeft, ChevronRight, Spool } from 'lucide-react'
@@ -80,12 +80,14 @@ export function MonthCalendar({
   // 表示中の月を管理（DayPickerの月切り替えに対応）
   const [displayMonth, setDisplayMonth] = useState(selectedDate)
 
-  // カレンダーが開かれた時に、選択中の日付の月を表示
-  useEffect(() => {
-    if (isOpen) {
-      setDisplayMonth(selectedDate)
-    }
-  }, [isOpen, selectedDate])
+  // カレンダーが開かれた時に、選択中の日付の月を表示（レンダー中の状態調整パターン）
+  const [wasOpen, setWasOpen] = useState(isOpen)
+  if (isOpen && !wasOpen) {
+    setWasOpen(true)
+    setDisplayMonth(selectedDate)
+  } else if (!isOpen && wasOpen) {
+    setWasOpen(false)
+  }
 
   const year = displayMonth.getFullYear()
   const month = displayMonth.getMonth() + 1

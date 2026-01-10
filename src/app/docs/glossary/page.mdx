@@ -1,0 +1,99 @@
+export const metadata = {
+  title: '用語説明',
+}
+
+# 用語説明
+
+ヒビオルで使われる用語を解説します
+
+<ReadTime minutes={3} />
+
+---
+
+<div className="grid gap-4 sm:grid-cols-2">
+
+<GlossaryCard term="ヒビオル" icon="sparkles">
+  **このアプリの名前**
+
+  「日々」と「織る」を組み合わせた造語。毎日の小さな記録を織り重ねていくイメージ。糸を一本一本紡ぐように、日々の思考を記録します。
+</GlossaryCard>
+
+<GlossaryCard term="ほつれ" icon="shield">
+  **継続を守るスキップ機能**
+
+  記録できない日を「守る」ための機能。週2回まで使用可能で、毎週月曜0:00にリセット。記録がない日に自動消費されます。
+</GlossaryCard>
+
+<GlossaryCard term="ストリーク" icon="flame">
+  **連続記録日数**
+
+  Duolingo式の継続モチベーション設計。毎日0:00（JST）にリセット判定。記録またはほつれで継続し、途切れると0にリセット。最長記録は保持されます。
+</GlossaryCard>
+
+<GlossaryCard term="タイムライン" icon="scroll-text">
+  **記録の一覧画面**
+
+  日付ごとに記録がグループ化されて表示。上下スクロールで過去の記録を閲覧でき、カレンダーからジャンプも可能です。
+</GlossaryCard>
+
+<GlossaryCard term="エントリ" icon="pen-line">
+  **1つの記録**
+
+  テキストや画像を含む1つの記録単位。絵文字1つから投稿可能で、1日に最大20件まで作成可能です（βテスト版）。
+</GlossaryCard>
+
+<GlossaryCard term="カレンダー" icon="calendar">
+  **月間の記録概要**
+
+  1ヶ月の記録状況を俯瞰できます。記録がある日は緑色、ほつれを使った日は糸巻きアイコンで表示。日付をタップするとその日にジャンプします。
+</GlossaryCard>
+
+<GlossaryCard term="エクスポート" icon="upload">
+  **データの書き出し**
+
+  記録をJSON/Markdown形式でダウンロード。バックアップや他ツールへの移行に便利。AIツールに読み込ませて分析することも可能です。
+</GlossaryCard>
+
+<GlossaryCard term="ロンゲストストリーク" icon="trophy">
+  **過去最高の連続記録日数**
+
+  これまでの最長ストリーク記録。途中でストリークが途切れても、この記録は保持されます。自分の継続記録を振り返る指標になります。
+</GlossaryCard>
+
+<GlossaryCard term="フォロー" icon="user-plus">
+  **他のユーザーとつながる機能**
+
+  他のユーザーをフォローすると、その人の達成や共有投稿がソーシャルフィードに表示されます。一方向のフォローなので、相手の承認は不要です。
+</GlossaryCard>
+
+<GlossaryCard term="ソーシャルフィード" icon="newspaper">
+  **フォロー中ユーザーの活動一覧**
+
+  フォローしているユーザーの達成（アチーブメント）や共有投稿が流れるタイムライン。仲間の継続を見て、お互いに励まし合えます。
+</GlossaryCard>
+
+<GlossaryCard term="お祝い" icon="party-popper">
+  **達成を応援する機能**
+
+  他のユーザーの達成に対してお祝いを送れます。お祝いされると通知が届き、継続のモチベーションになります。
+</GlossaryCard>
+
+<GlossaryCard term="達成（アチーブメント）" icon="medal">
+  **継続のマイルストーン**
+
+  記録の継続や投稿数に応じて解除される実績。連続記録（3日、7日、14日...）や累計投稿数（10件、30件、50件...）など、4種類の達成があります。
+</GlossaryCard>
+
+<GlossaryCard term="共有投稿" icon="share-2">
+  **フォロワーに公開する投稿**
+
+  通常の記録は非公開ですが、共有マークを付けるとフォロワーのソーシャルフィードに表示されます。プライバシーを守りながら、特定の投稿だけ共有できます。
+</GlossaryCard>
+
+<GlossaryCard term="追いリマインド" icon="bell-ring">
+  **記録忘れを防ぐ追加通知**
+
+  定時リマインドの後、まだ記録がない場合に届く追加の通知。デフォルトで60分後に送信され、最大2回まで届きます。記録すると自動でキャンセルされます。
+</GlossaryCard>
+
+</div>

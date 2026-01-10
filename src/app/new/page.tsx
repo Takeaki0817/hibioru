@@ -13,7 +13,7 @@ export default async function NewEntryPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   return <NewEntryClient userId={user.id} />

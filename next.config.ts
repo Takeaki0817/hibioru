@@ -1,6 +1,10 @@
+import createMDX from '@next/mdx'
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // MDXファイルをページとして認識
+  pageExtensions: ['ts', 'tsx', 'mdx'],
+
   // React Compiler（自動メモ化によるパフォーマンス向上）
   reactCompiler: true,
 
@@ -10,6 +14,8 @@ const nextConfig: NextConfig = {
 
   // リモート画像の許可設定
   images: {
+    // ローカル開発時は画像最適化を無効化（プライベートIPへのアクセス制限を回避）
+    unoptimized: process.env.NODE_ENV === 'development',
     remotePatterns: [
       // Google OAuth アバター画像
       {
@@ -52,4 +58,9 @@ const nextConfig: NextConfig = {
   productionBrowserSourceMaps: false,
 };
 
-export default nextConfig;
+// MDXの設定
+// Note: Turbopackではremarkプラグイン（関数）をシリアライズできないため、
+// remark-gfmは使用しない。GFM機能（テーブル等）はMDXファイル内でHTMLを直接記述する。
+const withMDX = createMDX()
+
+export default withMDX(nextConfig);

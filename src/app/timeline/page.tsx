@@ -42,7 +42,7 @@ export default async function TimelinePage({
 
   const user = userResult.data.user
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   // エントリ取得エラーはログのみ（空リストで続行可能）

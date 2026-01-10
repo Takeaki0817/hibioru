@@ -21,7 +21,7 @@ export default async function EditEntryPage({
 
   const user = userResult.data.user
   if (!user) {
-    redirect('/login')
+    redirect('/')
   }
 
   if (!entryResult.ok) {

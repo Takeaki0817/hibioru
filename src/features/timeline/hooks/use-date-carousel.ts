@@ -122,30 +122,56 @@ export function useDateCarousel({
 
   // activeDatesが取得されたら最新日付（maxDate）に移動
   // 注意: 初期化時は onDateChange を呼ばない（TimelineList のスクロール検出を優先）
-  useEffect(() => {
-    if (!api || !maxDate || hasInitializedToMaxDate.current) return
+  // レンダー中の状態調整パターン + スクロール副作用の分離
+  const [prevMaxDateForInit, setPrevMaxDateForInit] = useState<string | null>(null)
+  const [pendingScroll, setPendingScroll] = useState<{
+    index: number
+    resetWindow: boolean
+  } | null>(null)
 
-    hasInitializedToMaxDate.current = true
+  // レンダー中の状態調整（setState のみ、ref 操作は effect へ）
+  if (api && maxDate && maxDate !== prevMaxDateForInit) {
+    setPrevMaxDateForInit(maxDate)
     const maxDateObj = new Date(maxDate)
 
     const diff = differenceInDays(startOfDay(maxDateObj), startOfDay(windowCenter))
     if (Math.abs(diff) <= WINDOW_DAYS) {
       const targetIndex = CENTER_INDEX + diff
-      api.scrollTo(targetIndex, true)
       setSelectedIndex(targetIndex)
-      prevIndexRef.current = targetIndex
-      // 初期化時は onDateChange を呼ばない
+      setPendingScroll({ index: targetIndex, resetWindow: false })
     } else {
       setWindowCenter(maxDateObj)
+      setSelectedIndex(CENTER_INDEX)
+      setPendingScroll({ index: CENTER_INDEX, resetWindow: true })
+    }
+  }
+
+  // スクロール副作用とref更新（外部システムとの同期）
+  // pendingScroll変更のみをトリガーとして処理
+  const [processedScroll, setProcessedScroll] = useState<typeof pendingScroll>(null)
+
+  useEffect(() => {
+    if (!api || !pendingScroll || pendingScroll === processedScroll) return
+
+    const { index, resetWindow } = pendingScroll
+
+    // ref の更新は effect 内で行う
+    hasInitializedToMaxDate.current = true
+    prevIndexRef.current = index
+
+    if (resetWindow) {
       isInitialized.current = false
       requestAnimationFrame(() => {
-        api.scrollTo(CENTER_INDEX, true)
-        setSelectedIndex(CENTER_INDEX)
-        prevIndexRef.current = CENTER_INDEX
-        // 初期化時は onDateChange を呼ばない
+        api.scrollTo(index, true)
+        // 非同期コールバック内でstate更新
+        setProcessedScroll(pendingScroll)
       })
+    } else {
+      api.scrollTo(index, true)
+      // 非同期コールバック内でstate更新
+      queueMicrotask(() => setProcessedScroll(pendingScroll))
     }
-  }, [api, maxDate, windowCenter])
+  }, [api, pendingScroll, processedScroll])
 
   // 外部からの日付変更を受け付ける関数を公開
   useEffect(() => {

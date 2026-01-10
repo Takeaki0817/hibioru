@@ -127,7 +127,7 @@ export function BetaTestCallSection() {
         {/* CTA */}
         <div className="text-center">
           <Button asChild size="lg" className="w-full sm:w-auto">
-            <Link href="/login">今すぐβテストに参加する</Link>
+            <Link href="/">今すぐβテストに参加する</Link>
           </Button>
           <p className="mt-4 text-xs text-muted-foreground">
             ソーシャルページの「フィードバックを送る」ボタンからご意見をお寄せください

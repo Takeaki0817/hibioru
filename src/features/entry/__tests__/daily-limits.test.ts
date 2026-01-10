@@ -11,11 +11,11 @@ import {
   DAILY_ENTRY_LIMIT,
   DAILY_IMAGE_LIMIT
 } from '../api/daily-limits'
+import { createClient } from '@/lib/supabase/server'
 
 // モック設定
-jest.mock('@/lib/supabase/server', () => ({
-  createClient: jest.fn()
-}))
+jest.mock('@/lib/supabase/server')
+const mockCreateClient = jest.mocked(createClient)
 
 describe('daily-limits', () => {
   const mockUserId = 'test-user-123'
@@ -52,8 +52,7 @@ describe('daily-limits', () => {
   describe('getDailyEntryCount', () => {
     it('当日の投稿件数を取得できること', async () => {
       const mockClient = createChainMock({ count: 5, error: null })
-      const { createClient } = require('@/lib/supabase/server')
-      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
+      mockCreateClient.mockResolvedValue(mockClient)
 
       const count = await getDailyEntryCount(mockUserId)
       expect(count).toBe(5)
@@ -61,8 +60,7 @@ describe('daily-limits', () => {
 
     it('エラー時は0を返すこと', async () => {
       const mockClient = createChainMock({ count: null, error: { message: 'DB error' } })
-      const { createClient } = require('@/lib/supabase/server')
-      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
+      mockCreateClient.mockResolvedValue(mockClient)
 
       const count = await getDailyEntryCount(mockUserId)
       expect(count).toBe(0)
@@ -72,8 +70,7 @@ describe('daily-limits', () => {
   describe('getDailyImageCount', () => {
     it('当日の画像投稿件数を取得できること', async () => {
       const mockClient = createChainMock({ count: 3, error: null })
-      const { createClient } = require('@/lib/supabase/server')
-      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
+      mockCreateClient.mockResolvedValue(mockClient)
 
       const count = await getDailyImageCount(mockUserId)
       expect(count).toBe(3)
@@ -83,8 +80,7 @@ describe('daily-limits', () => {
   describe('checkDailyEntryLimit', () => {
     it('制限内の場合はallowed=trueを返すこと', async () => {
       const mockClient = createChainMock({ count: 5, error: null })
-      const { createClient } = require('@/lib/supabase/server')
-      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
+      mockCreateClient.mockResolvedValue(mockClient)
 
       const result = await checkDailyEntryLimit(mockUserId)
 
@@ -99,8 +95,7 @@ describe('daily-limits', () => {
 
     it('上限到達時はallowed=falseを返すこと', async () => {
       const mockClient = createChainMock({ count: 20, error: null })
-      const { createClient } = require('@/lib/supabase/server')
-      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
+      mockCreateClient.mockResolvedValue(mockClient)
 
       const result = await checkDailyEntryLimit(mockUserId)
 
@@ -116,8 +111,7 @@ describe('daily-limits', () => {
   describe('checkDailyImageLimit', () => {
     it('制限内の場合はallowed=trueを返すこと', async () => {
       const mockClient = createChainMock({ count: 2, error: null })
-      const { createClient } = require('@/lib/supabase/server')
-      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
+      mockCreateClient.mockResolvedValue(mockClient)
 
       const result = await checkDailyImageLimit(mockUserId)
 
@@ -132,8 +126,7 @@ describe('daily-limits', () => {
 
     it('上限到達時はallowed=falseを返すこと', async () => {
       const mockClient = createChainMock({ count: 5, error: null })
-      const { createClient } = require('@/lib/supabase/server')
-      ;(createClient as jest.Mock).mockResolvedValue(mockClient)
+      mockCreateClient.mockResolvedValue(mockClient)
 
       const result = await checkDailyImageLimit(mockUserId)
 

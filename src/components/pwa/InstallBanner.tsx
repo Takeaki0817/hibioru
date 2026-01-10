@@ -1,12 +1,17 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Download, X, Share, Plus } from 'lucide-react'
 import { usePwaInstall } from '@/hooks/use-pwa-install'
 import { MotionButton } from '@/components/ui/motion-button'
 import { cn } from '@/lib/utils'
 import { APP_CONFIG } from '@/lib/constants/app-config'
+
+// ハイドレーション対応: クライアント側でのみtrueを返す
+const emptySubscribe = () => () => {}
+const getClientSnapshot = () => true
+const getServerSnapshot = () => false
 
 /**
  * PWAインストールバナー
@@ -18,14 +23,10 @@ export function InstallBanner() {
   const { shouldShowBanner, canInstall, isIOS, install, dismiss } = usePwaInstall()
   const [showIOSGuide, setShowIOSGuide] = useState(false)
   // ハイドレーション不整合を防ぐため、マウント後にのみ表示
-  const [mounted, setMounted] = useState(false)
+  const isClient = useSyncExternalStore(emptySubscribe, getClientSnapshot, getServerSnapshot)
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  // マウント前またはバナー非表示条件では何もレンダリングしない
-  if (!mounted || !shouldShowBanner) {
+  // サーバー/ハイドレーション中またはバナー非表示条件では何もレンダリングしない
+  if (!isClient || !shouldShowBanner) {
     return null
   }
 

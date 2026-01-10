@@ -278,19 +278,23 @@ interface User {
   avatarUrl: string | null;
 }
 
-interface AuthContextValue {
+// Zustand storeとして実装
+interface AuthStore {
   user: User | null;
   isLoading: boolean;
-  signOut: () => Promise<void>;
+  setUser: (user: User | null) => void;
+  setLoading: (isLoading: boolean) => void;
 }
 ```
 
-- State model: React Context + useStateによるグローバル状態
+- State model: Zustandによるグローバル状態管理（React Contextではなくストア）
 - Persistence: Supabaseセッション（Cookie）に同期
 - Concurrency: onAuthStateChangeによるリアクティブ更新
 
+> **設計変更メモ**: 当初はReact Context + useStateの設計だったが、実装ではZustandストアを採用。Props Drillingを避け、よりシンプルな状態管理を実現。
+
 **Implementation Notes**
-- Integration: RootLayoutでラップし、全ページで利用可能にする
+- Integration: 各コンポーネントで`useAuthStore()`フックを直接呼び出す（Context Providerでラップ不要）
 - Validation: ユーザー情報はSupabaseから取得した値をそのまま使用
 - Risks: SSRとCSRの状態不整合 -> 初期ロード時はisLoading=trueで対応
 
@@ -318,10 +322,12 @@ interface AuthContextValue {
 ##### Service Interface
 
 ```typescript
-// Server Action として実装
+// クライアントサイドで直接実装（Server Actionではない）
 async function signInWithGoogle(): Promise<void>;
 async function signOut(): Promise<void>;
 ```
+
+> **設計変更メモ**: 当初はServer Actionとして設計していたが、OAuth開始処理はブラウザからのリダイレクトが必要なため、クライアントサイドで直接`supabase.auth.signInWithOAuth()`を呼び出す方式を採用。
 
 - Preconditions: signInWithGoogle - 未認証状態、signOut - 認証済み状態
 - Postconditions: signInWithGoogle - Googleログイン画面へリダイレクト、signOut - /loginへリダイレクト

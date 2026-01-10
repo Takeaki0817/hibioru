@@ -37,8 +37,21 @@ export function ProblemsSection() {
           ))}
         </div>
 
+        {/* 筆記開示の説明 */}
+        <div className="mt-12 rounded-lg border border-primary/20 bg-primary/5 p-6 text-center">
+          <p className="mb-3 text-sm font-medium text-primary">なぜ「書き出す」ことが効くのか</p>
+          <p className="text-base text-foreground/90 sm:text-lg">
+            心理学では「筆記開示」と呼ばれ、書き出すことで
+            <br className="hidden sm:inline" />
+            思考が整理され、ストレスが軽減されることがわかっています。
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            でも、続けることが難しい。だから、ヒビオルを作りました。
+          </p>
+        </div>
+
         {/* 結論 */}
-        <div className="mt-12 rounded-lg bg-primary/5 p-6 text-center">
+        <div className="mt-6 rounded-lg bg-muted/50 p-6 text-center">
           <p className="text-base font-medium text-foreground sm:text-lg">
             誰かに見せる文章を書く必要はありません。
             <br />

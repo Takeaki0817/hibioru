@@ -3,7 +3,7 @@
 import {
   createContext,
   useContext,
-  useRef,
+  useState,
   type ReactNode,
 } from 'react'
 import { useStore, type StoreApi } from 'zustand'
@@ -33,13 +33,11 @@ export function createStoreContext<T>(
    * ストアはProviderのマウント時に一度だけ作成される
    */
   function StoreProvider({ children }: { children: ReactNode }) {
-    const storeRef = useRef<StoreApi<T> | null>(null)
-    if (storeRef.current === null) {
-      storeRef.current = createStoreFn()
-    }
+    // useState の遅延初期化でレンダー中のref.currentアクセスを回避
+    const [store] = useState<StoreApi<T>>(() => createStoreFn())
 
     return (
-      <StoreContext.Provider value={storeRef.current}>
+      <StoreContext.Provider value={store}>
         {children}
       </StoreContext.Provider>
     )

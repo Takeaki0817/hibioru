@@ -50,7 +50,7 @@ export async function getDailyImageCount(userId: string): Promise<number> {
       .select('*', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('is_deleted', false)
-      .not('image_url', 'is', null)
+      .not('image_urls', 'is', null)
       .gte('created_at', start.toISOString())
       .lt('created_at', end.toISOString())
 

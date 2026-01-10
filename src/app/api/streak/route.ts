@@ -6,6 +6,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getStreakInfo } from '@/features/streak/api/service'
+import { logger } from '@/lib/logger'
 
 // Next.js 16: createClient()使用で自動的に動的レンダリング
 
@@ -20,7 +21,7 @@ export async function GET() {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: '認証が必要です' },
         { status: 401 }
       )
     }
@@ -29,16 +30,19 @@ export async function GET() {
     const result = await getStreakInfo(user.id)
 
     if (!result.ok) {
+      // 内部エラーはログに記録、ユーザーには汎用メッセージを返す
+      logger.error('ストリーク情報取得エラー:', result.error)
       return NextResponse.json(
-        { error: result.error.message },
+        { error: '処理中にエラーが発生しました' },
         { status: 500 }
       )
     }
 
     return NextResponse.json(result.value, { status: 200 })
-  } catch {
+  } catch (error) {
+    logger.error('ストリークAPI予期せぬエラー:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: '処理中にエラーが発生しました' },
       { status: 500 }
     )
   }

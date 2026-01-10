@@ -1,0 +1,151 @@
+export const metadata = {
+  title: 'ロードマップ',
+}
+
+# ロードマップ
+
+今後の開発予定
+
+<ReadTime minutes={2} />
+
+---
+
+## 完了
+
+<div className="space-y-3">
+
+<SectionCard title="βテスト版リリース（v0.1.0）">
+  <RoadmapStatus status="completed" />
+  <span className="ml-2 text-xs text-muted-foreground">2025年12月</span>
+  <div className="mt-2 text-sm text-muted-foreground">
+    タイムライン、記録の作成・編集・削除、画像添付、ストリーク・ほつれ機能、カレンダーナビゲーション、通知設定、PWA対応
+  </div>
+</SectionCard>
+
+<SectionCard title="ソーシャル機能（v0.2.0）">
+  <RoadmapStatus status="completed" />
+  <span className="ml-2 text-xs text-muted-foreground">2026年1月</span>
+  <div className="mt-2 text-sm text-muted-foreground">
+    フォロー・フォロワー機能、アチーブメント（実績）機能、記録のソーシャル共有、週間記録でのほつれ使用状況表示
+  </div>
+</SectionCard>
+
+<SectionCard title="アクセシビリティ・セキュリティ強化">
+  <RoadmapStatus status="completed" />
+  <span className="ml-2 text-xs text-muted-foreground">2026年1月</span>
+  <div className="mt-2 text-sm text-muted-foreground">
+    WCAG 2.1 Level AA準拠、セキュリティ強化、フォローバック機能
+  </div>
+</SectionCard>
+
+<SectionCard title="ドキュメント・法的文書整備（v0.3.0）">
+  <RoadmapStatus status="completed" />
+  <span className="ml-2 text-xs text-muted-foreground">2026年1月</span>
+  <div className="mt-2 text-sm text-muted-foreground">
+    使い方ガイド、用語説明、FAQ、更新履歴、プライバシーポリシー・利用規約の日本法準拠改訂
+  </div>
+</SectionCard>
+
+<SectionCard title="UI/UX改善">
+  <RoadmapStatus status="completed" />
+  <span className="ml-2 text-xs text-muted-foreground">2026年1月</span>
+  <div className="mt-2 text-sm text-muted-foreground">
+    グラスモーフィズムUI、M PLUS Rounded 1cフォント導入、スワイプでタブ切り替え、エクスポート機能の説明パネル
+  </div>
+</SectionCard>
+
+<SectionCard title="データエクスポート">
+  <RoadmapStatus status="completed" />
+  <span className="ml-2 text-xs text-muted-foreground">2026年1月</span>
+  <div className="mt-2 text-sm text-muted-foreground">
+    JSON/Markdown形式でのデータ書き出し、期間指定オプション
+  </div>
+</SectionCard>
+
+</div>
+
+---
+
+## 予定
+
+<div className="space-y-3">
+
+<SectionCard title="サブスクリプション・決済機能" variant="highlight">
+  <RoadmapStatus status="planned" />
+  <div className="mt-2 text-sm text-muted-foreground">
+    プレミアムプランの仕様策定、Stripe決済連携、プラン管理機能
+  </div>
+</SectionCard>
+
+<SectionCard title="パフォーマンス改善">
+  <RoadmapStatus status="planned" />
+  <div className="mt-2 text-sm text-muted-foreground">
+    PWA起動時の読み込み高速化、投稿時のレスポンス改善
+  </div>
+</SectionCard>
+
+<SectionCard title="ブランドロゴ改善">
+  <RoadmapStatus status="planned" />
+  <div className="mt-2 text-sm text-muted-foreground">
+    アプリアイコン・ロゴのリデザイン、ブランドアイデンティティの強化
+  </div>
+</SectionCard>
+
+<SectionCard title="アチーブメント閲覧機能">
+  <RoadmapStatus status="planned" />
+  <div className="mt-2 text-sm text-muted-foreground">
+    獲得済みアチーブメントの一覧表示、進捗確認、未達成アチーブメントの表示
+  </div>
+</SectionCard>
+
+<SectionCard title="アチーブメント達成演出">
+  <RoadmapStatus status="planned" />
+  <div className="mt-2 text-sm text-muted-foreground">
+    アチーブメント達成時のアニメーション・エフェクト、達成感を高める演出
+  </div>
+</SectionCard>
+
+<SectionCard title="ネイティブアプリ提供">
+  <RoadmapStatus status="planned" />
+  <div className="mt-2 text-sm text-muted-foreground">
+    iOS/Androidネイティブアプリの開発・配信、プッシュ通知の強化
+  </div>
+</SectionCard>
+
+</div>
+
+---
+
+## 検討中
+
+<div className="space-y-3">
+
+<SectionCard title="ハッシュタグ機能">
+  <RoadmapStatus status="considering" />
+  <div className="mt-2 text-sm text-muted-foreground">
+    記録へのハッシュタグ付与、タグによるフィルタリング・検索
+  </div>
+</SectionCard>
+
+<SectionCard title="検索・ブックマーク機能">
+  <RoadmapStatus status="considering" />
+  <div className="mt-2 text-sm text-muted-foreground">
+    過去の記録をキーワード検索、重要な記録をブックマークして素早くアクセス
+  </div>
+</SectionCard>
+
+<SectionCard title="外部API提供">
+  <RoadmapStatus status="considering" />
+  <div className="mt-2 text-sm text-muted-foreground">
+    開発者向けAPI公開、サードパーティ連携の可能性
+  </div>
+</SectionCard>
+
+<SectionCard title="AIによる振り返りレポート">
+  <RoadmapStatus status="considering" />
+  <div className="mt-2 text-sm text-muted-foreground">
+    記録の傾向分析、週/月単位の自動サマリー生成、パターン発見のAI支援
+  </div>
+</SectionCard>
+
+</div>

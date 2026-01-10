@@ -60,11 +60,17 @@ pnpm build && pnpm lint
 
 # テスト
 pnpm test                           # ユニットテスト（Jest）
+pnpm test:watch                     # ウォッチモード
+pnpm test:coverage                  # カバレッジ付き
+pnpm test -- path/to/file           # 単一ファイル実行
 pnpm exec playwright test           # E2Eテスト
+pnpm exec playwright test --ui      # E2E UIモード（デバッグ用）
 
 # Supabase
 pnpm db:types                       # 型定義生成
 pnpm db:migration:new <name>        # 新規マイグレーション
+pnpm db:push                        # リモートDBにマイグレーション適用
+pnpm db:pull                        # リモートDBからスキーマ取得
 pnpm db:backup                      # リモートDBバックアップ
 ```
 

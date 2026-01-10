@@ -166,12 +166,13 @@ sequenceDiagram
 
 | Component | Domain/Layer | Intent | Req Coverage | Key Dependencies | Contracts |
 |-----------|--------------|--------|--------------|------------------|-----------|
-| StreakService | lib/streak | ストリーク計算・更新 | 1.1-1.5, 2.1-2.3, 6.1-6.4 | SupabaseClient (P0) | Service |
-| HotsureService | lib/hotsure | ほつれ消費・リセット | 3.1-3.5, 4.1-4.5 | SupabaseClient (P0) | Service |
-| DailyBatchJob | database | 日次ストリーク処理 | 7.1-7.6, 2.1-2.3, 3.1-3.5 | pg_cron (P0) | Batch |
-| WeeklyBatchJob | database | 週次ほつれリセット | 4.1-4.5 | pg_cron (P0) | Batch |
+| StreakService | lib/streak | ストリーク計算・更新・ほつれ情報取得 | 1.1-1.5, 2.1-2.3, 6.1-6.4 | SupabaseClient (P0) | Service |
+| process_daily_streak | database/function | 日次ストリーク処理（ほつれ自動消費含む） | 7.1-7.6, 2.1-2.3, 3.1-3.5 | pg_cron (P0) | Batch |
+| reset_weekly_hotsure | database/function | 週次ほつれリセット | 4.1-4.5 | pg_cron (P0) | Batch |
 | InitTrigger | database | 新規ユーザー初期化 | 5.1-5.5 | auth.users (P0) | Event |
 | StreakAPI | app/api | REST API エンドポイント | 1.1-1.5, 6.1-6.4 | StreakService (P0) | API |
+
+> **設計変更メモ**: 当初はHotsureServiceとしてTypeScriptサービス層での実装を想定していたが、パフォーマンスとトランザクション整合性の観点から、PostgreSQL関数（`process_daily_streak`, `reset_weekly_hotsure`）内で完全に実装。TypeScript側はストリーク情報取得時にほつれ情報も含めて返すのみ。
 
 ### Service Layer
 
@@ -624,9 +625,10 @@ CREATE INDEX idx_batch_logs_executed_at ON public.batch_logs(executed_at);
 
 - StreakService.updateStreakOnEntry: 初回記録、2回目記録、longest_streak更新
 - StreakService.breakStreak: current_streak=0、longest_streak維持
-- HotsureService.consumeHotsure: 消費成功、残数0時の失敗
-- HotsureService.resetHotsure: 値リセット確認
+- StreakService.getStreakInfo: ほつれ情報（hotsure_remaining, hotsure_used_dates）の正確な取得
 - 日付計算ロジック: JSTタイムゾーン境界テスト
+
+> **Note**: ほつれの消費・リセットロジックはPostgreSQL関数（`process_daily_streak`, `reset_weekly_hotsure`）内に実装されているため、Integration Testsでカバー
 
 ### Integration Tests
 

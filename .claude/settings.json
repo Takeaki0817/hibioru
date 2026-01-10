@@ -57,7 +57,7 @@
     ]
   },
   "enabledPlugins": {
-    "claude-mem@thedotmack": true
+    "claude-mem@thedotmack": false
   },
   "sandbox": {
     "enabled": true,
@@ -65,10 +65,7 @@
     "network": {
       "allowLocalBinding": true
     },
-    "excludedCommands": [
-      "docker",
-      "supabase"
-    ]
+    "excludedCommands": ["docker", "supabase", "pnpm", "npm", "npx"]
   },
   "alwaysThinkingEnabled": true
 }
