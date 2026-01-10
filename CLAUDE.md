@@ -205,6 +205,23 @@ main ← develop ← feature/*, fix/*, refactor/*
 |--------|------|
 | **supabase** | DB操作・スキーマ確認 |
 | **playwright-test** | E2Eテスト実行・デバッグ |
+| **context7** | ライブラリ最新ドキュメント検索 |
+
+### context7 使用例
+
+```bash
+# 1. ライブラリIDを解決
+mcp__context7__resolve-library-id --libraryName "next.js" --query "Server Components"
+
+# 2. ドキュメント検索
+mcp__context7__query-docs --libraryId "/vercel/next.js" --query "How to use Server Components"
+```
+
+**主なライブラリID**:
+- `/vercel/next.js` - Next.js
+- `/supabase/supabase` - Supabase
+- `/tanstack/query` - TanStack Query
+- `/tailwindlabs/tailwindcss` - Tailwind CSS
 
 ### よくある間違い
 
