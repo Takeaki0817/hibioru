@@ -51,6 +51,7 @@ export async function createPortalSession(): Promise<BillingResult<CheckoutResul
     const session = await stripe.billingPortal.sessions.create({
       customer: subscription.stripe_customer_id,
       return_url: `${process.env.NEXT_PUBLIC_APP_URL}/social`,
+      locale: 'ja',
     })
 
     return { ok: true, value: { url: session.url } }
