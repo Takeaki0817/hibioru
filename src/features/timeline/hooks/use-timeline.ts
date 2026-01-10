@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/constants/query-keys'
-import { fetchEntries } from '../api/queries'
+import { fetchTimelineEntries } from '../api/server-queries'
 import type { TimelineEntry } from '../types'
 
 export interface UseTimelineOptions {
@@ -60,7 +60,7 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
   } = useInfiniteQuery({
     queryKey: queryKeys.entries.timeline(userId, initialCursor),
     queryFn: ({ pageParam }) =>
-      fetchEntries({
+      fetchTimelineEntries({
         userId,
         cursor: pageParam.cursor,
         limit: pageSize,
@@ -92,7 +92,7 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
       queryClient.prefetchInfiniteQuery({
         queryKey: queryKeys.entries.timeline(userId, nextCursor),
         queryFn: ({ pageParam }) =>
-          fetchEntries({
+          fetchTimelineEntries({
             userId,
             cursor: pageParam.cursor,
             limit: pageSize,

@@ -1,5 +1,9 @@
-import type { MDXComponents } from 'mdx/types'
 import type { LucideIcon } from 'lucide-react'
+import type { ComponentType } from 'react'
+
+// MDXComponents型の定義（カスタムコンポーネントは独自のpropsを持つためany許容）
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MDXComponents = Record<string, ComponentType<any> | undefined>
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import {

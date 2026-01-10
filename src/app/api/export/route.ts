@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 import type { Entry } from '@/features/entry/types'
 
 // Next.js 16: createClient()使用で自動的に動的レンダリング
@@ -50,8 +51,9 @@ export async function GET(request: NextRequest) {
     const { data: entries, error } = await query
 
     if (error) {
+      logger.error('Export query failed', error)
       return NextResponse.json(
-        { error: error.message },
+        { error: 'データの取得に失敗しました' },
         { status: 500 }
       )
     }
@@ -91,8 +93,9 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
+    logger.error('Export failed', error)
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : '不明なエラー' },
+      { error: 'エクスポート処理に失敗しました' },
       { status: 500 }
     )
   }

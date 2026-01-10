@@ -4,9 +4,11 @@ import 'server-only'
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
+import { logger } from '@/lib/logger'
 import type { EntryInsert, EntryUpdate } from '@/lib/types/database'
 import type { Entry, CreateEntryInput, UpdateEntryInput, EntryError, Result } from '../types'
 import { isEditable } from '../utils'
+import { validateEntryContent } from '../constants'
 import { handleEntryCreated } from '@/features/notification/api/entry-integration'
 import { updateStreakOnEntry } from '@/features/streak/api/service'
 import {
@@ -28,11 +30,12 @@ export async function createEntry(
   try {
     const supabase = await createClient()
 
-    // 空白のみのコンテンツをチェック
-    if (input.content.trim().length === 0) {
+    // コンテンツを検証（空白チェック + 文字数制限）
+    const validation = validateEntryContent(input.content)
+    if (!validation.valid) {
       return {
         ok: false,
-        error: { code: 'EMPTY_CONTENT', message: '内容を入力してください' }
+        error: { code: 'EMPTY_CONTENT', message: validation.error! }
       }
     }
 
@@ -79,10 +82,7 @@ export async function createEntry(
     ]).then((results) => {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          console.error(
-            `並列処理[${index}]失敗:`,
-            result.reason instanceof Error ? result.reason.message : result.reason
-          )
+          logger.error(`並列処理[${index}]失敗`, result.reason)
         }
       })
     })
@@ -112,6 +112,15 @@ export async function updateEntry(
 ): Promise<Result<Entry, EntryError>> {
   try {
     const supabase = await createClient()
+
+    // コンテンツを検証（空白チェック + 文字数制限）
+    const validation = validateEntryContent(input.content)
+    if (!validation.valid) {
+      return {
+        ok: false,
+        error: { code: 'EMPTY_CONTENT', message: validation.error! }
+      }
+    }
 
     // 既存エントリを取得して編集可能かチェック
     const getResult = await getEntry(id)
@@ -159,7 +168,7 @@ export async function updateEntry(
         id,
         true
       ).catch((err) => {
-        console.error('達成チェック失敗:', err instanceof Error ? err.message : err)
+        logger.error('達成チェック失敗', err)
       })
     } else if (getResult.value.is_shared && !input.isShared) {
       // 共有→非共有: 達成レコードを削除
@@ -167,7 +176,7 @@ export async function updateEntry(
         getResult.value.user_id,
         id
       ).catch((err) => {
-        console.error('達成削除失敗:', err instanceof Error ? err.message : err)
+        logger.error('達成削除失敗', err)
       })
     } else if (getResult.value.is_shared && input.isShared) {
       // 共有状態を維持したまま内容を編集: achievements の updated_at を更新
@@ -176,7 +185,7 @@ export async function updateEntry(
         getResult.value.user_id,
         id
       ).catch((err) => {
-        console.error('達成touch失敗:', err instanceof Error ? err.message : err)
+        logger.error('達成touch失敗', err)
       })
     }
 
@@ -228,7 +237,7 @@ export async function deleteEntry(id: string): Promise<Result<void, EntryError>>
         getResult.value.user_id,
         id
       ).catch((err) => {
-        console.error('達成削除失敗:', err instanceof Error ? err.message : err)
+        logger.error('達成削除失敗', err)
       })
     }
 
