@@ -45,6 +45,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `architecture.md` - Featuresベースアーキテクチャ
 - `data-fetching.md` - TanStack Query、Supabaseクエリ
 - `security.md` - セキュリティ規約（認証、エラー処理）
+- `supabase.md` - Supabase操作、マイグレーション規約
+- `testing.md` - Jest・Playwright テスト規約
 - `skills-guide.md` - Skills活用ガイド
 - `mcp-guide.md` - MCP活用ガイド
 
@@ -120,6 +122,14 @@ queryKeys.entries.timeline(userId)
 // Result型（Railway Oriented Programming）
 import type { Result } from '@/lib/types/result'
 import { ok, err, isOk } from '@/lib/types/result'
+
+// エラーハンドリング（内部情報を隠蔽）
+import { createSafeError } from '@/lib/error-handler'
+return { ok: false, error: createSafeError('DB_ERROR', error) }
+
+// ロギング（本番でconsole.error禁止）
+import { logger } from '@/lib/logger'
+logger.error('処理失敗', error)
 ```
 
 ### 重要な設計原則
@@ -164,11 +174,45 @@ main ← develop ← feature/*, fix/*, refactor/*
 
 ## Skills & MCP
 
+スキルは `/skill-name` 形式で呼び出す。スキル名は **小文字・ハイフン区切り** で指定。
+
+### プロジェクトスキル一覧
+
+| カテゴリ | スキル名 | 用途 |
+|---------|----------|------|
+| **開発** | `/spec-full` | 新機能を仕様→実装→テストまで一括実行 |
+| | `/typescript-write` | TypeScript/JSコード実装 |
+| | `/typescript-review` | コードレビュー（読み取り専用） |
+| | `/frontend-design` | 高品質UIコンポーネント生成 |
+| **フレームワーク** | `/nextjs-app-router-patterns` | Next.js App Router パターン |
+| | `/react-state-management` | React状態管理（Zustand等） |
+| | `/tailwind-design-system` | Tailwindデザインシステム |
+| **テスト** | `/javascript-testing-patterns` | Jest/Vitest ユニットテスト |
+| | `/e2e-testing-patterns` | Playwright E2Eテスト |
+| | `/webapp-testing` | ブラウザ操作テスト |
+| **E2Eコマンド** | `/e2e:generate` | E2Eテスト生成 |
+| | `/e2e:verify` | 機能検証 |
+| | `/e2e:fix` | テスト失敗時の修正 |
+| **その他** | `/serena` | LSPベースコード理解 |
+| | `/accessibility-auditor` | WCAGアクセシビリティ監査 |
+| | `/seo-review` | SEO監査 |
+| | `/skill-writer` | 新規スキル作成ガイド |
+| | `/context-compression` | コンテキスト圧縮 |
+
+### MCP
+
 | ツール | 用途 |
 |--------|------|
-| **spec-full** | 新機能を仕様→実装→テストまで一括実行 |
-| **serena** | LSPベースのシンボル検索・リファクタリング |
-| **supabase MCP** | DB操作・スキーマ確認 |
-| **playwright-test MCP** | E2Eテスト実行・デバッグ |
+| **supabase** | DB操作・スキーマ確認 |
+| **playwright-test** | E2Eテスト実行・デバッグ |
+
+### よくある間違い
+
+| ❌ 間違い | ✅ 正しい |
+|-----------|-----------|
+| `/Writing` | `/typescript-write` |
+| `/review` | `/typescript-review` |
+| `/design` | `/frontend-design` |
+| `/test` | `/javascript-testing-patterns` または `/e2e:generate` |
 
 → 詳細: `.claude/rules/skills-guide.md`, `.claude/rules/mcp-guide.md`
