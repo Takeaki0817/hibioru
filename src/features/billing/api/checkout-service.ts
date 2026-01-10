@@ -77,12 +77,16 @@ export async function createCheckoutSession(
 
     // Stripe Customer取得または作成
     let customerId = subscription?.stripe_customer_id
+    console.log('[Checkout] Existing customerId:', customerId)
+
     if (!customerId) {
+      console.log('[Checkout] Creating new customer...')
       const customer = await stripe.customers.create({
         email: user.email,
         metadata: { supabase_user_id: user.id },
       })
       customerId = customer.id
+      console.log('[Checkout] New customerId:', customerId)
 
       // subscriptionsテーブル更新
       await supabase.from('subscriptions').upsert(
@@ -96,6 +100,7 @@ export async function createCheckoutSession(
       )
     }
 
+    console.log('[Checkout] Creating checkout session...')
     // Checkout Session作成
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
@@ -111,7 +116,10 @@ export async function createCheckoutSession(
       },
     })
 
+    console.log('[Checkout] Session created:', session.id, session.url)
+
     if (!session.url) {
+      console.log('[Checkout] ERROR: No session URL')
       return {
         ok: false,
         error: createSafeBillingError('STRIPE_ERROR'),
@@ -120,6 +128,7 @@ export async function createCheckoutSession(
 
     return { ok: true, value: { url: session.url } }
   } catch (error) {
+    console.log('[Checkout] CATCH ERROR:', error)
     return {
       ok: false,
       error: createSafeBillingError('STRIPE_ERROR', error),
