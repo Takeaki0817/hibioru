@@ -3,6 +3,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { transformToSignedUrls } from '@/lib/supabase/signed-url'
 import type { SocialFeedItem, SocialResult, SocialFeedResult, AchievementType } from '../types'
 import { SOCIAL_PAGINATION } from '../constants'
 
@@ -123,51 +124,63 @@ export async function getSocialFeed(cursor?: string): Promise<SocialResult<Socia
     const hasMore = filteredAchievements.length > SOCIAL_PAGINATION.FEED_PAGE_SIZE
     const items = filteredAchievements.slice(0, SOCIAL_PAGINATION.FEED_PAGE_SIZE)
 
-    const feedItems: SocialFeedItem[] = items.map((achievement) => {
-      const user = achievement.user as unknown as {
-        id: string
-        username: string
-        display_name: string
-        avatar_url: string | null
-      }
-      const entry = achievement.entry as unknown as {
-        id: string
-        content: string
-        image_urls: string[] | null
-      } | null
-      const celebrations = achievement.celebrations as unknown as {
-        id: string
-        from_user_id: string
-      }[]
+    // フィードアイテムを作成（署名付きURL変換を含む）
+    const feedItems: SocialFeedItem[] = await Promise.all(
+      items.map(async (achievement) => {
+        const user = achievement.user as unknown as {
+          id: string
+          username: string
+          display_name: string
+          avatar_url: string | null
+        }
+        const entry = achievement.entry as unknown as {
+          id: string
+          content: string
+          image_urls: string[] | null
+        } | null
+        const celebrations = achievement.celebrations as unknown as {
+          id: string
+          from_user_id: string
+        }[]
 
-      const isCelebrated = celebrations.some((c) => c.from_user_id === userData.user!.id)
+        const isCelebrated = celebrations.some((c) => c.from_user_id === userData.user!.id)
 
-      return {
-        id: achievement.id,
-        type: achievement.is_shared ? 'shared_entry' : 'achievement',
-        user: {
-          id: user.id,
-          username: user.username,
-          displayName: user.display_name,
-          avatarUrl: user.avatar_url,
-        },
-        achievement: {
-          type: achievement.type as AchievementType,
-          threshold: achievement.threshold,
-          value: achievement.value,
-        },
-        entry: entry
-          ? {
-              id: entry.id,
-              content: entry.content,
-              imageUrls: entry.image_urls,
-            }
-          : undefined,
-        celebrationCount: celebrations.length,
-        isCelebrated,
-        createdAt: achievement.created_at,
-      }
-    })
+        // 画像URLを署名付きURLに変換（他ユーザーの画像なのでサービスロールを使用）
+        const signedImageUrls = entry?.image_urls
+          ? await transformToSignedUrls(
+              entry.image_urls,
+              userData.user!.id,
+              achievement.user_id
+            )
+          : null
+
+        return {
+          id: achievement.id,
+          type: achievement.is_shared ? 'shared_entry' : 'achievement',
+          user: {
+            id: user.id,
+            username: user.username,
+            displayName: user.display_name,
+            avatarUrl: user.avatar_url,
+          },
+          achievement: {
+            type: achievement.type as AchievementType,
+            threshold: achievement.threshold,
+            value: achievement.value,
+          },
+          entry: entry
+            ? {
+                id: entry.id,
+                content: entry.content,
+                imageUrls: signedImageUrls,
+              }
+            : undefined,
+          celebrationCount: celebrations.length,
+          isCelebrated,
+          createdAt: achievement.created_at,
+        }
+      })
+    )
 
     return {
       ok: true,
