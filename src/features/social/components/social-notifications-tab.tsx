@@ -1,32 +1,20 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Bell, UserPlus } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { ListSkeleton } from '@/components/ui/list-skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 import { useSocialNotifications } from '../hooks/use-social-notifications'
 import { useSocialRealtime } from '../hooks/use-social-realtime'
 import { useFollowingIds } from '../hooks/use-following-ids'
+import { useCurrentUserId } from '../hooks/use-current-user-id'
 import { FollowButton } from './follow-button'
 import type { SocialNotificationItem } from '../types'
-import { ACHIEVEMENT_ICONS, ACHIEVEMENT_TYPE_LABELS, ANIMATION_CONFIG } from '../constants'
-import { createClient } from '@/lib/supabase/client'
+import { ACHIEVEMENT_ICONS, ACHIEVEMENT_TYPE_LABELS } from '../constants'
 import { getTimeAgo } from '@/lib/date-utils'
-
-const containerVariants = {
-  animate: {
-    transition: { staggerChildren: 0.03 },
-  },
-}
-
-const notificationVariants = {
-  initial: { opacity: 0, x: -10 },
-  animate: {
-    opacity: 1,
-    x: 0,
-    transition: ANIMATION_CONFIG.springDefault,
-  },
-}
+import { listContainerVariants, notificationItemVariants } from '@/lib/animations'
 
 /**
  * ソーシャル通知タブ
@@ -34,15 +22,8 @@ const notificationVariants = {
  * Supabase Realtimeで新着通知をリアルタイム受信
  */
 export function SocialNotificationsTab() {
-  const [currentUserId, setCurrentUserId] = useState<string | undefined>()
-
   // 現在のユーザーIDを取得
-  useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setCurrentUserId(user?.id)
-    })
-  }, [])
+  const { userId: currentUserId } = useCurrentUserId()
 
   // 通知取得
   const {
@@ -75,15 +56,19 @@ export function SocialNotificationsTab() {
     <div className="space-y-4">
       {/* 通知リスト */}
       {isLoading && notifications.length === 0 ? (
-        <NotificationsSkeleton />
+        <ListSkeleton variant="notification" />
       ) : notifications.length === 0 ? (
-        <EmptyNotificationsState />
+        <EmptyState
+          icon={Bell}
+          title="通知はありません"
+          description="フォロワーからのお祝いや新しいフォロワーの通知がここに表示されます"
+        />
       ) : (
         <motion.div
           role="list"
           aria-label="通知一覧"
           className="space-y-4"
-          variants={containerVariants}
+          variants={listContainerVariants}
           initial="initial"
           animate="animate"
         >
@@ -140,7 +125,7 @@ function NotificationItem({ notification, currentUserId, isFollowing }: Notifica
     <motion.div
       role="listitem"
       aria-label={`${notificationLabel}（${timeAgo}）`}
-      variants={notificationVariants}
+      variants={notificationItemVariants}
       initial="initial"
       animate="animate"
       className="p-4 rounded-xl border transition-all bg-card border-border"
@@ -206,42 +191,3 @@ function NotificationItem({ notification, currentUserId, isFollowing }: Notifica
   )
 }
 
-// 空状態
-function EmptyNotificationsState() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="text-center py-12"
-    >
-      <div className="size-16 mx-auto mb-4 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-        <Bell className="size-8 text-primary-400" />
-      </div>
-      <h3 className="font-medium text-lg mb-2">通知はありません</h3>
-      <p className="text-sm text-muted-foreground max-w-xs mx-auto">
-        フォロワーからのお祝いや新しいフォロワーの通知がここに表示されます
-      </p>
-    </motion.div>
-  )
-}
-
-// スケルトンローディング
-function NotificationsSkeleton() {
-  return (
-    <div role="status" aria-busy="true" aria-label="通知を読み込み中" className="space-y-4">
-      <span className="sr-only">通知を読み込み中...</span>
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="p-4 rounded-xl border border-border bg-card" aria-hidden="true">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="size-10 rounded-full bg-muted animate-pulse" />
-            <div className="space-y-2 flex-1">
-              <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-              <div className="h-3 w-32 bg-muted rounded animate-pulse" />
-            </div>
-          </div>
-          <div className="h-10 bg-muted rounded-lg animate-pulse" />
-        </div>
-      ))}
-    </div>
-  )
-}

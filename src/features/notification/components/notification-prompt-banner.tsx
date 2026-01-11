@@ -20,6 +20,9 @@ export function NotificationPromptBanner() {
     <AnimatePresence>
       {shouldShowPrompt && (
         <motion.div
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
           initial={{ y: 100, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 100, opacity: 0 }}
@@ -34,7 +37,7 @@ export function NotificationPromptBanner() {
           <div className="flex items-center gap-3">
             {/* アイコン */}
             <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-              <Bell className="w-6 h-6 text-primary-600 dark:text-primary-400" />
+              <Bell aria-hidden="true" className="w-6 h-6 text-primary-600 dark:text-primary-400" />
             </div>
 
             {/* テキスト */}
@@ -52,9 +55,10 @@ export function NotificationPromptBanner() {
               onClick={handleDismiss}
               className="flex-shrink-0 p-2 -m-2 text-muted-foreground hover:text-foreground transition-colors"
               aria-label="閉じる"
+              aria-busy={isLoading}
               disabled={isLoading}
             >
-              <X className="w-5 h-5" />
+              <X aria-hidden="true" className="w-5 h-5" />
             </button>
           </div>
 
@@ -73,6 +77,7 @@ export function NotificationPromptBanner() {
               size="sm"
               onClick={handleDismiss}
               className="flex-1"
+              aria-busy={isLoading}
               disabled={isLoading}
             >
               後で
@@ -82,9 +87,10 @@ export function NotificationPromptBanner() {
               size="sm"
               onClick={handleAllow}
               className="flex-1"
+              aria-busy={isLoading}
               disabled={isLoading}
             >
-              <Bell className="w-4 h-4" />
+              <Bell aria-hidden="true" className="w-4 h-4" />
               {isLoading ? '設定中...' : '許可する'}
             </MotionButton>
           </div>

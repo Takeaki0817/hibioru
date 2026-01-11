@@ -65,6 +65,96 @@ export async function GET() {
 
 ---
 
+## useEffect内での非同期処理
+
+### ESLint set-state-in-effect 対策
+
+useEffect内で直接setStateを呼ぶと、カスケードレンダーを引き起こす。
+
+```typescript
+// ❌ 悪い例: ESLintエラー（set-state-in-effect）
+function UserList() {
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    setIsLoading(true)  // ← NG: 直接setState
+    fetchUsers().then((data) => {
+      setUsers(data)
+      setIsLoading(false)
+    })
+  }, [])
+}
+
+// ✅ 良い例: 非同期関数を内部で定義
+function UserList() {
+  const [users, setUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    let isMounted = true
+
+    const fetchData = async () => {
+      const result = await fetchUsers()
+      if (!isMounted) return  // アンマウント後の更新を防止
+
+      if (result.ok) {
+        setUsers(result.value)
+      }
+      setIsLoading(false)
+    }
+
+    fetchData()
+    return () => { isMounted = false }
+  }, [])
+}
+```
+
+### ページネーションと初回フェッチの分離
+
+```typescript
+function PaginatedList() {
+  const [items, setItems] = useState<Item[]>([])
+  const [nextCursor, setNextCursor] = useState<string | null>(null)
+
+  // ページネーション用（明示的なカーソル引数）
+  const loadMore = useCallback(async (cursor: string) => {
+    const result = await fetchItems(cursor)
+    if (result.ok) {
+      setItems((prev) => [...prev, ...result.value.items])
+      setNextCursor(result.value.nextCursor)
+    }
+  }, [])
+
+  // 初回フェッチ用（useEffect + クリーンアップ）
+  useEffect(() => {
+    let isMounted = true
+    const fetchInitial = async () => {
+      const result = await fetchItems()
+      if (!isMounted) return
+      if (result.ok) {
+        setItems(result.value.items)
+        setNextCursor(result.value.nextCursor)
+      }
+    }
+    fetchInitial()
+    return () => { isMounted = false }
+  }, [])
+
+  // リトライ用（useCallback）
+  const retryFetch = useCallback(() => {
+    fetchItems().then((result) => {
+      if (result.ok) {
+        setItems(result.value.items)
+        setNextCursor(result.value.nextCursor)
+      }
+    })
+  }, [])
+}
+```
+
+---
+
 ## 状態管理: Zustand
 
 Props Drillingを避け、Zustandストアを使用。

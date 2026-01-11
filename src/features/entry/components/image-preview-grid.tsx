@@ -48,7 +48,7 @@ export function ImagePreviewGrid({
         <div key={`new-${index}`} className="relative size-20">
           <img
             src={img.previewUrl}
-            alt={`プレビュー ${index + 1}`}
+            alt={`添付画像 ${index + 1}件目のプレビュー`}
             className="size-20 rounded-lg object-cover"
           />
           <Button
@@ -60,7 +60,7 @@ export function ImagePreviewGrid({
             aria-label={`画像${index + 1}を削除`}
             className="absolute -top-2 -right-2 !size-6 rounded-full shadow-md"
           >
-            <X size={14} />
+            <X aria-hidden="true" size={14} />
           </Button>
         </div>
       ))}
@@ -72,7 +72,7 @@ export function ImagePreviewGrid({
           <div key={`existing-${index}`} className="relative size-20">
             <Image
               src={url}
-              alt={`既存画像 ${index + 1}`}
+              alt={`既存の添付画像 ${index + 1}件目`}
               width={80}
               height={80}
               className="size-20 rounded-lg object-cover"
@@ -87,7 +87,7 @@ export function ImagePreviewGrid({
                 aria-label={`画像${index + 1}の削除を取り消す`}
                 className="absolute inset-0 rounded-lg bg-black/60 flex items-center justify-center disabled:cursor-not-allowed h-auto p-0"
               >
-                <ImageOff size={24} className="text-accent-400" />
+                <ImageOff aria-hidden="true" size={24} className="text-accent-400" />
               </Button>
             ) : (
               // 削除ボタン
@@ -100,7 +100,7 @@ export function ImagePreviewGrid({
                 aria-label={`画像${index + 1}を削除`}
                 className="absolute -top-2 -right-2 !size-6 rounded-full shadow-md"
               >
-                <X size={14} />
+                <X aria-hidden="true" size={14} />
               </Button>
             )}
           </div>

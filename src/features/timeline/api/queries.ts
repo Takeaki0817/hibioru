@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/client'
 import { isoToJSTDateString } from '@/lib/date-utils'
+import { logger } from '@/lib/logger'
 import type { Entry } from '@/lib/types/database'
 import type { TimelinePage } from '../types'
 import { convertToTimelineEntry } from '../types'
@@ -108,7 +109,7 @@ export async function fetchCalendarData(
 
   // streaksのエラーはログのみ（エントリがあればカレンダー表示は可能）
   if (streaksResult.error) {
-    console.error('ストリーク取得失敗:', streaksResult.error.message)
+    logger.error('ストリーク取得失敗', streaksResult.error.message)
   }
 
   // 日付ごとにグループ化
@@ -167,7 +168,7 @@ export async function fetchAllEntryDates(
 
   // streaksのエラーはログのみ（エントリがあればカルーセル表示は可能）
   if (streaksResult.error) {
-    console.error('ストリーク取得失敗:', streaksResult.error.message)
+    logger.error('ストリーク取得失敗', streaksResult.error.message)
   }
 
   // 日付ごとにグループ化（重複除去）

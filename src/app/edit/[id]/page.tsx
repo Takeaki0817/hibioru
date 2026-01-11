@@ -1,9 +1,16 @@
+import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { getEntry } from '@/features/entry/api/service'
 import { isEditable } from '@/features/entry/utils'
 import { EditEntryClient } from './EditEntryClient'
 import { NotEditableClient } from './NotEditableClient'
+
+export const metadata: Metadata = {
+  title: '記録を編集 | ヒビオル',
+  description: 'ヒビオルの記録を編集します',
+  robots: { index: false }, // 編集ページはnoindex
+}
 
 export default async function EditEntryPage({
   params

@@ -131,3 +131,46 @@ const ListItem = memo(function ListItem({ item, onSelect }: Props) {
 - フィーチャー固有のエラー型（エラーコードが異なる）
 - 似ているが役割が異なるコンポーネント
 - 1箇所でしか使わないユーティリティ
+
+## 共通UIコンポーネント
+
+複数フィーチャーで繰り返し使用されるUIパターンは共通化する。
+
+### 作成済みコンポーネント
+
+| コンポーネント | 場所 | 用途 |
+|---------------|------|------|
+| `ListSkeleton` | `src/components/ui/list-skeleton.tsx` | リスト表示のローディングスケルトン |
+| `EmptyState` | `src/components/ui/empty-state.tsx` | 空状態の表示 |
+
+### 使用例
+
+```typescript
+// ListSkeleton - variantで表示形式を切り替え
+<ListSkeleton variant="user" count={5} />
+<ListSkeleton variant="feed" count={3} />
+<ListSkeleton variant="notification" count={5} />
+
+// EmptyState - アイコン・タイトル・説明をカスタマイズ
+<EmptyState
+  icon={Users}
+  title="まだ誰もフォローしていません"
+  description="ユーザーを検索してフォローしてみましょう"
+/>
+```
+
+## 責務分離の実績
+
+2025年1月リファクタリングでの分割実績：
+
+| コンポーネント | Before | After | 削減率 | 主な分離先 |
+|---------------|--------|-------|--------|-----------|
+| `timeline-list.tsx` | 520行 | 279行 | 46% | `use-timeline-grouping.ts`, `use-initial-scroll.ts` |
+| `social-feed-tab.tsx` | 367行 | 111行 | 70% | `use-feed-entries.ts`, `use-achievement-realtime.ts` |
+| `entry-form.tsx` | 406行 | 322行 | 21% | `ImageUploadSection.tsx` |
+
+### 分離判断の目安
+
+- **300行超**: 責務の見直しを検討
+- **400行超**: カスタムフックへの分離を検討
+- **500行超**: 必ず分離（保守性が著しく低下するため）

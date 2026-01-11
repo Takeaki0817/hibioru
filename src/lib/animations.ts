@@ -180,3 +180,36 @@ export const tabSlideTransition: Transition = {
   stiffness: 300,
   damping: 30,
 }
+
+// === リストアイテム（フィード・通知用） ===
+// フィードアイテム: 上からフェードイン
+export const feedItemVariants: Variants = {
+  initial: { opacity: 0, y: 10 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: springs.subtle,
+  },
+  exit: {
+    opacity: 0,
+    y: -10,
+    transition: { duration: 0.2 },
+  },
+}
+
+// 通知アイテム: 左からスライドイン
+export const notificationItemVariants: Variants = {
+  initial: { opacity: 0, x: -10 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: springs.subtle,
+  },
+}
+
+// リストコンテナ: 子要素を順次表示
+export const listContainerVariants: Variants = {
+  animate: {
+    transition: { staggerChildren: 0.03 },
+  },
+}

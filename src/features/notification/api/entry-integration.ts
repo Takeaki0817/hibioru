@@ -8,6 +8,8 @@
  * タスク13.1の実装
  */
 
+import type { Result } from '@/lib/types/result';
+import { ok, err } from '@/lib/types/result';
 import { updateEntryRecorded } from './log';
 import { cancelFollowUps } from './followup';
 
@@ -40,12 +42,6 @@ export type EntryIntegrationError =
   | { type: 'VALIDATION_ERROR'; message: string }
   | { type: 'UNEXPECTED_ERROR'; message: string };
 
-/**
- * Result型
- */
-export type Result<T, E> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
 
 /**
  * 入力のバリデーション
@@ -94,7 +90,7 @@ export async function handleEntryCreated(
   // 入力バリデーション
   const validationError = validateEvent(event);
   if (validationError) {
-    return { ok: false, error: validationError };
+    return err(validationError);
   }
 
   try {
@@ -117,21 +113,15 @@ export async function handleEntryCreated(
     ]);
 
     // 各処理の結果を返す
-    return {
-      ok: true,
-      value: {
-        logUpdated: logResult.ok,
-        followUpsCancelled: cancelResult.ok,
-      },
-    };
+    return ok({
+      logUpdated: logResult.ok,
+      followUpsCancelled: cancelResult.ok,
+    });
   } catch (error) {
     // 予期せぬ例外
-    return {
-      ok: false,
-      error: {
-        type: 'UNEXPECTED_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
-    };
+    return err({
+      type: 'UNEXPECTED_ERROR',
+      message: error instanceof Error ? error.message : '不明なエラー',
+    });
   }
 }

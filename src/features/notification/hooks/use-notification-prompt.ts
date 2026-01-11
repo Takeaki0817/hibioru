@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useNotificationPermission } from './use-notification-permission'
 import { usePushSubscription } from './use-push-subscription'
 import { useAuthStore } from '@/features/auth/stores/auth-store'
+import { logger } from '@/lib/logger'
 
 interface UseNotificationPromptReturn {
   /** プロンプトを表示すべきか */
@@ -126,7 +127,7 @@ export function useNotificationPrompt(): UseNotificationPromptReturn {
 
       setPromptShown(true)
     } catch (err) {
-      console.error('通知設定の更新に失敗:', err)
+      logger.error('通知設定の更新に失敗', err)
     }
   }, [user])
 

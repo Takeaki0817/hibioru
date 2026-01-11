@@ -5,10 +5,7 @@ import { useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { getSocialNotifications } from '../api/notifications'
 import type { SocialNotificationItem } from '../types'
-
-// キャッシュ設定
-const NOTIFICATIONS_STALE_TIME = 5 * 60 * 1000 // 5分
-const NOTIFICATIONS_GC_TIME = 10 * 60 * 1000 // 10分
+import { SOCIAL_QUERY_CONFIG } from '../constants'
 
 /**
  * ソーシャル通知のデータ取得とキャッシュ操作
@@ -45,8 +42,8 @@ export function useSocialNotifications(): UseSocialNotificationsReturn {
       },
       getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
       initialPageParam: undefined as string | undefined,
-      staleTime: NOTIFICATIONS_STALE_TIME,
-      gcTime: NOTIFICATIONS_GC_TIME,
+      staleTime: SOCIAL_QUERY_CONFIG.notifications.staleTime,
+      gcTime: SOCIAL_QUERY_CONFIG.notifications.gcTime,
     })
 
   // ページをフラット化して通知リストを取得

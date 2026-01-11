@@ -3,6 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { createClient } from '@/lib/supabase/client'
 import { queryKeys } from '@/lib/constants/query-keys'
+import { logger } from '@/lib/logger'
 
 // 再レンダリング時の不要な配列生成を防ぐ
 const EMPTY_ARRAY: string[] = []
@@ -42,7 +43,7 @@ export function useFollowingIds(): UseFollowingIdsReturn {
         .eq('follower_id', user.id)
 
       if (error) {
-        console.error('フォロー中ユーザーの取得に失敗:', error.message)
+        logger.error('フォロー中ユーザーの取得に失敗', error.message)
         return []
       }
 
