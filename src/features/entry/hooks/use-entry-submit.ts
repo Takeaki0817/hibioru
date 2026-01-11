@@ -106,15 +106,22 @@ export function useEntrySubmit({
         const imageUrls = buildImageUrls(uploadedUrls)
 
         // エントリ作成/更新
-        const result =
-          mode === 'create'
-            ? await createEntry({ content, imageUrls, isShared })
-            : await updateEntry({
-                id: initialEntry!.id,
-                content,
-                imageUrls,
-                isShared,
-              })
+        let result
+        if (mode === 'create') {
+          result = await createEntry({ content, imageUrls, isShared })
+        } else if (initialEntry) {
+          // mode === 'edit' かつ initialEntry が存在（上記早期リターンで保証）
+          result = await updateEntry({
+            id: initialEntry.id,
+            content,
+            imageUrls,
+            isShared,
+          })
+        } else {
+          // TypeScript の型絞り込み用（実際には到達しない）
+          submitError('編集対象のエントリーが見つかりません')
+          return
+        }
 
         if (result.serverError) {
           submitError(result.serverError)
