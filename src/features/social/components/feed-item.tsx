@@ -10,24 +10,7 @@ import type { SocialFeedItem } from '../types'
 import { ACHIEVEMENT_ICONS, getAchievementMessage } from '../constants'
 import { cn } from '@/lib/utils'
 import { getTimeAgo } from '@/lib/date-utils'
-import { feedItemVariants } from '@/lib/animations'
-
-// パーティクルアニメーション設定
-const particleVariants = {
-  initial: { scale: 0, opacity: 1, rotate: 0 },
-  animate: (custom: { angle: number; distance: number; delay: number }) => ({
-    scale: [0, 1.8, 0],
-    opacity: [1, 1, 0],
-    rotate: [0, 220],
-    x: Math.cos((custom.angle * Math.PI) / 180) * custom.distance,
-    y: Math.sin((custom.angle * Math.PI) / 180) * custom.distance,
-    transition: {
-      duration: 0.4,
-      ease: 'easeInOut' as const,
-      delay: custom.delay * 0.5,
-    },
-  }),
-}
+import { feedItemVariants, particleVariants } from '@/lib/animations'
 
 export interface FeedItemProps {
   item: SocialFeedItem

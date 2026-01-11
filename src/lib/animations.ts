@@ -213,3 +213,28 @@ export const listContainerVariants: Variants = {
     transition: { staggerChildren: 0.03 },
   },
 }
+
+// === パーティクル系バリアント（お祝いエフェクト用） ===
+// カスタムパラメータの型定義
+export interface ParticleAnimationConfig {
+  angle: number
+  distance: number
+  delay: number
+}
+
+// パーティクルアニメーション: 放射状に広がるエフェクト
+export const particleVariants = {
+  initial: { scale: 0, opacity: 1, rotate: 0 },
+  animate: (custom: ParticleAnimationConfig) => ({
+    scale: [0, 1.8, 0],
+    opacity: [1, 1, 0],
+    rotate: [0, 220],
+    x: Math.cos((custom.angle * Math.PI) / 180) * custom.distance,
+    y: Math.sin((custom.angle * Math.PI) / 180) * custom.distance,
+    transition: {
+      duration: 0.4,
+      ease: 'easeInOut' as const,
+      delay: custom.delay * 0.5,
+    },
+  }),
+}
