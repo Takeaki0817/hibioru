@@ -37,9 +37,13 @@ export function useNotificationPrompt(): UseNotificationPromptReturn {
   useEffect(() => {
     if (!user || !isInitialized) return
 
+    let isMounted = true
+
     const fetchSettings = async () => {
       try {
         const response = await fetch('/api/notification/settings')
+        if (!isMounted) return
+
         if (response.ok) {
           const data = await response.json()
           setPromptShown(data.notification_prompt_shown ?? false)
@@ -48,11 +52,17 @@ export function useNotificationPrompt(): UseNotificationPromptReturn {
           setPromptShown(false)
         }
       } catch {
-        setPromptShown(false)
+        if (isMounted) {
+          setPromptShown(false)
+        }
       }
     }
 
     fetchSettings()
+
+    return () => {
+      isMounted = false
+    }
   }, [user, isInitialized])
 
   // 通知設定を更新
