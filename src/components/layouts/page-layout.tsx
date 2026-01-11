@@ -30,7 +30,7 @@ export function PageLayout({
       {header}
 
       {wrapWithMain ? (
-        <main className={cn('flex-1 overflow-auto', mainClassName)}>
+        <main id="main-content" className={cn('flex-1 overflow-auto', mainClassName)}>
           {children}
         </main>
       ) : (
