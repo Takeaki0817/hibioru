@@ -51,6 +51,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `testing.md` | Jest・Playwright テスト | `**/*.test.ts`, `e2e/**` |
 | `refactoring.md` | 責務分離、共通化基準 | （ガイド） |
 | `architecture.md` | Featuresベースアーキテクチャ | （ガイド） |
+| `achievements.md` | アチーブメント閾値変更・バックフィル | `src/features/social/constants.ts` |
+| `ui-components.md` | 共通UIコンポーネント規約 | `src/components/ui/**` |
 
 → `paths`指定ありのファイルは該当ファイル編集時に自動適用される
 
@@ -70,7 +72,7 @@ pnpm test                           # ユニットテスト（Jest）
 pnpm test:watch                     # ウォッチモード
 pnpm test:coverage                  # カバレッジ付き
 pnpm test -- path/to/file           # 単一ファイル実行
-pnpm test -- --testPathPattern=name # パターンマッチ実行
+pnpm test -- --testPathPatterns="name" # パターンマッチ実行
 pnpm exec playwright test           # E2Eテスト
 pnpm exec playwright test --ui      # E2E UIモード（デバッグ用）
 
