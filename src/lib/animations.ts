@@ -180,3 +180,61 @@ export const tabSlideTransition: Transition = {
   stiffness: 300,
   damping: 30,
 }
+
+// === リストアイテム（フィード・通知用） ===
+// フィードアイテム: 上からフェードイン
+export const feedItemVariants: Variants = {
+  initial: { opacity: 0, y: 10 },
+  animate: {
+    opacity: 1,
+    y: 0,
+    transition: springs.subtle,
+  },
+  exit: {
+    opacity: 0,
+    y: -10,
+    transition: { duration: 0.2 },
+  },
+}
+
+// 通知アイテム: 左からスライドイン
+export const notificationItemVariants: Variants = {
+  initial: { opacity: 0, x: -10 },
+  animate: {
+    opacity: 1,
+    x: 0,
+    transition: springs.subtle,
+  },
+}
+
+// リストコンテナ: 子要素を順次表示
+export const listContainerVariants: Variants = {
+  animate: {
+    transition: { staggerChildren: 0.03 },
+  },
+}
+
+// === パーティクル系バリアント（お祝いエフェクト用） ===
+// カスタムパラメータの型定義
+export interface ParticleAnimationConfig {
+  angle: number
+  distance: number
+  delay: number
+}
+
+// パーティクルアニメーション: 放射状に広がるエフェクト
+export const particleVariants = {
+  initial: { scale: 0, opacity: 1, rotate: 0 },
+  animate: (custom: ParticleAnimationConfig) => ({
+    scale: [0, 1.8, 0],
+    opacity: [1, 1, 0],
+    rotate: [0, 220],
+    x: Math.cos((custom.angle * Math.PI) / 180) * custom.distance,
+    y: Math.sin((custom.angle * Math.PI) / 180) * custom.distance,
+    transition: {
+      duration: 0.4,
+      ease: 'easeInOut' as const,
+      delay: custom.delay * 0.5,
+    },
+  }),
+}

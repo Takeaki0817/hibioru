@@ -30,6 +30,14 @@ export const metadata: Metadata = {
     description:
       'ADHDの開発者が20年の挫折を経て作った、絵文字1つから始められる記録アプリ。',
     type: 'website',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'ヒビオル - ADHD当事者のための瞬間記録アプリ',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',

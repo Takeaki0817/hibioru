@@ -41,14 +41,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 主要なrulesファイル
 
-- `react-patterns.md` - Server/Client Components、Next.js最適化
-- `architecture.md` - Featuresベースアーキテクチャ
-- `data-fetching.md` - TanStack Query、Supabaseクエリ
-- `security.md` - セキュリティ規約（認証、エラー処理）
-- `supabase.md` - Supabase操作、マイグレーション規約
-- `testing.md` - Jest・Playwright テスト規約
-- `skills-guide.md` - Skills活用ガイド
-- `mcp-guide.md` - MCP活用ガイド
+| ファイル | 用途 | 自動適用 |
+|---------|------|---------|
+| `react-patterns.md` | Server/Client Components、useEffect非同期パターン | `src/**/*.tsx` |
+| `coding-standards.md` | TypeScript規約、命名規則 | `src/**/*.{ts,tsx}` |
+| `data-fetching.md` | TanStack Query、Supabaseクエリ | `src/**/api/**` |
+| `security.md` | 認証、エラー処理、ログ出力 | `src/**/*.{ts,tsx}` |
+| `supabase.md` | Supabase操作、マイグレーション | `supabase/**/*` |
+| `testing.md` | Jest・Playwright テスト | `**/*.test.ts`, `e2e/**` |
+| `refactoring.md` | 責務分離、共通化基準 | （ガイド） |
+| `architecture.md` | Featuresベースアーキテクチャ | （ガイド） |
+
+→ `paths`指定ありのファイルは該当ファイル編集時に自動適用される
 
 ---
 
@@ -137,8 +141,9 @@ logger.error('処理失敗', error)
 - **バレルファイル禁止**: `index.ts` は使用せず直接インポート
 - **Server Components優先**: `'use client'` はインタラクティブな部分のみ
 - **dynamic export禁止**: `export const dynamic = 'force-dynamic'` は使用しない
+- **責務分離**: 300行超で見直し、400行超でフック分離、500行超は必ず分離
 
-→ 詳細: `.claude/rules/react-patterns.md`
+→ 詳細: `.claude/rules/react-patterns.md`, `.claude/rules/refactoring.md`
 
 ---
 
@@ -176,52 +181,24 @@ main ← develop ← feature/*, fix/*, refactor/*
 
 スキルは `/skill-name` 形式で呼び出す。スキル名は **小文字・ハイフン区切り** で指定。
 
-### プロジェクトスキル一覧
+### 主要スキル
 
-| カテゴリ | スキル名 | 用途 |
-|---------|----------|------|
-| **開発** | `/spec-full` | 新機能を仕様→実装→テストまで一括実行 |
-| | `/typescript-write` | TypeScript/JSコード実装 |
-| | `/typescript-review` | コードレビュー（読み取り専用） |
-| | `/frontend-design` | 高品質UIコンポーネント生成 |
-| **フレームワーク** | `/nextjs-app-router-patterns` | Next.js App Router パターン |
-| | `/react-state-management` | React状態管理（Zustand等） |
-| | `/tailwind-design-system` | Tailwindデザインシステム |
-| **テスト** | `/javascript-testing-patterns` | Jest/Vitest ユニットテスト |
-| | `/e2e-testing-patterns` | Playwright E2Eテスト |
-| | `/webapp-testing` | ブラウザ操作テスト |
-| **E2Eコマンド** | `/e2e:generate` | E2Eテスト生成 |
-| | `/e2e:verify` | 機能検証 |
-| | `/e2e:fix` | テスト失敗時の修正 |
-| **その他** | `/serena` | LSPベースコード理解 |
-| | `/accessibility-auditor` | WCAGアクセシビリティ監査 |
-| | `/seo-review` | SEO監査 |
-| | `/skill-writer` | 新規スキル作成ガイド |
-| | `/context-compression` | コンテキスト圧縮 |
+| 用途 | スキル名 |
+|------|----------|
+| 新機能開発 | `/spec-full` |
+| コード実装 | `/typescript-write` |
+| コードレビュー | `/typescript-review` |
+| UI生成 | `/frontend-design` |
+| E2Eテスト | `/e2e:generate`, `/e2e:verify`, `/e2e:fix` |
+| コード理解 | `/serena`（LSPベース） |
 
-### MCP
+### 主要MCP
 
 | ツール | 用途 |
 |--------|------|
 | **supabase** | DB操作・スキーマ確認 |
 | **playwright-test** | E2Eテスト実行・デバッグ |
 | **context7** | ライブラリ最新ドキュメント検索 |
-
-### context7 使用例
-
-```bash
-# 1. ライブラリIDを解決
-mcp__context7__resolve-library-id --libraryName "next.js" --query "Server Components"
-
-# 2. ドキュメント検索
-mcp__context7__query-docs --libraryId "/vercel/next.js" --query "How to use Server Components"
-```
-
-**主なライブラリID**:
-- `/vercel/next.js` - Next.js
-- `/supabase/supabase` - Supabase
-- `/tanstack/query` - TanStack Query
-- `/tailwindlabs/tailwindcss` - Tailwind CSS
 
 ### よくある間違い
 
@@ -230,6 +207,5 @@ mcp__context7__query-docs --libraryId "/vercel/next.js" --query "How to use Serv
 | `/Writing` | `/typescript-write` |
 | `/review` | `/typescript-review` |
 | `/design` | `/frontend-design` |
-| `/test` | `/javascript-testing-patterns` または `/e2e:generate` |
 
 → 詳細: `.claude/rules/skills-guide.md`, `.claude/rules/mcp-guide.md`
