@@ -269,7 +269,7 @@ function LoginContent() {
               <Link
                 href="/docs/terms"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="external noopener noreferrer"
                 className="underline underline-offset-2 hover:text-foreground transition-colors"
               >
                 利用規約
@@ -278,7 +278,7 @@ function LoginContent() {
               <Link
                 href="/docs/privacy"
                 target="_blank"
-                rel="noopener noreferrer"
+                rel="external noopener noreferrer"
                 className="underline underline-offset-2 hover:text-foreground transition-colors"
               >
                 プライバシーポリシー
