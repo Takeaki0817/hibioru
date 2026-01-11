@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect } from 'react'
+import { useMemo } from 'react'
 import { motion } from 'framer-motion'
 import { Users, UserPlus, AlertCircle, RefreshCw } from 'lucide-react'
 import {
@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { ListSkeleton } from '@/components/ui/list-skeleton'
 import { EmptyState } from '@/components/ui/empty-state'
 import { getFollowingList, getFollowerList } from '../api/follows'
+import { useFollowList } from '../hooks/use-follow-list'
 import { FollowButton } from './follow-button'
 import { ANIMATION_CONFIG, ERROR_MESSAGES } from '../constants'
 import type { PublicUserInfo } from '../types'
@@ -85,71 +86,17 @@ export function FollowListContent({
  * フォロー中ユーザーリスト
  */
 function FollowingList() {
-  const [users, setUsers] = useState<PublicUserInfo[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [hasMore, setHasMore] = useState(false)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const loadMore = useCallback(async (cursor: string) => {
-    setIsLoading(true)
-    const result = await getFollowingList(cursor)
-    setIsLoading(false)
-
-    if (result.ok) {
-      setUsers((prev) => [...prev, ...result.value.items])
-      setNextCursor(result.value.nextCursor)
-      setHasMore(!!result.value.nextCursor)
-    } else {
-      setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
-    }
-  }, [])
-
-  // マウント時に初回データを取得
-  useEffect(() => {
-    let isMounted = true
-    const fetchInitial = async () => {
-      const result = await getFollowingList()
-      if (!isMounted) return
-      setIsLoading(false)
-      if (result.ok) {
-        setUsers(result.value.items)
-        setNextCursor(result.value.nextCursor)
-        setHasMore(!!result.value.nextCursor)
-      } else {
-        setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
-      }
-    }
-    fetchInitial()
-    return () => { isMounted = false }
-  }, [])
-
-  const retryFetch = useCallback(() => {
-    setError(null)
-    setIsLoading(true)
-    getFollowingList().then((result) => {
-      setIsLoading(false)
-      if (result.ok) {
-        setUsers(result.value.items)
-        setNextCursor(result.value.nextCursor)
-        setHasMore(!!result.value.nextCursor)
-      } else {
-        setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
-      }
-    })
-  }, [])
+  // fetchFn を安定化（再レンダー時に同じ参照を維持）
+  const fetchFn = useMemo(() => getFollowingList, [])
+  const { users, isLoading, hasMore, nextCursor, error, loadMore, retryFetch } =
+    useFollowList({ fetchFn })
 
   if (isLoading && users.length === 0) {
     return <ListSkeleton variant="user" count={5} />
   }
 
   if (error && users.length === 0) {
-    return (
-      <ErrorState
-        message={error}
-        onRetry={retryFetch}
-      />
-    )
+    return <ErrorState message={error} onRetry={retryFetch} />
   }
 
   if (users.length === 0) {
@@ -195,71 +142,17 @@ function FollowingList() {
  * フォロワーリスト
  */
 function FollowerList() {
-  const [users, setUsers] = useState<PublicUserInfo[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [hasMore, setHasMore] = useState(false)
-  const [nextCursor, setNextCursor] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-
-  const loadMore = useCallback(async (cursor: string) => {
-    setIsLoading(true)
-    const result = await getFollowerList(cursor)
-    setIsLoading(false)
-
-    if (result.ok) {
-      setUsers((prev) => [...prev, ...result.value.items])
-      setNextCursor(result.value.nextCursor)
-      setHasMore(!!result.value.nextCursor)
-    } else {
-      setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
-    }
-  }, [])
-
-  // マウント時に初回データを取得
-  useEffect(() => {
-    let isMounted = true
-    const fetchInitial = async () => {
-      const result = await getFollowerList()
-      if (!isMounted) return
-      setIsLoading(false)
-      if (result.ok) {
-        setUsers(result.value.items)
-        setNextCursor(result.value.nextCursor)
-        setHasMore(!!result.value.nextCursor)
-      } else {
-        setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
-      }
-    }
-    fetchInitial()
-    return () => { isMounted = false }
-  }, [])
-
-  const retryFetch = useCallback(() => {
-    setError(null)
-    setIsLoading(true)
-    getFollowerList().then((result) => {
-      setIsLoading(false)
-      if (result.ok) {
-        setUsers(result.value.items)
-        setNextCursor(result.value.nextCursor)
-        setHasMore(!!result.value.nextCursor)
-      } else {
-        setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
-      }
-    })
-  }, [])
+  // fetchFn を安定化（再レンダー時に同じ参照を維持）
+  const fetchFn = useMemo(() => getFollowerList, [])
+  const { users, isLoading, hasMore, nextCursor, error, loadMore, retryFetch } =
+    useFollowList({ fetchFn })
 
   if (isLoading && users.length === 0) {
     return <ListSkeleton variant="user" count={5} />
   }
 
   if (error && users.length === 0) {
-    return (
-      <ErrorState
-        message={error}
-        onRetry={retryFetch}
-      />
-    )
+    return <ErrorState message={error} onRetry={retryFetch} />
   }
 
   if (users.length === 0) {
