@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion } from 'framer-motion'
-import { Users, UserPlus } from 'lucide-react'
+import { Users, UserPlus, AlertCircle, RefreshCw } from 'lucide-react'
 import {
   SheetHeader,
   SheetTitle,
@@ -11,11 +11,12 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import { ListSkeleton } from '@/components/ui/list-skeleton'
+import { EmptyState } from '@/components/ui/empty-state'
 import { getFollowingList, getFollowerList } from '../api/follows'
 import { FollowButton } from './follow-button'
 import { ANIMATION_CONFIG, ERROR_MESSAGES } from '../constants'
 import type { PublicUserInfo } from '../types'
-import { AlertCircle, RefreshCw } from 'lucide-react'
 
 const containerVariants = {
   animate: {
@@ -90,25 +91,13 @@ function FollowingList() {
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // 初回データ取得（useEffectなしで直接fetchを開始）
-  const [fetchStarted, setFetchStarted] = useState(false)
-
-  const loadUsers = useCallback(async (cursor?: string) => {
-    // 追加読み込み時のみ明示的にローディング設定（初回は既にtrue）
-    if (cursor) {
-      setIsLoading(true)
-    }
+  const loadMore = useCallback(async (cursor: string) => {
+    setIsLoading(true)
     const result = await getFollowingList(cursor)
-    // 非同期コールバック内でのstate更新はOK
-    setError(null)
     setIsLoading(false)
 
     if (result.ok) {
-      if (cursor) {
-        setUsers((prev) => [...prev, ...result.value.items])
-      } else {
-        setUsers(result.value.items)
-      }
+      setUsers((prev) => [...prev, ...result.value.items])
       setNextCursor(result.value.nextCursor)
       setHasMore(!!result.value.nextCursor)
     } else {
@@ -116,28 +105,56 @@ function FollowingList() {
     }
   }, [])
 
-  // 初回のみfetchを開始（レンダー中にstate更新を行い、非同期処理を開始）
-  if (!fetchStarted) {
-    setFetchStarted(true)
-    loadUsers()
-  }
+  // マウント時に初回データを取得
+  useEffect(() => {
+    let isMounted = true
+    const fetchInitial = async () => {
+      const result = await getFollowingList()
+      if (!isMounted) return
+      setIsLoading(false)
+      if (result.ok) {
+        setUsers(result.value.items)
+        setNextCursor(result.value.nextCursor)
+        setHasMore(!!result.value.nextCursor)
+      } else {
+        setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
+      }
+    }
+    fetchInitial()
+    return () => { isMounted = false }
+  }, [])
+
+  const retryFetch = useCallback(() => {
+    setError(null)
+    setIsLoading(true)
+    getFollowingList().then((result) => {
+      setIsLoading(false)
+      if (result.ok) {
+        setUsers(result.value.items)
+        setNextCursor(result.value.nextCursor)
+        setHasMore(!!result.value.nextCursor)
+      } else {
+        setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
+      }
+    })
+  }, [])
 
   if (isLoading && users.length === 0) {
-    return <ListSkeleton />
+    return <ListSkeleton variant="user" count={5} />
   }
 
   if (error && users.length === 0) {
     return (
       <ErrorState
         message={error}
-        onRetry={() => loadUsers()}
+        onRetry={retryFetch}
       />
     )
   }
 
   if (users.length === 0) {
     return (
-      <EmptyListState
+      <EmptyState
         icon={Users}
         title="まだ誰もフォローしていません"
         description="ユーザーを検索してフォローしてみましょう"
@@ -158,11 +175,11 @@ function FollowingList() {
         <UserListItem key={user.id} user={user} showFollowButton={true} />
       ))}
 
-      {hasMore && (
+      {hasMore && nextCursor && (
         <Button
           variant="ghost"
           className="w-full"
-          onClick={() => loadUsers(nextCursor ?? undefined)}
+          onClick={() => loadMore(nextCursor)}
           disabled={isLoading}
           aria-label="さらにフォロー中のユーザーを読み込む"
           aria-busy={isLoading}
@@ -184,25 +201,13 @@ function FollowerList() {
   const [nextCursor, setNextCursor] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  // 初回データ取得（useEffectなしで直接fetchを開始）
-  const [fetchStarted, setFetchStarted] = useState(false)
-
-  const loadUsers = useCallback(async (cursor?: string) => {
-    // 追加読み込み時のみ明示的にローディング設定（初回は既にtrue）
-    if (cursor) {
-      setIsLoading(true)
-    }
+  const loadMore = useCallback(async (cursor: string) => {
+    setIsLoading(true)
     const result = await getFollowerList(cursor)
-    // 非同期コールバック内でのstate更新はOK
-    setError(null)
     setIsLoading(false)
 
     if (result.ok) {
-      if (cursor) {
-        setUsers((prev) => [...prev, ...result.value.items])
-      } else {
-        setUsers(result.value.items)
-      }
+      setUsers((prev) => [...prev, ...result.value.items])
       setNextCursor(result.value.nextCursor)
       setHasMore(!!result.value.nextCursor)
     } else {
@@ -210,28 +215,56 @@ function FollowerList() {
     }
   }, [])
 
-  // 初回のみfetchを開始（レンダー中にstate更新を行い、非同期処理を開始）
-  if (!fetchStarted) {
-    setFetchStarted(true)
-    loadUsers()
-  }
+  // マウント時に初回データを取得
+  useEffect(() => {
+    let isMounted = true
+    const fetchInitial = async () => {
+      const result = await getFollowerList()
+      if (!isMounted) return
+      setIsLoading(false)
+      if (result.ok) {
+        setUsers(result.value.items)
+        setNextCursor(result.value.nextCursor)
+        setHasMore(!!result.value.nextCursor)
+      } else {
+        setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
+      }
+    }
+    fetchInitial()
+    return () => { isMounted = false }
+  }, [])
+
+  const retryFetch = useCallback(() => {
+    setError(null)
+    setIsLoading(true)
+    getFollowerList().then((result) => {
+      setIsLoading(false)
+      if (result.ok) {
+        setUsers(result.value.items)
+        setNextCursor(result.value.nextCursor)
+        setHasMore(!!result.value.nextCursor)
+      } else {
+        setError(result.error?.message ?? ERROR_MESSAGES.FOLLOW_LIST_LOAD_FAILED)
+      }
+    })
+  }, [])
 
   if (isLoading && users.length === 0) {
-    return <ListSkeleton />
+    return <ListSkeleton variant="user" count={5} />
   }
 
   if (error && users.length === 0) {
     return (
       <ErrorState
         message={error}
-        onRetry={() => loadUsers()}
+        onRetry={retryFetch}
       />
     )
   }
 
   if (users.length === 0) {
     return (
-      <EmptyListState
+      <EmptyState
         icon={UserPlus}
         title="まだフォロワーはいません"
         description="記録を続けてフォロワーを増やしましょう"
@@ -252,11 +285,11 @@ function FollowerList() {
         <UserListItem key={user.id} user={user} showFollowButton={true} />
       ))}
 
-      {hasMore && (
+      {hasMore && nextCursor && (
         <Button
           variant="ghost"
           className="w-full"
-          onClick={() => loadUsers(nextCursor ?? undefined)}
+          onClick={() => loadMore(nextCursor)}
           disabled={isLoading}
           aria-label="さらにフォロワーを読み込む"
           aria-busy={isLoading}
@@ -298,48 +331,6 @@ function UserListItem({ user, showFollowButton }: UserListItemProps) {
       </div>
 
       {showFollowButton && <FollowButton userId={user.id} username={user.displayName} />}
-    </motion.div>
-  )
-}
-
-// スケルトンローディング
-function ListSkeleton() {
-  return (
-    <div role="status" aria-busy="true" aria-label="ユーザーリストを読み込み中" className="space-y-2">
-      <span className="sr-only">ユーザーリストを読み込み中...</span>
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex items-center gap-3 p-4 rounded-xl border border-border bg-card" aria-hidden="true">
-          <div className="size-10 rounded-full bg-muted animate-pulse" />
-          <div className="flex-1 space-y-2">
-            <div className="h-4 w-24 bg-muted rounded animate-pulse" />
-            <div className="h-3 w-16 bg-muted rounded animate-pulse" />
-          </div>
-          <div className="h-8 w-24 bg-muted rounded-md animate-pulse" />
-        </div>
-      ))}
-    </div>
-  )
-}
-
-// 空状態
-interface EmptyListStateProps {
-  icon: typeof Users
-  title: string
-  description: string
-}
-
-function EmptyListState({ icon: Icon, title, description }: EmptyListStateProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="text-center py-12"
-    >
-      <div className="size-16 mx-auto mb-4 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-        <Icon className="size-8 text-primary-400" />
-      </div>
-      <h3 className="font-medium text-lg mb-2">{title}</h3>
-      <p className="text-sm text-muted-foreground">{description}</p>
     </motion.div>
   )
 }
