@@ -4,8 +4,6 @@ import { setupTestSession, TEST_USER, waitForPageLoad } from './fixtures/test-he
 /**
  * Realtime更新のE2Eテスト
  *
- * PR #36 検証チェックリスト 3.2 Realtime更新の検証
- *
  * 技術的制約:
  * - WebSocketの直接テストは困難
  * - 複数ユーザーが必要なテスト（達成リアルタイム受信など）は現時点ではスキップ

@@ -3,10 +3,11 @@ import { setupTestSession, TEST_USER, waitForPageLoad } from './fixtures/test-he
 
 /**
  * SEOのE2Eテスト
- * PR #36 検証チェックリスト対象項目:
- * - 6.1.1: 編集ページnoindex → robots: noindexが設定
- * - 6.1.2: OGP画像 → og:imageが正しく設定
- * - 6.1.3: 外部リンク → rel="external noopener noreferrer"
+ *
+ * 検証項目:
+ * - 編集ページnoindex → robots: noindexが設定
+ * - OGP画像 → og:imageが正しく設定
+ * - 外部リンク → rel="external noopener noreferrer"
  */
 
 // ========================================

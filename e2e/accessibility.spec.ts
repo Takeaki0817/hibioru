@@ -3,13 +3,14 @@ import { setupTestSession, TEST_USER, waitForPageLoad } from './fixtures/test-he
 
 /**
  * アクセシビリティのE2Eテスト
- * PR #36 検証チェックリスト対象項目:
- * - 5.1.1: 装飾的アイコン → aria-hidden="true"
- * - 5.1.2: ローディング状態 → aria-busy="true"
- * - 5.1.3: トグル状態 → aria-pressed
- * - 5.1.4: 画像alt → 詳細なalt属性
- * - 5.2.1: キーボード送信 → Cmd+Enter / Ctrl+Enter
- * - 5.2.2: フォーカス管理 → Tabキー順序
+ *
+ * 検証項目:
+ * - 装飾的アイコン → aria-hidden="true"
+ * - ローディング状態 → aria-busy="true"
+ * - トグル状態 → aria-pressed
+ * - 画像alt → 詳細なalt属性
+ * - キーボード送信 → Cmd+Enter / Ctrl+Enter
+ * - フォーカス管理 → Tabキー順序
  */
 
 // ========================================
