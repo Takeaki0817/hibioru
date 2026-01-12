@@ -83,3 +83,23 @@ export async function getE2EMockUser(): Promise<MockUser | null> {
   }
   return null
 }
+
+/**
+ * 認証済みユーザーを取得
+ * E2Eテストモードの場合はモックユーザーを優先、それ以外はSupabase認証を使用
+ * @param supabase Supabaseクライアント
+ * @returns ユーザーオブジェクトまたはnull
+ */
+export async function getAuthenticatedUser(
+  supabase: { auth: { getUser: () => Promise<{ data: { user: unknown } }> } }
+): Promise<MockUser | null> {
+  // E2Eテストモードの場合はモックユーザーを優先
+  const mockUser = await getE2EMockUser()
+  if (mockUser) {
+    return mockUser
+  }
+
+  // 通常のSupabase認証
+  const { data } = await supabase.auth.getUser()
+  return data.user as MockUser | null
+}

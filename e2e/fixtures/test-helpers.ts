@@ -20,82 +20,22 @@ const SUPABASE_ANON_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
 
 /**
- * Supabase REST APIを使用してログインし、セッションを設定
- * Node.js側でAPIを呼び出し、結果をブラウザに注入する
+ * E2Eテストモードの認証バイパスを使用してセッションを設定
+ * setExtraHTTPHeaders でリクエストに Cookie ヘッダーを追加
+ * （middleware.ts と src/lib/supabase/e2e-auth.ts を利用）
  */
-export async function setupTestSession(page: Page, _userId?: string) {
-  // Node.js側でSupabase REST APIを呼び出してログイン
-  const loginResponse = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=password`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      apikey: SUPABASE_ANON_KEY,
-      Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({
-      email: TEST_USER.email,
-      password: TEST_USER.password,
-    }),
+export async function setupTestSession(page: Page, userId?: string) {
+  const testUserId = userId || TEST_USER.id
+
+  // ブラウザコンテキストに Cookie ヘッダーを設定
+  // すべてのリクエストに e2e-test-user-id Cookie が追加される
+  await page.setExtraHTTPHeaders({
+    cookie: `e2e-test-user-id=${testUserId}`,
   })
 
-  if (!loginResponse.ok) {
-    const errorData = await loginResponse.json()
-    throw new Error(`ログイン失敗: ${errorData.error_description || errorData.msg || 'Unknown error'}`)
-  }
-
-  const data = await loginResponse.json()
-  const { access_token, refresh_token, user, expires_in } = data
-
-  // セッションデータを構築
-  const sessionData = {
-    access_token,
-    refresh_token,
-    token_type: 'bearer',
-    expires_in,
-    expires_at: Math.floor(Date.now() / 1000) + expires_in,
-    user,
-  }
-
-  // ページに遷移してセッションを設定
-  await page.goto('/')
+  // 保護されたページに遷移
+  await page.goto('/timeline', { waitUntil: 'networkidle' })
   await waitForPageLoad(page)
-
-  // localStorageにセッションを保存
-  await page.evaluate(
-    ({ sessionData }) => {
-      const storageKey = 'sb-127-auth-token'
-      localStorage.setItem(storageKey, JSON.stringify(sessionData))
-    },
-    { sessionData }
-  )
-
-  // Cookieにもセッションを設定（@supabase/ssrが使用）
-  // Supabase SSRはデフォルトでJSONをそのまま保存（base64urlはオプション）
-  // 大きな値はチャンク化される（.0, .1, .2...）
-  const sessionJson = JSON.stringify(sessionData)
-
-  // チャンクサイズは約3180バイト
-  const CHUNK_SIZE = 3180
-  const chunks: string[] = []
-  for (let i = 0; i < sessionJson.length; i += CHUNK_SIZE) {
-    chunks.push(sessionJson.slice(i, i + CHUNK_SIZE))
-  }
-
-  // チャンク化されたCookieを設定
-  const cookies = chunks.map((chunk, index) => ({
-    name: index === 0 && chunks.length === 1 ? 'sb-127-auth-token' : `sb-127-auth-token.${index}`,
-    value: chunk,
-    domain: 'localhost',
-    path: '/',
-    httpOnly: false,
-    secure: false,
-    sameSite: 'Lax' as const,
-  }))
-
-  await page.context().addCookies(cookies)
-
-  // セッションを反映するため再遷移（reloadより安定）
-  await page.goto('/', { waitUntil: 'networkidle' })
 }
 
 /**

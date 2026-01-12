@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getAuthenticatedUser } from '@/lib/supabase/e2e-auth'
 import { TimelineClient } from './TimelineClient'
 import type { Entry } from '@/lib/types/database'
 
@@ -27,23 +28,21 @@ export default async function TimelinePage({
   const supabase = await createClient()
   const { today, tomorrow } = getTodayRange()
 
-  // 認証チェックと今日のエントリ取得を並列実行（パフォーマンス最適化）
+  // 認証チェック（E2Eテストモードではモックユーザーを使用）
+  const user = await getAuthenticatedUser(supabase)
+  if (!user) {
+    redirect('/')
+  }
+
+  // 今日のエントリを取得
   // RLSにより、entriesクエリは認証ユーザーのデータのみ返される
-  const userPromise = supabase.auth.getUser()
-  const entriesPromise = supabase
+  const entriesResult = await supabase
     .from('entries')
     .select('id, user_id, content, image_urls, created_at')
     .eq('is_deleted', false)
     .gte('created_at', today.toISOString())
     .lt('created_at', tomorrow.toISOString())
     .order('created_at', { ascending: false })
-
-  const [userResult, entriesResult] = await Promise.all([userPromise, entriesPromise])
-
-  const user = userResult.data.user
-  if (!user) {
-    redirect('/')
-  }
 
   // エントリ取得エラーはログのみ（空リストで続行可能）
   if (entriesResult.error) {
