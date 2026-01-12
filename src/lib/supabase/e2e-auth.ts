@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { cookies } from 'next/headers'
+import type { User } from '@supabase/supabase-js'
 
 /**
  * E2Eテスト環境用の認証ヘルパー
@@ -23,17 +24,18 @@ interface MockUser {
   created_at: string
 }
 
+/** 認証済みユーザーの型（MockUserまたはSupabase User） */
+export type AuthenticatedUser = MockUser | User
+
 /**
  * E2Eテストモードかどうかを判定
- * 開発環境でも有効にすることでE2Eテスト実行を容易にする
+ * playwright.config.ts の webServer.env で E2E_TEST_MODE=true が設定される
  * @returns {boolean} E2Eテストモードの場合true
  */
 export function isE2ETestMode(): boolean {
-  return (
-    process.env.NODE_ENV === 'test' ||
-    process.env.NODE_ENV === 'development' ||
-    process.env.E2E_TEST_MODE === 'true'
-  )
+  // セキュリティ: 明示的な環境変数でのみ有効化
+  // NODE_ENV === 'development' は含めない（開発環境での意図しない認証バイパスを防止）
+  return process.env.E2E_TEST_MODE === 'true'
 }
 
 /**
@@ -91,8 +93,8 @@ export async function getE2EMockUser(): Promise<MockUser | null> {
  * @returns ユーザーオブジェクトまたはnull
  */
 export async function getAuthenticatedUser(
-  supabase: { auth: { getUser: () => Promise<{ data: { user: unknown } }> } }
-): Promise<MockUser | null> {
+  supabase: { auth: { getUser: () => Promise<{ data: { user: User | null } }> } }
+): Promise<AuthenticatedUser | null> {
   // E2Eテストモードの場合はモックユーザーを優先
   const mockUser = await getE2EMockUser()
   if (mockUser) {
@@ -101,5 +103,5 @@ export async function getAuthenticatedUser(
 
   // 通常のSupabase認証
   const { data } = await supabase.auth.getUser()
-  return data.user as MockUser | null
+  return data.user
 }

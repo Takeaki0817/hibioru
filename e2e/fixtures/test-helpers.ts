@@ -398,3 +398,50 @@ export async function waitForPlansPage(page: Page) {
 // ============================================
 // DB検証やWebhookテストで使用するヘルパーはstripe-helpers.tsからインポート
 // 例: import { getSubscription, getBonusHotsure } from './fixtures/stripe-helpers'
+
+// ============================================
+// waitForTimeout代替ヘルパー
+// ============================================
+
+/**
+ * API応答を待機（waitForTimeoutの代替）
+ * @param page Playwrightページ
+ * @param urlPattern 待機するAPIのURLパターン（文字列または正規表現）
+ * @param options オプション設定
+ */
+export async function waitForApiResponse(
+  page: Page,
+  urlPattern: string | RegExp,
+  options?: { timeout?: number; statusCode?: number }
+) {
+  const timeout = options?.timeout ?? 10000
+  const expectedStatus = options?.statusCode ?? 200
+
+  return page.waitForResponse(
+    (response) => {
+      const matches =
+        typeof urlPattern === 'string'
+          ? response.url().includes(urlPattern)
+          : urlPattern.test(response.url())
+      return matches && response.status() === expectedStatus
+    },
+    { timeout }
+  )
+}
+
+/**
+ * 要素が表示されるまで待機（waitForTimeoutの代替）
+ * @param page Playwrightページ
+ * @param selector CSSセレクタ
+ * @param options オプション設定
+ */
+export async function waitForElement(
+  page: Page,
+  selector: string,
+  options?: { timeout?: number; state?: 'visible' | 'hidden' | 'attached' | 'detached' }
+) {
+  const timeout = options?.timeout ?? 10000
+  const state = options?.state ?? 'visible'
+
+  await page.waitForSelector(selector, { state, timeout })
+}
