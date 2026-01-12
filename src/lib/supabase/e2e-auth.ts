@@ -2,11 +2,47 @@ import 'server-only'
 
 import { cookies } from 'next/headers'
 import type { User } from '@supabase/supabase-js'
+import { logger } from '@/lib/logger'
 
 /**
  * E2Eテスト環境用の認証ヘルパー
  * テスト環境でのみ有効なモックユーザーを返す
+ *
+ * ## セキュリティ境界
+ *
+ * 1. E2E_TEST_MODE=true が明示的に設定された場合のみ有効
+ *    - playwright.config.ts の webServer.env でのみ設定される
+ *    - 本番環境では絶対に設定しないこと
+ *
+ * 2. NODE_ENV=development は意図的に除外
+ *    - 開発環境での意図しない認証バイパスを防止
+ *
+ * 3. 許可されたテストユーザーIDのみ受け入れ（ホワイトリスト検証）
+ *    - ALLOWED_TEST_USER_IDS に含まれるUUIDのみ有効
+ *    - 不正なUUIDはnullを返しログに記録
+ *
+ * 4. RLSポリシーによる二重防御
+ *    - auth.uid() はJWTトークンから取得されるため、
+ *      cookieの値だけではRLSをバイパスできない
  */
+
+/**
+ * E2Eテストで使用を許可されたユーザーID
+ * test-helpers.ts の TEST_USERS と同期を保つこと
+ */
+export const ALLOWED_TEST_USER_IDS = [
+  // 基本テストユーザー
+  '00000000-0000-0000-0000-000000000001', // PRIMARY
+  '00000000-0000-0000-0000-000000000002', // SECONDARY
+  // Billingテストユーザー
+  '00000000-0000-4000-8000-000000000001', // BILLING_FREE
+  '00000000-0000-4000-8000-000000000002', // BILLING_PREMIUM
+  '00000000-0000-4000-8000-000000000003', // BILLING_CANCELED
+  // Hotsure自動化テストユーザー
+  '00000000-0000-4000-8000-000000000010', // HOTSURE_TEST
+  '00000000-0000-4000-8000-000000000011', // CONCURRENT_1
+  '00000000-0000-4000-8000-000000000012', // CONCURRENT_2
+] as const
 
 interface MockUser {
   id: string
@@ -40,7 +76,8 @@ export function isE2ETestMode(): boolean {
 
 /**
  * E2EテストユーザーIDをCookieから取得
- * @returns {Promise<string | undefined>} テストユーザーID
+ * セキュリティ: ホワイトリストに含まれるIDのみ有効
+ * @returns {Promise<string | undefined>} テストユーザーID（無効な場合はundefined）
  */
 export async function getE2ETestUserId(): Promise<string | undefined> {
   if (!isE2ETestMode()) {
@@ -48,7 +85,19 @@ export async function getE2ETestUserId(): Promise<string | undefined> {
   }
 
   const cookieStore = await cookies()
-  return cookieStore.get('e2e-test-user-id')?.value
+  const testUserId = cookieStore.get('e2e-test-user-id')?.value
+
+  if (!testUserId) {
+    return undefined
+  }
+
+  // ホワイトリスト検証: 許可されたテストユーザーIDのみ受け入れ
+  if (!ALLOWED_TEST_USER_IDS.includes(testUserId as typeof ALLOWED_TEST_USER_IDS[number])) {
+    logger.warn('Invalid E2E test user ID attempted', { testUserId })
+    return undefined
+  }
+
+  return testUserId
 }
 
 /**

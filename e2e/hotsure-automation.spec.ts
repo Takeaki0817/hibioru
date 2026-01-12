@@ -26,8 +26,12 @@ import { createTestStreak } from './fixtures/stripe-helpers'
  * - Next.js開発サーバー起動
  */
 
-// ローカルSupabaseの設定
-const LOCAL_SUPABASE_SERVICE_ROLE_KEY =
+/**
+ * ローカルSupabase開発用キー（supabase-demo発行の公開キー）
+ * - issuer: "supabase-demo" - Supabase公式のデモ/ローカル開発用
+ * - 本番環境では SUPABASE_SERVICE_ROLE_KEY 環境変数を使用すること
+ */
+const SUPABASE_LOCAL_DEMO_SERVICE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
 
 // テストユーザーID
@@ -45,7 +49,7 @@ const CONCURRENT_TEST_USERS = [
 // Supabase Admin Client
 function getSupabaseAdmin() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321'
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || LOCAL_SUPABASE_SERVICE_ROLE_KEY
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_LOCAL_DEMO_SERVICE_KEY
   return createClient<Database>(supabaseUrl, supabaseServiceKey)
 }
 

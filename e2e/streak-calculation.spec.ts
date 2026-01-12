@@ -24,12 +24,19 @@ import { setupTestSession, TEST_USER, waitForPageLoad } from './fixtures/test-he
 
 // ローカルSupabaseの設定
 const SUPABASE_URL = 'http://127.0.0.1:54321'
-const SUPABASE_SERVICE_ROLE_KEY =
+
+/**
+ * ローカルSupabase開発用キー（supabase-demo発行の公開キー）
+ * - issuer: "supabase-demo" - Supabase公式のデモ/ローカル開発用
+ * - 本番環境では SUPABASE_SERVICE_ROLE_KEY 環境変数を使用すること
+ */
+const SUPABASE_LOCAL_DEMO_SERVICE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU'
 
 // テスト用Supabase Admin Client
 function getSupabaseAdmin() {
-  return createClient<Database>(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || SUPABASE_LOCAL_DEMO_SERVICE_KEY
+  return createClient<Database>(SUPABASE_URL, serviceKey)
 }
 
 // JST日付取得（YYYY-MM-DD形式）

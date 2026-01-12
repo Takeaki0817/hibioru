@@ -4,20 +4,34 @@ import type { LimitsResponse } from '../../src/features/billing/types'
 /**
  * E2Eテスト用ヘルパー関数
  * 認証やデータセットアップのユーティリティを提供
+ *
+ * セキュリティ: TEST_USERS に定義されたユーザーIDのみ使用可能
+ * e2e-auth.ts の ALLOWED_TEST_USER_IDS と同期を保つこと
  */
 
-// テストユーザー情報（DBに登録済みの開発ユーザーを使用）
-export const TEST_USER = {
-  id: '00000000-0000-0000-0000-000000000001',
-  email: 'dev@example.com',
-  password: 'dev-password',
-  displayName: '開発テストユーザー',
-}
+/**
+ * E2Eテストで使用を許可されたユーザー
+ * 型安全性のため、定数として定義
+ */
+export const TEST_USERS = {
+  /** プライマリテストユーザー（基本的なテストで使用） */
+  PRIMARY: {
+    id: '00000000-0000-0000-0000-000000000001',
+    email: 'dev@example.com',
+    password: 'dev-password',
+    displayName: '開発テストユーザー',
+  },
+  /** セカンダリテストユーザー（フォロー等の相互作用テストで使用） */
+  SECONDARY: {
+    id: '00000000-0000-0000-0000-000000000002',
+    email: 'dev2@example.com',
+    password: 'dev-password',
+    displayName: '開発テストユーザー2',
+  },
+} as const
 
-// ローカルSupabaseの設定
-const SUPABASE_URL = 'http://127.0.0.1:54321'
-const SUPABASE_ANON_KEY =
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0'
+/** @deprecated TEST_USERS.PRIMARY を使用してください */
+export const TEST_USER = TEST_USERS.PRIMARY
 
 /**
  * E2Eテストモードの認証バイパスを使用してセッションを設定
