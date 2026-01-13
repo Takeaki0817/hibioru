@@ -2,14 +2,23 @@
 
 import { motion, AnimatePresence } from 'framer-motion'
 import { cva } from 'class-variance-authority'
+import dynamic from 'next/dynamic'
 import { FeatureCard } from '@/components/ui/feature-card'
-import {
-  flameVariants,
-  numberHighlightVariants,
-  recordHighlightVariants,
-} from '@/lib/animations'
+import { numberHighlightVariants, recordHighlightVariants } from '@/lib/animations'
 import { WeeklyRecordDots } from './weekly-record-dots'
 import { LongestStreakCard } from './longest-streak-card'
+import { FlameAnimationFallback } from './flame-animation-fallback'
+import { useFlameIntensity } from '../hooks/use-flame-intensity'
+import { useReducedMotion } from '../hooks/use-reduced-motion'
+
+// Riveアニメーションは動的インポート（SSR無効化）
+const FlameAnimation = dynamic(
+  () => import('./flame-animation').then((mod) => mod.FlameAnimation),
+  {
+    ssr: false,
+    loading: () => <FlameAnimationFallback />,
+  }
+)
 
 interface StreakDisplayProps {
   currentStreak: number
@@ -48,6 +57,12 @@ export function StreakDisplay({
   // 今日の曜日（0=月曜日）
   const todayIndex = (new Date().getDay() + 6) % 7
 
+  // Riveアニメーション用の強度計算
+  const { scale, shouldExplode } = useFlameIntensity(currentStreak, longestStreak)
+
+  // アクセシビリティ: 視覚効果を減らす設定
+  const prefersReducedMotion = useReducedMotion()
+
   return (
     <FeatureCard title="継続記録">
       {/* ストリーク0日の場合の励ましメッセージ */}
@@ -80,15 +95,18 @@ export function StreakDisplay({
             )}
 
             <div className="relative flex items-center justify-center flex-col">
-              {/* 炎アイコン */}
-              <motion.span
-                className="text-5xl mb-2"
-                variants={flameVariants}
-                animate="animate"
-                aria-hidden="true"
-              >
-                🔥
-              </motion.span>
+              {/* 炎アニメーション */}
+              <div className="w-32 h-32">
+                {prefersReducedMotion ? (
+                  <FlameAnimationFallback />
+                ) : (
+                  <FlameAnimation
+                    scale={scale}
+                    triggerExplosion={shouldExplode}
+                    className="w-full h-full"
+                  />
+                )}
+              </div>
 
               {/* ストリーク数字 */}
               <AnimatePresence mode="wait">

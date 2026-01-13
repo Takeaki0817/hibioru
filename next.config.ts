@@ -49,6 +49,7 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-dialog',
       '@radix-ui/react-popover',
       '@radix-ui/react-dropdown-menu',
+      '@rive-app/react-canvas',
     ],
     // Turbopack ファイルシステムキャッシュ（開発時のコンパイル高速化）
     turbopackFileSystemCacheForDev: true,
@@ -99,7 +100,8 @@ const nextConfig: NextConfig = {
               "img-src 'self' data: https: blob:",
               "font-src 'self' https://fonts.gstatic.com data:",
               // 開発環境ではローカルSupabase（127.0.0.1:54321）への接続を許可
-              `connect-src 'self' https://*.supabase.co https://api.stripe.com wss://*.supabase.co${process.env.NODE_ENV === 'development' ? ' http://127.0.0.1:54321 ws://127.0.0.1:54321' : ''}`,
+              // Rive WASM: unpkg.com, cdn.jsdelivr.net を許可
+              `connect-src 'self' https://*.supabase.co https://api.stripe.com wss://*.supabase.co https://unpkg.com https://cdn.jsdelivr.net${process.env.NODE_ENV === 'development' ? ' http://127.0.0.1:54321 ws://127.0.0.1:54321' : ''}`,
               "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
               "object-src 'none'",
               "base-uri 'self'",
