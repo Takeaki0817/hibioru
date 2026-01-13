@@ -1,0 +1,28 @@
+# ヒビオル
+
+> ADHD当事者のための瞬間記録アプリ。「続かない」を終わりにする。絵文字1つから始められる日記アプリで、Duolingo式の継続支援機能を搭載。
+
+## サービス概要
+
+- [ランディングページ](https://hibioru.app/lp): サービス紹介・機能説明
+- [使い方ガイド](https://hibioru.app/docs/guide): 基本的な使い方
+- [用語集](https://hibioru.app/docs/glossary): ヒビオル独自の用語解説
+- [FAQ](https://hibioru.app/docs/faq): よくある質問
+
+## 主要機能
+
+- ストリーク: 毎日記録で継続日数をカウント
+- ほつれ: 週2回使える救済スキップ機能
+- 通知: 最大5つの時刻でリマインド
+- ソーシャル: DM・フォロワー数非表示のストレスフリーSNS
+
+## ドキュメント
+
+- [プライバシーポリシー](https://hibioru.app/docs/privacy)
+- [利用規約](https://hibioru.app/docs/terms)
+- [更新履歴](https://hibioru.app/docs/changelog)
+- [ロードマップ](https://hibioru.app/docs/roadmap)
+
+## 詳細情報
+
+- [llms-full.txt](https://hibioru.app/llms-full.txt): 完全版ドキュメント
