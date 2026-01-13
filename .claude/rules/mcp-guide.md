@@ -1,3 +1,8 @@
+---
+paths:
+  - ".mcp.json"
+---
+
 # MCP 活用ガイド
 
 `.mcp.json` に定義されたMCPサーバーが利用可能です。
@@ -225,6 +230,49 @@ mcp__gcloud__run_gcloud_command --command "projects list"
 
 ---
 
+### context7
+
+**用途**: ライブラリ・フレームワークの最新ドキュメント検索
+
+**主なツール**:
+| ツール | 用途 |
+|--------|------|
+| `resolve-library-id` | ライブラリ名からContext7 IDを取得 |
+| `query-docs` | ドキュメント・コード例を検索 |
+
+**使用例**:
+```bash
+# Step 1: ライブラリIDを取得
+mcp__context7__resolve-library-id --libraryName "next.js" --query "app router data fetching"
+# → libraryId: "/vercel/next.js" を取得
+
+# Step 2: ドキュメントを検索
+mcp__context7__query-docs --libraryId "/vercel/next.js" --query "server actions best practices"
+```
+
+**よく使うライブラリID**:
+| ライブラリ | ID |
+|-----------|-----|
+| Next.js | `/vercel/next.js` |
+| React | `/facebook/react` |
+| TanStack Query | `/tanstack/query` |
+| Supabase | `/supabase/supabase` |
+| Tailwind CSS | `/tailwindlabs/tailwindcss` |
+| shadcn/ui | `/shadcn-ui/ui` |
+| Zustand | `/pmndrs/zustand` |
+| Playwright | `/microsoft/playwright` |
+
+**使用場面**:
+- 新しいAPIの使い方を調べたい
+- ライブラリのベストプラクティスを確認したい
+- 公式ドキュメントの最新情報が必要な場合
+
+**注意**:
+- 1つの質問につき最大3回までの呼び出しを推奨
+- まず `resolve-library-id` でIDを取得してから `query-docs` を使用
+
+---
+
 ## MCP選択フローチャート
 
 ```
@@ -235,6 +283,8 @@ mcp__gcloud__run_gcloud_command --command "projects list"
     ├─ コードを理解したい
     │   ├─ シンボル単位で検索 → serena
     │   └─ テキスト検索 → Grep（ripgrep）
+    │
+    ├─ ライブラリの使い方を調べたい → context7
     │
     ├─ テストを実行したい
     │   ├─ E2Eテスト → playwright-test

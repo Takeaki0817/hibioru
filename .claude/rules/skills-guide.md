@@ -1,3 +1,9 @@
+---
+paths:
+  - ".claude/skills/**/*"
+  - ".claude/commands/**/*"
+---
+
 # Skills 活用ガイド
 
 プロジェクト固有のスキルが `.claude/skills/` に定義されています。

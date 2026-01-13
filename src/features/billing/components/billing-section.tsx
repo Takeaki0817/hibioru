@@ -79,18 +79,16 @@ export function BillingSection() {
 
         {/* 現在のプラン表示 */}
         <div className="p-4 bg-muted/50 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">現在のプラン</span>
-              <Badge variant={isPremium ? 'default' : 'secondary'} data-testid="current-plan-badge">
-                {PLAN_INFO[planType].name}
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="text-sm text-muted-foreground">現在のプラン</span>
+            <Badge variant={isPremium ? 'default' : 'secondary'} data-testid="current-plan-badge">
+              {PLAN_INFO[planType].name}
+            </Badge>
+            {isCanceledButActive && (
+              <Badge variant="outline" className="text-orange-600 border-orange-300">
+                キャンセル済み
               </Badge>
-              {isCanceledButActive && (
-                <Badge variant="outline" className="text-orange-600 border-orange-300">
-                  キャンセル済み
-                </Badge>
-              )}
-            </div>
+            )}
           </div>
 
           {/* キャンセル済みで期限内の場合は有効期限を表示 */}
@@ -155,10 +153,10 @@ export function BillingSection() {
 
         {/* ほつれ購入セクション */}
         <div className="border-t pt-4">
-          <div className="flex items-center justify-between">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0 flex-1">
               <h4 className="text-sm font-medium flex items-center gap-2">
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-4 w-4 flex-shrink-0" />
                 ほつれを追加購入
               </h4>
               <p className="text-xs text-muted-foreground mt-1">
@@ -175,6 +173,7 @@ export function BillingSection() {
               size="sm"
               onClick={handleHotsurePurchase}
               disabled={isLoading || !canPurchaseHotsure}
+              className="self-start sm:self-center flex-shrink-0"
               data-testid="purchase-hotsure-btn"
             >
               {canPurchaseHotsure ? '購入' : '上限'}
