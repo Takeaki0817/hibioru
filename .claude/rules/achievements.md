@@ -1,6 +1,10 @@
-# アチーブメント運用規約
+---
+paths:
+  - "src/features/social/constants.ts"
+  - "scripts/backfill-*.ts"
+---
 
-globs: src/features/social/constants.ts, scripts/backfill-*.ts
+# アチーブメント運用規約
 
 ## 閾値変更時の注意
 
