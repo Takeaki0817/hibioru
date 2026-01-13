@@ -107,7 +107,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // 静的ファイル、APIルート、PWA関連ファイルを除外
-    '/((?!_next/static|_next/image|api/|favicon.ico|manifest\\.webmanifest|sw\\.js|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
+    // 静的ファイル、APIルート、PWA関連ファイル、SEO関連ファイルを除外
+    '/((?!_next/static|_next/image|api/|favicon.ico|manifest\\.webmanifest|sw\\.js|robots\\.txt|sitemap\\.xml|llms\\.txt|llms-full\\.txt|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)$).*)',
   ],
 }
