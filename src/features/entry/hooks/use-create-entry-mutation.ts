@@ -244,6 +244,22 @@ export function useCreateEntryMutation({
 
                 if (optimisticIndex !== -1) {
                   // 楽観的エントリが見つかった場合、置換
+                  // ただし、既に同じIDのエントリが存在する場合は、楽観的エントリを削除するだけ
+                  const existingIndex = page.entries.findIndex(
+                    (entry) => entry.id === actualEntry.id && entry.id !== context?.optimisticId
+                  )
+
+                  if (existingIndex !== -1) {
+                    // 既に同じIDのエントリが存在する場合、楽観的エントリを削除するだけ
+                    return {
+                      ...page,
+                      entries: page.entries.filter(
+                        (entry) => entry.id !== context?.optimisticId
+                      ),
+                    }
+                  }
+
+                  // 楽観的エントリを実際のエントリに置換
                   return {
                     ...page,
                     entries: page.entries.map((entry) =>
@@ -264,7 +280,7 @@ export function useCreateEntryMutation({
                       entries: [actualEntry, ...page.entries],
                     }
                   }
-                  // 実際のエントリが既に存在する場合、そのまま返す
+                  // 実際のエントリが既に存在する場合、そのまま返す（重複を防ぐ）
                 }
               }
               return page
