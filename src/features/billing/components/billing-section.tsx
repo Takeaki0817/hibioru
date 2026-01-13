@@ -40,10 +40,10 @@ export function BillingSection() {
 
     const result = await createPortalSession()
 
-    if (result.ok) {
-      window.location.href = result.value.url
+    if (result.data) {
+      window.location.href = result.data.url
     } else {
-      setError(result.error.message)
+      setError(result.serverError ?? 'エラーが発生しました')
       setIsLoading(false)
     }
   }
@@ -54,10 +54,10 @@ export function BillingSection() {
 
     const result = await createHotsureCheckoutSession()
 
-    if (result.ok) {
-      window.location.href = result.value.url
+    if (result.data) {
+      window.location.href = result.data.url
     } else {
-      setError(result.error.message)
+      setError(result.serverError ?? 'エラーが発生しました')
       setIsLoading(false)
     }
   }

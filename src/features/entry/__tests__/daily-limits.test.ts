@@ -8,9 +8,8 @@ import {
   getDailyImageCount,
   checkDailyEntryLimit,
   checkDailyImageLimit,
-  DAILY_ENTRY_LIMIT,
-  DAILY_IMAGE_LIMIT
 } from '../api/daily-limits'
+import { DAILY_ENTRY_LIMIT, DAILY_IMAGE_LIMIT } from '../constants'
 import { createClient } from '@/lib/supabase/server'
 
 // モック設定
@@ -40,8 +39,8 @@ describe('daily-limits', () => {
   })
 
   describe('定数の確認', () => {
-    it('投稿上限は20件であること', () => {
-      expect(DAILY_ENTRY_LIMIT).toBe(20)
+    it('投稿上限は15件であること（無料プラン）', () => {
+      expect(DAILY_ENTRY_LIMIT).toBe(15)
     })
 
     it('画像上限は5枚であること', () => {
@@ -88,13 +87,13 @@ describe('daily-limits', () => {
       if (result.ok) {
         expect(result.value.allowed).toBe(true)
         expect(result.value.current).toBe(5)
-        expect(result.value.limit).toBe(20)
-        expect(result.value.remaining).toBe(15)
+        expect(result.value.limit).toBe(15)
+        expect(result.value.remaining).toBe(10)
       }
     })
 
     it('上限到達時はallowed=falseを返すこと', async () => {
-      const mockClient = createChainMock({ count: 20, error: null })
+      const mockClient = createChainMock({ count: 15, error: null })
       mockCreateClient.mockResolvedValue(mockClient)
 
       const result = await checkDailyEntryLimit(mockUserId)
@@ -102,7 +101,7 @@ describe('daily-limits', () => {
       expect(result.ok).toBe(true)
       if (result.ok) {
         expect(result.value.allowed).toBe(false)
-        expect(result.value.current).toBe(20)
+        expect(result.value.current).toBe(15)
         expect(result.value.remaining).toBe(0)
       }
     })

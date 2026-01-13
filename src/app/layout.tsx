@@ -7,6 +7,7 @@ import { QueryProvider } from "@/components/providers/QueryProvider";
 import { ServiceWorkerRegistration } from "@/components/ServiceWorkerRegistration";
 import { InstallBanner } from "@/components/pwa/InstallBanner";
 import { SkipLink } from "@/components/ui/skip-link";
+import { Toaster } from "sonner";
 import { APP_CONFIG, ICON_CONFIG } from "@/lib/constants/app-config";
 
 const mPlusRounded1c = M_PLUS_Rounded_1c({
@@ -71,6 +72,7 @@ export default function RootLayout({
           </QueryProvider>
           <ServiceWorkerRegistration />
           <InstallBanner />
+          <Toaster position="top-center" richColors closeButton />
         </ThemeProvider>
       </body>
     </html>

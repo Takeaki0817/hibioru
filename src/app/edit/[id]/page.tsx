@@ -1,9 +1,17 @@
+import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/e2e-auth'
 import { getEntry } from '@/features/entry/api/service'
 import { isEditable } from '@/features/entry/utils'
 import { EditEntryClient } from './EditEntryClient'
 import { NotEditableClient } from './NotEditableClient'
+
+export const metadata: Metadata = {
+  title: '記録を編集 | ヒビオル',
+  description: 'ヒビオルの記録を編集します',
+  robots: { index: false }, // 編集ページはnoindex
+}
 
 export default async function EditEntryPage({
   params
@@ -14,12 +22,12 @@ export default async function EditEntryPage({
   const supabase = await createClient()
 
   // 認証確認とエントリ取得を並列実行（パフォーマンス最適化）
-  const [userResult, entryResult] = await Promise.all([
-    supabase.auth.getUser(),
+  // E2Eテストモードではモックユーザーを使用
+  const [user, entryResult] = await Promise.all([
+    getAuthenticatedUser(supabase),
     getEntry(id),
   ])
 
-  const user = userResult.data.user
   if (!user) {
     redirect('/')
   }

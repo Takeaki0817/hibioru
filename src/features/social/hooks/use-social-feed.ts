@@ -5,10 +5,7 @@ import { useQueryClient, useInfiniteQuery } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { getSocialFeed } from '../api/timeline'
 import type { SocialFeedItem, SocialFeedResult } from '../types'
-
-// キャッシュ設定
-const FEED_STALE_TIME = 5 * 60 * 1000 // 5分
-const FEED_GC_TIME = 10 * 60 * 1000 // 10分
+import { SOCIAL_QUERY_CONFIG } from '../constants'
 
 // InfiniteQueryのデータ型
 interface FeedQueryData {
@@ -54,8 +51,8 @@ export function useSocialFeed(): UseSocialFeedReturn {
       },
       getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
       initialPageParam: undefined as string | undefined,
-      staleTime: FEED_STALE_TIME,
-      gcTime: FEED_GC_TIME,
+      staleTime: SOCIAL_QUERY_CONFIG.feed.staleTime,
+      gcTime: SOCIAL_QUERY_CONFIG.feed.gcTime,
     })
 
   // ページをフラット化してフィードアイテムを取得

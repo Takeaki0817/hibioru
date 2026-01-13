@@ -10,14 +10,9 @@
  */
 
 import { createClient } from '@/lib/supabase/server';
+import type { Result } from '@/lib/types/result';
+import { ok, err } from '@/lib/types/result';
 import type { NotificationType } from '../types';
-
-/**
- * Result型
- */
-export type Result<T, E> =
-  | { ok: true; value: T }
-  | { ok: false; error: E };
 
 /**
  * スケジューラエラーの型
@@ -272,22 +267,16 @@ export async function getNextFollowUpTime(
 
     if (settingsError) {
       if (settingsError.code === 'PGRST116') {
-        return {
-          ok: false,
-          error: { type: 'SETTINGS_NOT_FOUND' },
-        };
+        return err({ type: 'SETTINGS_NOT_FOUND' });
       }
-      return {
-        ok: false,
-        error: { type: 'DATABASE_ERROR', message: settingsError.message },
-      };
+      return err({ type: 'DATABASE_ERROR', message: settingsError.message });
     }
 
     const settings = settingsData as NotificationSettingsRow;
 
     // 追いリマインドが無効の場合
     if (!settings.follow_up_enabled) {
-      return { ok: true, value: null };
+      return ok(null);
     }
 
     // スケジュールを計算
@@ -312,10 +301,7 @@ export async function getNextFollowUpTime(
       .limit(10);
 
     if (logsError) {
-      return {
-        ok: false,
-        error: { type: 'DATABASE_ERROR', message: logsError.message },
-      };
+      return err({ type: 'DATABASE_ERROR', message: logsError.message });
     }
 
     const logs = (logsData || []) as NotificationLogRow[];
@@ -327,24 +313,21 @@ export async function getNextFollowUpTime(
 
     // maxCountに達している場合
     if (chaseReminderCount >= settings.follow_up_max_count) {
-      return { ok: true, value: null };
+      return ok(null);
     }
 
     // 次の追いリマインド時刻を取得
     const nextFollowUp = schedule.followUpTimes[chaseReminderCount];
     if (!nextFollowUp) {
-      return { ok: true, value: null };
+      return ok(null);
     }
 
-    return { ok: true, value: nextFollowUp.scheduledTime };
+    return ok(nextFollowUp.scheduledTime);
   } catch (error) {
-    return {
-      ok: false,
-      error: {
-        type: 'DATABASE_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
-    };
+    return err({
+      type: 'DATABASE_ERROR',
+      message: error instanceof Error ? error.message : '不明なエラー',
+    });
   }
 }
 
@@ -374,29 +357,20 @@ export async function shouldSendFollowUp(
 
     if (settingsError) {
       if (settingsError.code === 'PGRST116') {
-        return {
-          ok: false,
-          error: { type: 'SETTINGS_NOT_FOUND' },
-        };
+        return err({ type: 'SETTINGS_NOT_FOUND' });
       }
-      return {
-        ok: false,
-        error: { type: 'DATABASE_ERROR', message: settingsError.message },
-      };
+      return err({ type: 'DATABASE_ERROR', message: settingsError.message });
     }
 
     const settings = settingsData as NotificationSettingsRow;
 
     // 追いリマインドが無効の場合
     if (!settings.follow_up_enabled) {
-      return {
-        ok: true,
-        value: {
-          shouldSend: false,
-          followUpCount: 0,
-          reason: 'disabled',
-        },
-      };
+      return ok({
+        shouldSend: false,
+        followUpCount: 0,
+        reason: 'disabled',
+      });
     }
 
     // タイムゾーン考慮した当日の範囲を取得
@@ -414,10 +388,7 @@ export async function shouldSendFollowUp(
       .limit(10);
 
     if (logsError) {
-      return {
-        ok: false,
-        error: { type: 'DATABASE_ERROR', message: logsError.message },
-      };
+      return err({ type: 'DATABASE_ERROR', message: logsError.message });
     }
 
     const logs = (logsData || []) as NotificationLogRow[];
@@ -429,14 +400,11 @@ export async function shouldSendFollowUp(
 
     // maxCountに達している場合
     if (chaseReminderCount >= settings.follow_up_max_count) {
-      return {
-        ok: true,
-        value: {
-          shouldSend: false,
-          followUpCount: chaseReminderCount,
-          reason: 'max_count_reached',
-        },
-      };
+      return ok({
+        shouldSend: false,
+        followUpCount: chaseReminderCount,
+        reason: 'max_count_reached',
+      });
     }
 
     // スケジュールを計算
@@ -454,44 +422,32 @@ export async function shouldSendFollowUp(
     // 次の追いリマインド予定時刻を取得
     const nextFollowUp = schedule.followUpTimes[chaseReminderCount];
     if (!nextFollowUp) {
-      return {
-        ok: true,
-        value: {
-          shouldSend: false,
-          followUpCount: chaseReminderCount,
-          reason: 'max_count_reached',
-        },
-      };
+      return ok({
+        shouldSend: false,
+        followUpCount: chaseReminderCount,
+        reason: 'max_count_reached',
+      });
     }
 
     // 予定時刻に達しているかチェック
     if (currentTime < nextFollowUp.scheduledTime) {
-      return {
-        ok: true,
-        value: {
-          shouldSend: false,
-          followUpCount: nextFollowUpNumber,
-          reason: 'not_time_yet',
-        },
-      };
+      return ok({
+        shouldSend: false,
+        followUpCount: nextFollowUpNumber,
+        reason: 'not_time_yet',
+      });
     }
 
     // 送信すべき
-    return {
-      ok: true,
-      value: {
-        shouldSend: true,
-        followUpCount: nextFollowUpNumber,
-      },
-    };
+    return ok({
+      shouldSend: true,
+      followUpCount: nextFollowUpNumber,
+    });
   } catch (error) {
-    return {
-      ok: false,
-      error: {
-        type: 'DATABASE_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
-    };
+    return err({
+      type: 'DATABASE_ERROR',
+      message: error instanceof Error ? error.message : '不明なエラー',
+    });
   }
 }
 
@@ -528,21 +484,15 @@ export async function cancelFollowUps(
 
     // UNIQUE制約違反は「既にキャンセル済み」を意味するので成功として扱う
     if (error && error.code !== '23505') {
-      return {
-        ok: false,
-        error: { type: 'DATABASE_ERROR', message: error.message },
-      };
+      return err({ type: 'DATABASE_ERROR', message: error.message });
     }
 
-    return { ok: true, value: undefined };
+    return ok(undefined);
   } catch (error) {
-    return {
-      ok: false,
-      error: {
-        type: 'DATABASE_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
-    };
+    return err({
+      type: 'DATABASE_ERROR',
+      message: error instanceof Error ? error.message : '不明なエラー',
+    });
   }
 }
 
@@ -572,20 +522,14 @@ export async function isFollowUpCancelled(
       .limit(1);
 
     if (error) {
-      return {
-        ok: false,
-        error: { type: 'DATABASE_ERROR', message: error.message },
-      };
+      return err({ type: 'DATABASE_ERROR', message: error.message });
     }
 
-    return { ok: true, value: data && data.length > 0 };
+    return ok(data && data.length > 0);
   } catch (error) {
-    return {
-      ok: false,
-      error: {
-        type: 'DATABASE_ERROR',
-        message: error instanceof Error ? error.message : '不明なエラー',
-      },
-    };
+    return err({
+      type: 'DATABASE_ERROR',
+      message: error instanceof Error ? error.message : '不明なエラー',
+    });
   }
 }

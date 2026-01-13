@@ -21,12 +21,12 @@ export function PlanSelection() {
     setIsLoading(true)
     setError(null)
 
-    const result = await createCheckoutSession(selectedPlanType)
+    const result = await createCheckoutSession({ planType: selectedPlanType })
 
-    if (result.ok) {
-      window.location.href = result.value.url
+    if (result.data) {
+      window.location.href = result.data.url
     } else {
-      setError(result.error.message)
+      setError(result.serverError ?? 'エラーが発生しました')
       setIsLoading(false)
     }
   }

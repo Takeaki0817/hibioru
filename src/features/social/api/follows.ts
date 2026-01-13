@@ -2,9 +2,11 @@
 
 import 'server-only'
 
+import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { authActionClient } from '@/lib/safe-action'
 import { logger } from '@/lib/logger'
 import { createSafeError } from '@/lib/error-handler'
 import { rateLimits, checkRateLimit, getRateLimitErrorMessage } from '@/lib/rate-limit'
@@ -12,56 +14,40 @@ import type { FollowCounts, PublicUserInfo, SocialResult, PaginatedResult } from
 import { SOCIAL_PAGINATION } from '../constants'
 import { sendFollowPushNotification } from './push'
 
+// 入力スキーマ
+const followSchema = z.object({
+  targetUserId: z.string().uuid(),
+})
+
 /**
  * ユーザーをフォロー
  */
-export async function followUser(targetUserId: string): Promise<SocialResult<void>> {
-  try {
-    const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
-
-    if (!userData.user) {
-      return {
-        ok: false,
-        error: { code: 'UNAUTHORIZED', message: '未認証です' },
-      }
-    }
-
+export const followUser = authActionClient
+  .inputSchema(followSchema)
+  .action(async ({ parsedInput: { targetUserId }, ctx: { user, supabase } }) => {
     // レート制限チェック
-    const rateCheck = await checkRateLimit(rateLimits.follow, userData.user.id)
+    const rateCheck = await checkRateLimit(rateLimits.follow, user.id)
     if (!rateCheck.success) {
-      return {
-        ok: false,
-        error: { code: 'RATE_LIMITED', message: getRateLimitErrorMessage(rateCheck.resetAt) },
-      }
+      throw new Error(getRateLimitErrorMessage(rateCheck.resetAt))
     }
 
     // 自分自身をフォローしようとした場合
-    if (userData.user.id === targetUserId) {
-      return {
-        ok: false,
-        error: { code: 'SELF_FOLLOW', message: '自分自身をフォローすることはできません' },
-      }
+    if (user.id === targetUserId) {
+      throw new Error('自分自身をフォローすることはできません')
     }
 
     const { error } = await supabase.from('follows').insert({
-      follower_id: userData.user.id,
+      follower_id: user.id,
       following_id: targetUserId,
     })
 
     if (error) {
       // ユニーク制約違反（既にフォロー済み）
       if (error.code === '23505') {
-        return {
-          ok: false,
-          error: createSafeError('ALREADY_FOLLOWING'),
-        }
+        throw new Error('既にフォローしています')
       }
       logger.error('フォロー処理失敗', error)
-      return {
-        ok: false,
-        error: createSafeError('DB_ERROR', error),
-      }
+      throw new Error('フォロー処理に失敗しました')
     }
 
     // フォロー通知を作成（admin clientでRLSをバイパス）
@@ -69,14 +55,14 @@ export async function followUser(targetUserId: string): Promise<SocialResult<voi
     await adminClient.from('social_notifications').insert({
       user_id: targetUserId,
       type: 'follow',
-      from_user_id: userData.user.id,
+      from_user_id: user.id,
     })
 
     // プッシュ通知を送信（非同期、エラーは無視）
     const { data: fromUser } = await supabase
       .from('users')
       .select('display_name, username')
-      .eq('id', userData.user.id)
+      .eq('id', user.id)
       .single()
 
     if (fromUser) {
@@ -91,72 +77,42 @@ export async function followUser(targetUserId: string): Promise<SocialResult<voi
     // ソーシャルページのSSRキャッシュを無効化
     revalidatePath('/social')
 
-    return { ok: true, value: undefined }
-  } catch (error) {
-    return {
-      ok: false,
-      error: createSafeError('DB_ERROR', error),
-    }
-  }
-}
+    return { success: true }
+  })
 
 /**
  * フォロー解除
  */
-export async function unfollowUser(targetUserId: string): Promise<SocialResult<void>> {
-  try {
-    const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
-
-    if (!userData.user) {
-      return {
-        ok: false,
-        error: { code: 'UNAUTHORIZED', message: '未認証です' },
-      }
-    }
-
+export const unfollowUser = authActionClient
+  .inputSchema(followSchema)
+  .action(async ({ parsedInput: { targetUserId }, ctx: { user, supabase } }) => {
     // レート制限チェック
-    const rateCheck = await checkRateLimit(rateLimits.follow, userData.user.id)
+    const rateCheck = await checkRateLimit(rateLimits.follow, user.id)
     if (!rateCheck.success) {
-      return {
-        ok: false,
-        error: { code: 'RATE_LIMITED', message: getRateLimitErrorMessage(rateCheck.resetAt) },
-      }
+      throw new Error(getRateLimitErrorMessage(rateCheck.resetAt))
     }
 
     const { error, count } = await supabase
       .from('follows')
       .delete()
-      .eq('follower_id', userData.user.id)
+      .eq('follower_id', user.id)
       .eq('following_id', targetUserId)
 
     if (error) {
       logger.error('フォロー解除失敗', error)
-      return {
-        ok: false,
-        error: createSafeError('DB_ERROR', error),
-      }
+      throw new Error('フォロー解除に失敗しました')
     }
 
     // 削除された行がない場合（フォローしていなかった）
     if (count === 0) {
-      return {
-        ok: false,
-        error: createSafeError('NOT_FOLLOWING'),
-      }
+      throw new Error('フォローしていません')
     }
 
     // ソーシャルページのSSRキャッシュを無効化
     revalidatePath('/social')
 
-    return { ok: true, value: undefined }
-  } catch (error) {
-    return {
-      ok: false,
-      error: createSafeError('DB_ERROR', error),
-    }
-  }
-}
+    return { success: true }
+  })
 
 /**
  * フォロー状態を確認
@@ -410,4 +366,3 @@ export async function getFollowerList(
     }
   }
 }
-

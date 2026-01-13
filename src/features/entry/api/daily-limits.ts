@@ -5,11 +5,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { getJSTDayBounds } from '@/lib/date-utils'
 import type { LimitStatus, LimitError, Result } from '../types'
-import { DAILY_LIMITS } from '../constants'
-
-// 日次制限の定数（後方互換性のため再エクスポート）
-export const DAILY_ENTRY_LIMIT = DAILY_LIMITS.ENTRY_LIMIT
-export const DAILY_IMAGE_LIMIT = DAILY_LIMITS.IMAGE_LIMIT
+import { DAILY_ENTRY_LIMIT, DAILY_IMAGE_LIMIT } from '../constants'
 
 /**
  * 当日の投稿件数を取得（JST 0:00基準）

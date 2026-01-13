@@ -26,18 +26,24 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next({ request })
   }
 
+  // ========================================================================
   // E2Eテスト環境用バイパス
-  // NODE_ENV=test/development または E2E_TEST_MODE=true の場合のみ有効
-  // 開発環境でも有効にすることでE2Eテスト実行を容易にする
+  // ========================================================================
+  // セキュリティ境界:
+  // 1. E2E_TEST_MODE=true が明示的に設定された場合のみ有効
+  //    - playwright.config.ts の webServer.env でのみ設定
+  //    - 本番環境では絶対に設定しないこと
+  // 2. NODE_ENV=development は意図的に除外（開発環境での誤動作防止）
+  // 3. e2e-auth.ts でホワイトリスト検証を実施（許可されたUUIDのみ）
+  // 4. RLSポリシーによる二重防御（auth.uid()はJWTから取得）
+  // ========================================================================
   const isTestEnv =
-    process.env.NODE_ENV === 'test' ||
-    process.env.NODE_ENV === 'development' ||
-    process.env.E2E_TEST_MODE === 'true'
+    process.env.NODE_ENV === 'test' || process.env.E2E_TEST_MODE === 'true'
   const e2eTestUserId = request.cookies.get('e2e-test-user-id')?.value
 
   if (isTestEnv && e2eTestUserId) {
     // テストユーザーとして認証済みとみなす
-    // 保護されたルートへのアクセスを許可
+    // 注意: e2e-auth.ts側でホワイトリスト検証を行う
     if (!isPublicPath(pathname)) {
       return NextResponse.next({ request })
     }

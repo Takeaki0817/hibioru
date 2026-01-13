@@ -75,17 +75,17 @@ export function ProfileEditForm({
     }
 
     setIsCheckingUsername(true)
-    const result = await checkUsernameAvailability(value)
+    const result = await checkUsernameAvailability({ username: value })
     setIsCheckingUsername(false)
 
-    if (result.ok) {
-      if (result.value) {
+    if (result.serverError) {
+      setUsernameError('確認中にエラーが発生しました')
+    } else if (result.data) {
+      if (result.data.available) {
         setUsernameError(null)
       } else {
         setUsernameError('このユーザーIDは既に使用されています')
       }
-    } else {
-      setUsernameError('確認中にエラーが発生しました')
     }
   }, 500)
 
@@ -121,13 +121,13 @@ export function ProfileEditForm({
         displayName: displayName !== initialDisplayName ? displayName : undefined,
       })
 
-      if (result.ok) {
+      if (result.serverError) {
+        setError(result.serverError)
+      } else if (result.data) {
         setIsEditing(false)
         setError(null)
         // ページをリロードしてデータを更新
         window.location.reload()
-      } else {
-        setError(result.error.message)
       }
     })
   }

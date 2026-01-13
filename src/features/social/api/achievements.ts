@@ -5,6 +5,7 @@ import 'server-only'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getJSTDayBounds } from '@/lib/date-utils'
+import { logger } from '@/lib/logger'
 import type { Achievement, AchievementType, SocialResult } from '../types'
 import { ACHIEVEMENT_THRESHOLDS } from '../constants'
 
@@ -24,7 +25,7 @@ async function getTodayEntryCount(userId: string): Promise<number> {
     .lt('created_at', end.toISOString())
 
   if (error) {
-    console.error('当日エントリー数取得エラー:', error.message)
+    logger.error('当日エントリー数取得エラー', error.message)
     return 0
   }
 
@@ -44,7 +45,7 @@ async function getTotalEntryCount(userId: string): Promise<number> {
     .eq('is_deleted', false)
 
   if (error) {
-    console.error('総エントリー数取得エラー:', error.message)
+    logger.error('総エントリー数取得エラー', error.message)
     return 0
   }
 
@@ -93,7 +94,7 @@ async function hasExistingDailyAchievement(
     .maybeSingle()
 
   if (error) {
-    console.error('既存達成チェックエラー:', error.message)
+    logger.error('既存達成チェックエラー', error.message)
     return true // エラー時は作成しない
   }
 
@@ -119,7 +120,7 @@ async function hasExistingAchievement(
     .maybeSingle()
 
   if (error) {
-    console.error('既存達成チェックエラー:', error.message)
+    logger.error('既存達成チェックエラー', error.message)
     return true // エラー時は作成しない
   }
 
@@ -160,7 +161,7 @@ async function checkAndCreateAchievementForType(
           .single()
 
         if (error) {
-          console.error(`${type}達成作成エラー:`, error.message)
+          logger.error(`${type}達成作成エラー`, error.message)
           return null
         }
 
@@ -220,14 +221,20 @@ export async function checkAndCreateAchievements(
         .single()
 
       if (sharedError) {
-        console.error('共有達成作成エラー:', sharedError.message)
+        logger.error('共有達成作成エラー', sharedError.message)
       } else if (sharedAchievement) {
         newAchievements.push(mapToAchievement(sharedAchievement))
       }
     }
 
-    // 2. 1日の投稿数チェック
-    const todayCount = await getTodayEntryCount(userId)
+    // 2. カウントクエリを並列実行
+    const [todayCount, totalCount, currentStreak] = await Promise.all([
+      getTodayEntryCount(userId),
+      getTotalEntryCount(userId),
+      getCurrentStreak(userId),
+    ])
+
+    // 3. 1日の投稿数チェック
     const dailyAchievement = await checkAndCreateAchievementForType(
       adminClient,
       userId,
@@ -241,8 +248,7 @@ export async function checkAndCreateAchievements(
       newAchievements.push(dailyAchievement)
     }
 
-    // 3. 総投稿数チェック
-    const totalCount = await getTotalEntryCount(userId)
+    // 4. 総投稿数チェック
     const totalAchievement = await checkAndCreateAchievementForType(
       adminClient,
       userId,
@@ -256,8 +262,7 @@ export async function checkAndCreateAchievements(
       newAchievements.push(totalAchievement)
     }
 
-    // 4. 継続日数チェック
-    const currentStreak = await getCurrentStreak(userId)
+    // 5. 継続日数チェック
     const streakAchievement = await checkAndCreateAchievementForType(
       adminClient,
       userId,
@@ -320,7 +325,7 @@ export async function deleteSharedEntryAchievement(
       .eq('type', 'shared_entry')
 
     if (error) {
-      console.error('共有達成削除エラー:', error.message)
+      logger.error('共有達成削除エラー', error.message)
       return {
         ok: false,
         error: { code: 'DB_ERROR', message: error.message },
@@ -377,7 +382,7 @@ export async function touchSharedEntryAchievement(
       .eq('type', 'shared_entry')
 
     if (error) {
-      console.error('共有達成touch エラー:', error.message)
+      logger.error('共有達成touchエラー', error.message)
       return {
         ok: false,
         error: { code: 'DB_ERROR', message: error.message },

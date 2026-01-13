@@ -41,12 +41,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### 主要なrulesファイル
 
-- `react-patterns.md` - Server/Client Components、Next.js最適化
-- `architecture.md` - Featuresベースアーキテクチャ
-- `data-fetching.md` - TanStack Query、Supabaseクエリ
-- `security.md` - セキュリティ規約（認証、エラー処理）
-- `skills-guide.md` - Skills活用ガイド
-- `mcp-guide.md` - MCP活用ガイド
+| ファイル | 用途 | 自動適用 |
+|---------|------|---------|
+| `react-patterns.md` | Server/Client Components、useEffect非同期パターン | `src/**/*.tsx` |
+| `coding-standards.md` | TypeScript規約、命名規則 | `src/**/*.{ts,tsx}` |
+| `data-fetching.md` | TanStack Query、Supabaseクエリ | `src/**/api/**` |
+| `security.md` | 認証、エラー処理、ログ出力 | `src/**/*.{ts,tsx}` |
+| `supabase.md` | Supabase操作、マイグレーション | `supabase/**/*` |
+| `testing.md` | Jest・Playwright テスト | `**/*.test.ts`, `e2e/**` |
+| `refactoring.md` | 責務分離、共通化基準 | （ガイド） |
+| `architecture.md` | Featuresベースアーキテクチャ | （ガイド） |
+| `achievements.md` | アチーブメント閾値変更・バックフィル | `src/features/social/constants.ts` |
+| `ui-components.md` | 共通UIコンポーネント規約 | `src/components/ui/**` |
+
+→ `paths`指定ありのファイルは該当ファイル編集時に自動適用される
 
 ---
 
@@ -64,7 +72,7 @@ pnpm test                           # ユニットテスト（Jest）
 pnpm test:watch                     # ウォッチモード
 pnpm test:coverage                  # カバレッジ付き
 pnpm test -- path/to/file           # 単一ファイル実行
-pnpm test -- --testPathPattern=name # パターンマッチ実行
+pnpm test -- --testPathPatterns="name" # パターンマッチ実行
 pnpm exec playwright test           # E2Eテスト
 pnpm exec playwright test --ui      # E2E UIモード（デバッグ用）
 
@@ -119,7 +127,32 @@ queryKeys.entries.timeline(userId)
 
 // Result型（Railway Oriented Programming）
 import type { Result } from '@/lib/types/result'
-import { ok, err, isOk } from '@/lib/types/result'
+import { ok, err, isOk, isError } from '@/lib/types/result'
+
+// Server Actionでの使用パターン
+export async function myAction(): Promise<Result<Data, AppError>> {
+  if (!valid) return err({ code: 'INVALID_INPUT', message: '...' })
+  return ok(data)
+}
+
+// 呼び出し側での使用
+const result = await myAction()
+if (isOk(result)) {
+  // result.value にアクセス可能
+}
+
+// エラーハンドリング（内部情報を隠蔽）
+import { createSafeError } from '@/lib/error-handler'
+return { ok: false, error: createSafeError('DB_ERROR', error) }
+
+// ロギング（本番でconsole.error禁止）
+import { logger } from '@/lib/logger'
+logger.error('処理失敗', error)
+
+// JST日付ユーティリティ（ストリーク・タイムライン判定に必須）
+import { getJSTDateString, getJSTDayBounds, getJSTToday } from '@/lib/date-utils'
+const today = getJSTToday()                    // 'YYYY-MM-DD'
+const { start, end } = getJSTDayBounds()       // UTC Date objects
 ```
 
 ### 重要な設計原則
@@ -127,8 +160,9 @@ import { ok, err, isOk } from '@/lib/types/result'
 - **バレルファイル禁止**: `index.ts` は使用せず直接インポート
 - **Server Components優先**: `'use client'` はインタラクティブな部分のみ
 - **dynamic export禁止**: `export const dynamic = 'force-dynamic'` は使用しない
+- **責務分離**: 300行超で見直し、400行超でフック分離、500行超は必ず分離
 
-→ 詳細: `.claude/rules/react-patterns.md`
+→ 詳細: `.claude/rules/react-patterns.md`, `.claude/rules/refactoring.md`
 
 ---
 
@@ -164,11 +198,33 @@ main ← develop ← feature/*, fix/*, refactor/*
 
 ## Skills & MCP
 
+スキルは `/skill-name` 形式で呼び出す。スキル名は **小文字・ハイフン区切り** で指定。
+
+### 主要スキル
+
+| 用途 | スキル名 |
+|------|----------|
+| 新機能開発 | `/spec-full` |
+| コード実装 | `/typescript-write` |
+| コードレビュー | `/typescript-review` |
+| UI生成 | `/frontend-design` |
+| E2Eテスト | `/e2e:generate`, `/e2e:verify`, `/e2e:fix` |
+| コード理解 | `/serena`（LSPベース） |
+
+### 主要MCP
+
 | ツール | 用途 |
 |--------|------|
-| **spec-full** | 新機能を仕様→実装→テストまで一括実行 |
-| **serena** | LSPベースのシンボル検索・リファクタリング |
-| **supabase MCP** | DB操作・スキーマ確認 |
-| **playwright-test MCP** | E2Eテスト実行・デバッグ |
+| **supabase** | DB操作・スキーマ確認 |
+| **playwright-test** | E2Eテスト実行・デバッグ |
+| **context7** | ライブラリ最新ドキュメント検索 |
+
+### よくある間違い
+
+| ❌ 間違い | ✅ 正しい |
+|-----------|-----------|
+| `/Writing` | `/typescript-write` |
+| `/review` | `/typescript-review` |
+| `/design` | `/frontend-design` |
 
 → 詳細: `.claude/rules/skills-guide.md`, `.claude/rules/mcp-guide.md`

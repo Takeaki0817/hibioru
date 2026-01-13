@@ -4,6 +4,9 @@ import { config } from 'dotenv'
 // .env.localを読み込み（テストプロセス用）
 config({ path: '.env.local' })
 
+// E2Eテスト実行時の環境変数（認証必須テストの有効化）
+process.env.PLAYWRIGHT_AUTH_ENABLED = 'true'
+
 /**
  * Playwright設定
  * 認証機能のE2Eテスト用設定
@@ -56,11 +59,14 @@ export default defineConfig({
   webServer: {
     command: 'pnpm dev',
     url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
+    // 既存のサーバーを再利用（E2E_TEST_MODE=true で起動済みのサーバー）
+    reuseExistingServer: true,
     timeout: 120 * 1000,
     // E2Eテストモードを有効化（認証バイパス用）
     env: {
+      ...process.env,
       E2E_TEST_MODE: 'true',
+      PLAYWRIGHT_AUTH_ENABLED: 'true',
     },
   },
 })

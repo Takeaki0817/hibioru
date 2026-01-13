@@ -43,6 +43,7 @@ export type EntryError =
   | { code: 'NOT_FOUND'; message: string }
   | { code: 'EDIT_EXPIRED'; message: string }
   | { code: 'UNAUTHORIZED'; message: string }
+  | { code: 'FORBIDDEN'; message: string }
   | { code: 'DB_ERROR'; message: string }
   | { code: 'EMPTY_CONTENT'; message: string }
   | { code: 'LIMIT_EXCEEDED'; message: string }

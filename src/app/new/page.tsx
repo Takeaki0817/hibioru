@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/e2e-auth'
 import { NewEntryClient } from './NewEntryClient'
 
 export const metadata: Metadata = {
@@ -10,8 +11,9 @@ export const metadata: Metadata = {
 
 export default async function NewEntryPage() {
   const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
 
+  // 認証チェック（E2Eテストモードではモックユーザーを使用）
+  const user = await getAuthenticatedUser(supabase)
   if (!user) {
     redirect('/')
   }

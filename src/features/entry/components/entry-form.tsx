@@ -1,8 +1,6 @@
 'use client'
 
 import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
-import { useRouter } from 'next/navigation'
-import { useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cva } from 'class-variance-authority'
 import { Trash2, Share } from 'lucide-react'
@@ -10,17 +8,16 @@ import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
 import { SuccessOverlay } from './success-overlay'
 import { ImagePreviewGrid } from './image-preview-grid'
-import { createEntry, updateEntry, deleteEntry } from '@/features/entry/api/service'
-import { uploadImage } from '@/features/entry/api/image-service'
-import { saveDraft, loadDraft, clearDraft } from '@/features/entry/api/draft-storage'
+import { saveDraft, loadDraft } from '@/features/entry/api/draft-storage'
 import { MotionButton } from '@/components/ui/motion-button'
 import { Button } from '@/components/ui/button'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Switch } from '@/components/ui/switch'
 import { cn } from '@/lib/utils'
-import { queryKeys } from '@/lib/constants/query-keys'
 import { useEntryFormStore, selectCanSubmit, selectCanAddImage } from '../stores/entry-form-store'
+import { useEntrySubmit } from '../hooks/use-entry-submit'
+import { useEntryDelete } from '../hooks/use-entry-delete'
 
 // CVAバリアント定義 - フォームコンテナ
 const formContainerVariants = cva(
@@ -80,8 +77,6 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   const removedImageUrls = useEntryFormStore((s) => s.removedImageUrls)
   const isShared = useEntryFormStore((s) => s.isShared)
   const isSubmitting = useEntryFormStore((s) => s.isSubmitting)
-  const isDeleting = useEntryFormStore((s) => s.isDeleting)
-  const showDeleteConfirm = useEntryFormStore((s) => s.showDeleteConfirm)
   const isSuccess = useEntryFormStore((s) => s.isSuccess)
   const isFocused = useEntryFormStore((s) => s.isFocused)
   const error = useEntryFormStore((s) => s.error)
@@ -93,26 +88,33 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   const addImage = useEntryFormStore((s) => s.addImage)
   const removeImage = useEntryFormStore((s) => s.removeImage)
   const toggleExistingImageRemoval = useEntryFormStore((s) => s.toggleExistingImageRemoval)
-  const setShowDeleteConfirm = useEntryFormStore((s) => s.setShowDeleteConfirm)
   const setFocused = useEntryFormStore((s) => s.setFocused)
-  const submitStart = useEntryFormStore((s) => s.submitStart)
-  const submitSuccess = useEntryFormStore((s) => s.submitSuccess)
-  const submitError = useEntryFormStore((s) => s.submitError)
-  const deleteStart = useEntryFormStore((s) => s.deleteStart)
-  const deleteError = useEntryFormStore((s) => s.deleteError)
   const initialize = useEntryFormStore((s) => s.initialize)
   const reset = useEntryFormStore((s) => s.reset)
 
+  // 送信・削除フック
+  const { formRef, handleSubmit, submitForm } = useEntrySubmit({
+    mode,
+    initialEntry,
+    userId,
+    onSuccess,
+  })
+
+  const {
+    showDeleteConfirm,
+    isDeleting,
+    handleShowDeleteConfirm,
+    handleCloseDeleteConfirm,
+    handleDelete,
+  } = useEntryDelete({ initialEntry })
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const formRef = useRef<HTMLFormElement>(null)
-  const router = useRouter()
-  const queryClient = useQueryClient()
 
   // 外部から送信を呼び出せるようにする
   useImperativeHandle(ref, () => ({
     submit: () => {
-      if (canSubmit && formRef.current) {
-        formRef.current.requestSubmit()
+      if (canSubmit) {
+        submitForm()
       }
     },
   }))
@@ -159,10 +161,10 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       e.preventDefault()
       if (canSubmit) {
-        formRef.current?.requestSubmit()
+        submitForm()
       }
     }
-  }, [canSubmit])
+  }, [canSubmit, submitForm])
 
   // テキストエリアのイベントハンドラー（useCallbackで安定化）
   const handleContentChange = useCallback(
@@ -171,91 +173,9 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   )
   const handleFocus = useCallback(() => setFocused(true), [setFocused])
   const handleBlur = useCallback(() => setFocused(false), [setFocused])
-  const handleShowDeleteConfirm = useCallback(() => setShowDeleteConfirm(true), [setShowDeleteConfirm])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    submitStart()
-
-    try {
-      // 画像URL配列を構築
-      const imageUrls: string[] = []
-
-      // 新規画像をアップロード
-      for (const img of images) {
-        const uploadResult = await uploadImage(img.file, userId)
-        if (!uploadResult.ok) {
-          submitError(uploadResult.error.message)
-          return
-        }
-        imageUrls.push(uploadResult.value)
-      }
-
-      // 既存画像を維持（削除予定でないもの）
-      for (const url of existingImageUrls) {
-        if (!removedImageUrls.includes(url)) {
-          imageUrls.push(url)
-        }
-      }
-
-      // エントリ作成/更新
-      const result =
-        mode === 'create'
-          ? await createEntry({ content, imageUrls: imageUrls.length > 0 ? imageUrls : null, isShared })
-          : await updateEntry(initialEntry!.id, { content, imageUrls: imageUrls.length > 0 ? imageUrls : null, isShared })
-
-      if (!result.ok) {
-        submitError(result.error.message)
-        return
-      }
-
-      // 下書き削除
-      if (mode === 'create') {
-        clearDraft()
-      }
-
-      // 成功アニメーション表示
-      submitSuccess()
-
-      // キャッシュ無効化（共有状態の変更を反映）
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: queryKeys.entries.all }),
-        queryClient.invalidateQueries({ queryKey: queryKeys.social.all }),
-      ])
-
-      // 少し待ってから遷移
-      setTimeout(() => {
-        if (onSuccess) {
-          onSuccess()
-        } else {
-          router.push('/timeline')
-        }
-      }, 300)
-    } catch (err) {
-      submitError(err instanceof Error ? err.message : '投稿に失敗しました')
-    }
-  }
-
-  // 削除処理
-  const handleDelete = async () => {
-    if (!initialEntry) return
-
-    deleteStart()
-
-    try {
-      const result = await deleteEntry(initialEntry.id)
-
-      if (!result.ok) {
-        deleteError(result.error.message)
-        return
-      }
-
-      // タイムラインに戻る
-      router.push('/timeline')
-    } catch (err) {
-      deleteError(err instanceof Error ? err.message : '削除に失敗しました')
-    }
-  }
+  // 操作無効化フラグ
+  const isDisabled = isSubmitting || isSuccess
 
   return (
     <motion.form
@@ -279,7 +199,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
             id="share-toggle"
             checked={isShared}
             onCheckedChange={setIsShared}
-            disabled={isSubmitting || isSuccess}
+            disabled={isDisabled}
           />
         </label>
       </div>
@@ -301,7 +221,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
             'bg-transparent placeholder:text-muted-foreground/60',
             'leading-relaxed overflow-y-auto'
           )}
-          disabled={isSubmitting || isSuccess}
+          disabled={isDisabled}
         />
 
         {/* 成功オーバーレイ */}
@@ -317,14 +237,14 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
         removedImageUrls={removedImageUrls}
         onRemoveNewImage={removeImage}
         onToggleExistingImageRemoval={toggleExistingImageRemoval}
-        disabled={isSubmitting || isSuccess}
+        disabled={isDisabled}
       />
 
       {/* 画像添付 & 削除ボタン */}
       <div className="mt-4 flex items-center justify-between">
         <ImageAttachment
           onImageSelect={addImage}
-          disabled={isSubmitting || isSuccess || !canAddImage}
+          disabled={isDisabled || !canAddImage}
         />
 
         {/* 削除ボタン（編集モードのみ） */}
@@ -333,7 +253,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
             type="button"
             variant="ghost"
             onClick={handleShowDeleteConfirm}
-            disabled={isSubmitting || isDeleting || isSuccess}
+            disabled={isDisabled || isDeleting}
             aria-label="この記録を削除"
             className="w-20 h-20 rounded-lg bg-accent/60 hover:bg-accent/70"
           >
@@ -388,7 +308,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
       {/* 削除確認ダイアログ */}
       <ConfirmDialog
         open={showDeleteConfirm}
-        onOpenChange={(open) => !isDeleting && setShowDeleteConfirm(open)}
+        onOpenChange={handleCloseDeleteConfirm}
         title="記録を削除しますか？"
         description="この操作は取り消せません。"
         confirmLabel="削除する"

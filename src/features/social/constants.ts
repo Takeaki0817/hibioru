@@ -100,6 +100,18 @@ export const SOCIAL_PAGINATION = {
   USER_SEARCH_PAGE_SIZE: 10,
 } as const
 
+// TanStack Queryキャッシュ設定
+export const SOCIAL_QUERY_CONFIG = {
+  feed: {
+    staleTime: 5 * 60 * 1000, // 5分
+    gcTime: 10 * 60 * 1000, // 10分
+  },
+  notifications: {
+    staleTime: 5 * 60 * 1000, // 5分
+    gcTime: 10 * 60 * 1000, // 10分
+  },
+} as const
+
 // ユーザー名のバリデーション
 export const USERNAME_RULES = {
   MIN_LENGTH: 3,
