@@ -163,10 +163,84 @@ npx tsx scripts/test-hotsure.ts reset   # 状態リセット
 
 ---
 
+## 6. RLSポリシー最適化
+
+### 実装日
+2026-01-14
+
+### 実装内容
+
+Security Advisor警告への対応としてRLSポリシーを最適化。
+
+| 対応内容 | 件数 | 効果 |
+|---------|------|------|
+| `auth.uid()` → `(select auth.uid())` | 33件 | 各行評価→クエリ毎1回に改善 |
+| 複数permissiveポリシー統合 | 3テーブル | ポリシー評価回数削減 |
+| 外部キーインデックス追加 | 3件 | JOIN性能向上 |
+| 未使用インデックス削除 | 3件 | メンテナンスコスト削減 |
+
+### 統合されたポリシー
+
+| テーブル | 統合前 | 統合後 | 新ポリシー名 |
+|---------|--------|--------|-------------|
+| achievements | 2 | 1 | `Users can view achievements` |
+| celebrations | 2 | 1 | `Users can view celebrations` |
+| entries | 2 | 1 | `Users can view entries` |
+
+### 追加インデックス
+
+```sql
+idx_achievements_entry_id
+idx_social_notifications_achievement_id
+idx_social_notifications_from_user_id
+```
+
+### 削除インデックス
+
+```sql
+follows_created_idx
+achievements_created_idx
+celebrations_created_idx
+```
+
+### マイグレーションファイル
+
+`supabase/migrations/20260114000000_optimize_rls_policies_and_indexes.sql`
+
+---
+
+## 7. RLSポリシー追加修正（Multiple Permissive Policies）
+
+### 実装日
+2026-01-14
+
+### 実装内容
+
+前回のマイグレーション後に残った `multiple_permissive_policies` 警告に対応。
+
+| 対応内容 | テーブル | 修正内容 |
+|---------|---------|---------|
+| ロール分離 | subscriptions | `TO authenticated` / `TO service_role` に分離 |
+| ロール分離 | hotsure_purchases | `TO authenticated` / `TO service_role` に分離 |
+| 重複削除 | users | "Users can view own profile" を削除 |
+
+### 根本原因
+
+- Service roleポリシーを `USING ((select auth.role()) = 'service_role')` で定義していたが、これは `roles: {public}` に適用されるため、Userポリシーと同じロールで重複
+- 正しくは `TO service_role` を使用して別ロールに適用すべき
+
+### マイグレーションファイル
+
+`supabase/migrations/20260114010000_fix_remaining_multiple_permissive_policies.sql`
+
+---
+
 ## 更新履歴
 
 | 日付 | 内容 |
 |------|------|
+| 2026-01-14 | RLSポリシー追加修正（Multiple Permissive Policies警告対応） |
+| 2026-01-14 | RLSポリシー最適化（Security Advisor警告対応） |
 | 2025-12-18 | プッシュ通知機能テスト完了、ほつれ機能テスト完了 |
 | 2025-12-18 | UI改善（ルートページ、フッターナビ、FAB） |
 | 2025-12-17 | ストリーク・ほつれ機能実装 |
