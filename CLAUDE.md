@@ -127,7 +127,19 @@ queryKeys.entries.timeline(userId)
 
 // Result型（Railway Oriented Programming）
 import type { Result } from '@/lib/types/result'
-import { ok, err, isOk } from '@/lib/types/result'
+import { ok, err, isOk, isError } from '@/lib/types/result'
+
+// Server Actionでの使用パターン
+export async function myAction(): Promise<Result<Data, AppError>> {
+  if (!valid) return err({ code: 'INVALID_INPUT', message: '...' })
+  return ok(data)
+}
+
+// 呼び出し側での使用
+const result = await myAction()
+if (isOk(result)) {
+  // result.value にアクセス可能
+}
 
 // エラーハンドリング（内部情報を隠蔽）
 import { createSafeError } from '@/lib/error-handler'
@@ -136,6 +148,11 @@ return { ok: false, error: createSafeError('DB_ERROR', error) }
 // ロギング（本番でconsole.error禁止）
 import { logger } from '@/lib/logger'
 logger.error('処理失敗', error)
+
+// JST日付ユーティリティ（ストリーク・タイムライン判定に必須）
+import { getJSTDateString, getJSTDayBounds, getJSTToday } from '@/lib/date-utils'
+const today = getJSTToday()                    // 'YYYY-MM-DD'
+const { start, end } = getJSTDayBounds()       // UTC Date objects
 ```
 
 ### 重要な設計原則

@@ -1,5 +1,3 @@
-'use server'
-
 import { createSafeActionClient } from 'next-safe-action'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'

@@ -8,9 +8,8 @@ import {
   getDailyImageCount,
   checkDailyEntryLimit,
   checkDailyImageLimit,
-  DAILY_ENTRY_LIMIT,
-  DAILY_IMAGE_LIMIT
 } from '../api/daily-limits'
+import { DAILY_ENTRY_LIMIT, DAILY_IMAGE_LIMIT } from '../constants'
 import { createClient } from '@/lib/supabase/server'
 
 // モック設定

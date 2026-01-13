@@ -19,3 +19,7 @@ export const DAILY_LIMITS = {
   ENTRY_LIMIT: PLAN_LIMITS.free.dailyEntryLimit!,  // 15（無料プラン）
   IMAGE_LIMIT: PLAN_LIMITS.free.monthlyImageLimit!, // 5（無料プラン）
 } as const
+
+// 個別エクスポート（テストや他モジュールで使用）
+export const DAILY_ENTRY_LIMIT = DAILY_LIMITS.ENTRY_LIMIT
+export const DAILY_IMAGE_LIMIT = DAILY_LIMITS.IMAGE_LIMIT
