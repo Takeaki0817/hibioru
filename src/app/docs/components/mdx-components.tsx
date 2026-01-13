@@ -31,6 +31,7 @@ import {
   Medal,
   Share2,
   Spool,
+  CreditCard,
 } from 'lucide-react'
 
 // アイコン名からコンポーネントへのマッピング
@@ -59,6 +60,7 @@ const iconMap: Record<string, LucideIcon> = {
   medal: Medal,
   'share-2': Share2,
   spool: Spool,
+  'credit-card': CreditCard,
 }
 
 /**

@@ -34,7 +34,7 @@ export function PlanCard({
     >
       {recommended && (
         <Badge
-          className="absolute -top-2 left-1/2 -translate-x-1/2"
+          className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap"
           variant="default"
         >
           おすすめ

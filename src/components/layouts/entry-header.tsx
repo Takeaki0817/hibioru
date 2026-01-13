@@ -35,7 +35,7 @@ export function EntryHeader({ title, onClose }: EntryHeaderProps) {
       <div className="mx-auto flex h-20 max-w-400 items-center justify-between px-2.5 md:px-4">
         {/* 左: ロゴ */}
         <h1 className="text-foreground">
-          <Logo size="sm" />
+          <Logo className="w-24 h-auto" />
           <span className="sr-only">ヒビオル</span>
         </h1>
 

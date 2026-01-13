@@ -49,10 +49,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `security.md` | 認証、エラー処理、ログ出力 | `src/**/*.{ts,tsx}` |
 | `supabase.md` | Supabase操作、マイグレーション | `supabase/**/*` |
 | `testing.md` | Jest・Playwright テスト | `**/*.test.ts`, `e2e/**` |
-| `refactoring.md` | 責務分離、共通化基準 | （ガイド） |
-| `architecture.md` | Featuresベースアーキテクチャ | （ガイド） |
 | `achievements.md` | アチーブメント閾値変更・バックフィル | `src/features/social/constants.ts` |
 | `ui-components.md` | 共通UIコンポーネント規約 | `src/components/ui/**` |
+| `skills-guide.md` | Skills活用ガイド | `.claude/skills/**`, `.claude/commands/**` |
+| `mcp-guide.md` | MCP活用ガイド | `.mcp.json` |
+| `refactoring.md` | 責務分離、共通化基準 | （ガイド） |
+| `architecture.md` | Featuresベースアーキテクチャ | （ガイド） |
+| `git-workflow.md` | Gitブランチ戦略 | （ガイド） |
 
 → `paths`指定ありのファイルは該当ファイル編集時に自動適用される
 
@@ -211,13 +214,27 @@ main ← develop ← feature/*, fix/*, refactor/*
 | E2Eテスト | `/e2e:generate`, `/e2e:verify`, `/e2e:fix` |
 | コード理解 | `/serena`（LSPベース） |
 
+### プロジェクト固有 Skills
+
+`.claude/skills/` に以下のスキルがインストール済み：
+
+| カテゴリ | スキル |
+|----------|--------|
+| **開発** | `typescript-write`, `typescript-review`, `nextjs-app-router-patterns` |
+| **UI/デザイン** | `frontend-design`, `ui-ux-pro-max`, `tailwind-design-system` |
+| **テスト** | `javascript-testing-patterns`, `e2e-testing-patterns`, `webapp-testing` |
+| **品質** | `accessibility-auditor`, `seo-review`, `security-requirement-extraction` |
+| **その他** | `react-state-management`, `cache-components`, `rule-identifier`, `serena` |
+
 ### 主要MCP
 
 | ツール | 用途 |
 |--------|------|
 | **supabase** | DB操作・スキーマ確認 |
 | **playwright-test** | E2Eテスト実行・デバッグ |
-| **context7** | ライブラリ最新ドキュメント検索 |
+| **context7** | ライブラリ最新ドキュメント検索（`resolve-library-id` → `query-docs`） |
+| **serena** | LSPベースシンボル検索・編集 |
+| **shadcn** | UIコンポーネント追加 |
 
 ### よくある間違い
 

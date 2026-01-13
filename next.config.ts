@@ -49,6 +49,7 @@ const nextConfig: NextConfig = {
       '@radix-ui/react-dialog',
       '@radix-ui/react-popover',
       '@radix-ui/react-dropdown-menu',
+      '@rive-app/react-canvas',
     ],
     // Turbopack ファイルシステムキャッシュ（開発時のコンパイル高速化）
     turbopackFileSystemCacheForDev: true,
@@ -56,6 +57,63 @@ const nextConfig: NextConfig = {
 
   // 本番環境でのソースマップを無効化（バンドルサイズ削減）
   productionBrowserSourceMaps: false,
+
+  // セキュリティヘッダー
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          // XSS攻撃対策
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          // クリックジャッキング対策
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          // リファラー情報の制御
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+          // ブラウザ機能の制限
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+          // HSTS（HTTPS強制）
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains; preload',
+          },
+          // Content Security Policy
+          // 注意: Google OAuth、Supabase、Stripe等の外部サービスを許可
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://js.stripe.com",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "img-src 'self' data: https: blob:",
+              "font-src 'self' https://fonts.gstatic.com data:",
+              // 開発環境ではローカルSupabase（127.0.0.1:54321）への接続を許可
+              // Rive WASM: unpkg.com, cdn.jsdelivr.net を許可
+              `connect-src 'self' https://*.supabase.co https://api.stripe.com wss://*.supabase.co https://unpkg.com https://cdn.jsdelivr.net${process.env.NODE_ENV === 'development' ? ' http://127.0.0.1:54321 ws://127.0.0.1:54321' : ''}`,
+              "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'none'",
+              "upgrade-insecure-requests",
+            ].join('; '),
+          },
+        ],
+      },
+    ];
+  },
 };
 
 // MDXの設定
