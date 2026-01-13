@@ -42,6 +42,28 @@ export const metadata: Metadata = {
       { url: ICON_CONFIG.appleTouchIcon, sizes: "180x180", type: "image/png" },
     ],
   },
+  openGraph: {
+    title: APP_CONFIG.name,
+    description: APP_CONFIG.description,
+    type: 'website',
+    url: 'https://hibioru.app',
+    siteName: 'ヒビオル',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'ヒビオル - ADHD当事者のための瞬間記録アプリ',
+      },
+    ],
+    locale: 'ja_JP',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: APP_CONFIG.name,
+    description: APP_CONFIG.description,
+    images: ['/og-image.png'],
+  },
   other: {
     "mobile-web-app-capable": "yes",
   },
