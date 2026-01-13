@@ -2,9 +2,10 @@
 
 import { useEffect } from 'react'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
+import type { InfiniteData } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { fetchEntries } from '../api/queries'
-import type { TimelineEntry } from '../types'
+import type { TimelineEntry, TimelinePage } from '../types'
 
 export interface UseTimelineOptions {
   userId: string
@@ -47,6 +48,10 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
       ).toISOString()
     : undefined
 
+  // 既存のキャッシュがあれば初期データとして使用（ローディング状態を回避）
+  const queryKey = queryKeys.entries.timeline(userId, initialCursor)
+  const existingData = queryClient.getQueryData<InfiniteData<TimelinePage>>(queryKey)
+
   const {
     data,
     isLoading,
@@ -58,13 +63,13 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
     fetchPreviousPage,
     refetch,
   } = useInfiniteQuery({
-    queryKey: queryKeys.entries.timeline(userId, initialCursor),
+    queryKey: queryKey,
     queryFn: ({ pageParam }) =>
       fetchEntries({
         userId,
-        cursor: pageParam.cursor,
+        cursor: (pageParam as PageParam).cursor,
         limit: pageSize,
-        direction: pageParam.direction,
+        direction: (pageParam as PageParam).direction,
       }),
     // タイムラインは更新頻度が低いため長めのstaleTime
     staleTime: 10 * 60 * 1000, // 10分
@@ -79,6 +84,8 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
         ? { cursor: firstPage.prevCursor, direction: 'after' as const }
         : undefined,
     initialPageParam: { cursor: initialCursor, direction: 'before' } as PageParam,
+    // 既存キャッシュがあれば初期データとして使用（ローディング状態を回避）
+    initialData: existingData,
   })
 
   // 全ページのentriesをフラット化
@@ -89,14 +96,15 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
   const nextCursor = data?.pages[data.pages.length - 1]?.nextCursor
   useEffect(() => {
     if (hasNextPage && nextCursor) {
+      const prefetchKey = queryKeys.entries.timeline(userId, nextCursor)
       queryClient.prefetchInfiniteQuery({
-        queryKey: queryKeys.entries.timeline(userId, nextCursor),
+        queryKey: prefetchKey,
         queryFn: ({ pageParam }) =>
           fetchEntries({
             userId,
-            cursor: pageParam.cursor,
+            cursor: (pageParam as PageParam).cursor,
             limit: pageSize,
-            direction: pageParam.direction,
+            direction: (pageParam as PageParam).direction,
           }),
         initialPageParam: { cursor: nextCursor, direction: 'before' } as PageParam,
         staleTime: 10 * 60 * 1000, // 10分

@@ -227,8 +227,14 @@ export async function checkAndCreateAchievements(
       }
     }
 
-    // 2. 1日の投稿数チェック
-    const todayCount = await getTodayEntryCount(userId)
+    // 2. カウントクエリを並列実行
+    const [todayCount, totalCount, currentStreak] = await Promise.all([
+      getTodayEntryCount(userId),
+      getTotalEntryCount(userId),
+      getCurrentStreak(userId),
+    ])
+
+    // 3. 1日の投稿数チェック
     const dailyAchievement = await checkAndCreateAchievementForType(
       adminClient,
       userId,
@@ -242,8 +248,7 @@ export async function checkAndCreateAchievements(
       newAchievements.push(dailyAchievement)
     }
 
-    // 3. 総投稿数チェック
-    const totalCount = await getTotalEntryCount(userId)
+    // 4. 総投稿数チェック
     const totalAchievement = await checkAndCreateAchievementForType(
       adminClient,
       userId,
@@ -257,8 +262,7 @@ export async function checkAndCreateAchievements(
       newAchievements.push(totalAchievement)
     }
 
-    // 4. 継続日数チェック
-    const currentStreak = await getCurrentStreak(userId)
+    // 5. 継続日数チェック
     const streakAchievement = await checkAndCreateAchievementForType(
       adminClient,
       userId,
