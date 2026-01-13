@@ -3,7 +3,7 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cva } from 'class-variance-authority'
-import { Trash2, Share } from 'lucide-react'
+import { Trash2, Users } from 'lucide-react'
 import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
 import { SuccessOverlay } from './success-overlay'
@@ -193,8 +193,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           <span>今、何を考えてる？</span>
         </h1>
         <label htmlFor="share-toggle" className="flex items-center gap-2 cursor-pointer select-none">
-          <Share className="size-4 text-muted-foreground" />
-          <span className="text-sm text-muted-foreground">フォロワーに共有</span>
+          <Users className="size-5 text-muted-foreground" />
           <Switch
             id="share-toggle"
             checked={isShared}
