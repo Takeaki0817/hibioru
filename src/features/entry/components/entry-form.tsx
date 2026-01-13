@@ -3,7 +3,7 @@
 import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cva } from 'class-variance-authority'
-import { Trash2, Users } from 'lucide-react'
+import { MessageCircleMore, Trash2, Users } from 'lucide-react'
 import type { Entry } from '@/features/entry/types'
 import { ImageAttachment } from './image-attachment'
 import { SuccessOverlay } from './success-overlay'
@@ -188,8 +188,8 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
     >
       {/* ヘッダー */}
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-medium text-muted-foreground flex items-center gap-2">
-          <span>💭</span>
+        <h1 className="text-lg font-medium text-muted-foreground flex items-center gap-1.5">
+          <MessageCircleMore className="size-6 text-primary" />
           <span>今、何を考えてる？</span>
         </h1>
         <label htmlFor="share-toggle" className="flex items-center gap-2 cursor-pointer select-none">
