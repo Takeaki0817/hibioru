@@ -4,7 +4,6 @@ import { useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
 import type { InfiniteData } from '@tanstack/react-query'
-import { QueryProvider } from '@/components/providers/QueryProvider'
 import { DateHeader } from '@/features/timeline/components/date-header'
 import { MonthCalendar } from '@/features/timeline/components/month-calendar'
 import { TimelineList } from '@/features/timeline/components/timeline-list'
@@ -220,20 +219,19 @@ function TimelineContent({
 }
 
 // メインコンポーネント（Providerでラップ）
+// QueryProviderはlayout.tsxで既に設定されているため、ここでは不要
 export function TimelineClient({
   userId,
   initialEntries,
   initialDate,
 }: TimelineClientProps) {
   return (
-    <QueryProvider>
-      <TimelineStoreProvider>
-        <TimelineContent
-          userId={userId}
-          initialEntries={initialEntries}
-          initialDate={initialDate}
-        />
-      </TimelineStoreProvider>
-    </QueryProvider>
+    <TimelineStoreProvider>
+      <TimelineContent
+        userId={userId}
+        initialEntries={initialEntries}
+        initialDate={initialDate}
+      />
+    </TimelineStoreProvider>
   )
 }
