@@ -43,9 +43,18 @@ export function useTimelineGrouping({
   initialDate,
 }: UseTimelineGroupingOptions): UseTimelineGroupingResult {
   // 日付ごとにエントリをグループ化
+  // 同じIDのエントリが重複している場合は、最初のもののみを使用（重複を防ぐ）
   const groupedEntries = useMemo(() => {
     const grouped = new Map<string, TimelineEntry[]>()
+    const seenIds = new Set<string>()
+    
     for (const entry of entries) {
+      // 同じIDのエントリが既に存在する場合はスキップ（重複を防ぐ）
+      if (seenIds.has(entry.id)) {
+        continue
+      }
+      seenIds.add(entry.id)
+      
       const dateKey = entry.date
       if (!grouped.has(dateKey)) {
         grouped.set(dateKey, [])

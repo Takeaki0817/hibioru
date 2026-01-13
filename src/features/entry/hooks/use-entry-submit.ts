@@ -56,6 +56,9 @@ export function useEntrySubmit({
   const submitError = useEntryFormStore((s) => s.submitError)
   const reset = useEntryFormStore((s) => s.reset)
 
+  // リダイレクトのタイマーを保持（エラー時にキャンセルするため）
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // createモード用の楽観的更新Mutation
   // 即時リダイレクト最適化: onSuccess/onErrorは空（処理はmutation内で完結）
   const createMutation = useCreateEntryMutation({
@@ -64,7 +67,13 @@ export function useEntrySubmit({
       // キャッシュ更新はmutation内で完了、リダイレクトは即時実行済み
     },
     onError: () => {
-      // toastはmutation内で表示済み
+      // エラー時はリダイレクトをキャンセル
+      if (redirectTimerRef.current) {
+        clearTimeout(redirectTimerRef.current)
+        redirectTimerRef.current = null
+      }
+      // エラーメッセージはmutation内でtoast表示済み
+      submitError('投稿に失敗しました')
     },
   })
 
@@ -114,7 +123,13 @@ export function useEntrySubmit({
         // 1. 下書きをクリア
         clearDraft()
 
-        // 2. 楽観的更新でmutationを開始
+        // 2. 既存のリダイレクトタイマーをクリア（念のため）
+        if (redirectTimerRef.current) {
+          clearTimeout(redirectTimerRef.current)
+          redirectTimerRef.current = null
+        }
+
+        // 3. 楽観的更新でmutationを開始
         createMutation.mutate({
           content,
           images,
@@ -123,11 +138,13 @@ export function useEntrySubmit({
           isShared,
         })
 
-        // 3. 成功アニメーションを表示
+        // 4. 成功アニメーションを表示
         submitSuccess()
 
-        // 4. アニメーション表示後にリダイレクト（800msで以前と同等の体感時間）
-        setTimeout(() => {
+        // 5. アニメーション表示後にリダイレクト（800msで以前と同等の体感時間）
+        // エラー時はonErrorコールバックでタイマーがクリアされる
+        redirectTimerRef.current = setTimeout(() => {
+          redirectTimerRef.current = null
           reset()
           if (onSuccess) {
             onSuccess()

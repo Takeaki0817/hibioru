@@ -124,23 +124,36 @@ export function useCreateEntryMutation({
       queryClient.setQueriesData<InfiniteData<TimelinePage>>(
         { queryKey: ['entries', 'timeline', userId], exact: false },
         (oldData) => {
-          if (!oldData?.pages?.[0]) return oldData
+          // 既存のキャッシュがある場合、楽観的エントリを先頭に追加
+          if (oldData?.pages?.[0]) {
+            return {
+              ...oldData,
+              pages: [
+                {
+                  ...oldData.pages[0],
+                  entries: [optimisticEntry, ...oldData.pages[0].entries],
+                },
+                ...oldData.pages.slice(1),
+              ],
+            }
+          }
 
+          // キャッシュが存在しない場合、新規作成
           return {
-            ...oldData,
             pages: [
               {
-                ...oldData.pages[0],
-                entries: [optimisticEntry, ...oldData.pages[0].entries],
+                entries: [optimisticEntry],
+                nextCursor: null,
+                prevCursor: null,
               },
-              ...oldData.pages.slice(1),
             ],
+            pageParams: [{ cursor: undefined, direction: 'before' }],
           }
         }
       )
 
-      // キャッシュが存在しない場合（タイムライン未訪問）は新規作成
-      // cursorなし（undefined）のタイムラインキーに初期データをセット
+      // リダイレクト時にタイムラインが確実に楽観的更新されたキャッシュを読み込めるように、
+      // cursorなし（undefined）のタイムラインキーに確実にキャッシュをセット
       const defaultTimelineKey = queryKeys.entries.timeline(userId, undefined)
       const existingCache = queryClient.getQueryData<InfiniteData<TimelinePage>>(defaultTimelineKey)
 
@@ -155,6 +168,21 @@ export function useCreateEntryMutation({
           ],
           pageParams: [{ cursor: undefined, direction: 'before' }],
         })
+      } else {
+        // 既存のキャッシュがある場合も、楽観的エントリが先頭にあることを確認
+        const firstPage = existingCache.pages[0]
+        if (firstPage && !firstPage.entries.some((e) => e.id === optimisticId)) {
+          queryClient.setQueryData<InfiniteData<TimelinePage>>(defaultTimelineKey, {
+            ...existingCache,
+            pages: [
+              {
+                ...firstPage,
+                entries: [optimisticEntry, ...firstPage.entries],
+              },
+              ...existingCache.pages.slice(1),
+            ],
+          })
+        }
       }
 
       return { previousData, optimisticId }
@@ -191,17 +219,68 @@ export function useCreateEntryMutation({
       queryClient.setQueriesData<InfiniteData<TimelinePage>>(
         { queryKey: ['entries', 'timeline', userId], exact: false },
         (oldData) => {
-          if (!oldData?.pages) return oldData
+          if (!oldData?.pages) {
+            // キャッシュが存在しない場合、実際のエントリを含む新規キャッシュを作成
+            return {
+              pages: [
+                {
+                  entries: [actualEntry],
+                  nextCursor: null,
+                  prevCursor: null,
+                },
+              ],
+              pageParams: [{ cursor: undefined, direction: 'before' }],
+            }
+          }
 
           return {
             ...oldData,
             pages: oldData.pages.map((page, index) => {
               if (index === 0) {
-                return {
-                  ...page,
-                  entries: page.entries.map((entry) =>
-                    entry.id === context?.optimisticId ? actualEntry : entry
-                  ),
+                // 楽観的エントリを探して置換
+                const optimisticIndex = page.entries.findIndex(
+                  (entry) => entry.id === context?.optimisticId
+                )
+
+                if (optimisticIndex !== -1) {
+                  // 楽観的エントリが見つかった場合、置換
+                  // ただし、既に同じIDのエントリが存在する場合は、楽観的エントリを削除するだけ
+                  const existingIndex = page.entries.findIndex(
+                    (entry) => entry.id === actualEntry.id && entry.id !== context?.optimisticId
+                  )
+
+                  if (existingIndex !== -1) {
+                    // 既に同じIDのエントリが存在する場合、楽観的エントリを削除するだけ
+                    return {
+                      ...page,
+                      entries: page.entries.filter(
+                        (entry) => entry.id !== context?.optimisticId
+                      ),
+                    }
+                  }
+
+                  // 楽観的エントリを実際のエントリに置換
+                  return {
+                    ...page,
+                    entries: page.entries.map((entry) =>
+                      entry.id === context?.optimisticId ? actualEntry : entry
+                    ),
+                  }
+                } else {
+                  // 楽観的エントリが見つからない場合（SSRで初期データが取得された場合など）、
+                  // 実際のエントリが既に存在するかチェック
+                  const existingIndex = page.entries.findIndex(
+                    (entry) => entry.id === actualEntry.id
+                  )
+
+                  if (existingIndex === -1) {
+                    // 実際のエントリが存在しない場合、先頭に追加
+                    return {
+                      ...page,
+                      entries: [actualEntry, ...page.entries],
+                    }
+                  }
+                  // 実際のエントリが既に存在する場合、そのまま返す（重複を防ぐ）
                 }
               }
               return page
