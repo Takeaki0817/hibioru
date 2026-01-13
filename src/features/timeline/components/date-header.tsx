@@ -52,7 +52,7 @@ export function DateHeader({
       <div className="mx-auto flex h-20 max-w-3xl items-center justify-between px-2.5 md:px-4">
         {/* 左: ロゴ */}
         <h1 className="text-foreground">
-          <Logo size="sm" />
+          <Logo className="w-24 h-auto" />
           <span className="sr-only">ヒビオル</span>
         </h1>
 
@@ -67,23 +67,25 @@ export function DateHeader({
           onDateClick={handleDateClick}
         />
 
-        {/* 右: 月（カレンダーボタン） */}
-        <button
-          onClick={toggleCalendar}
-          className={cn(
-            'flex items-center gap-1.5 px-3 py-1.5 rounded-lg',
-            'text-sm font-medium',
-            'text-primary-600 dark:text-primary-400',
-            'bg-primary-100 hover:bg-primary-200',
-            'dark:bg-primary-100 dark:hover:bg-primary-200',
-            'transition-all active:scale-95'
-          )}
-          aria-label={isCalendarOpen ? 'カレンダーを閉じる' : 'カレンダーを開く'}
-          aria-expanded={isCalendarOpen}
-        >
-          <Calendar className="w-4 h-4" aria-hidden="true" />
-          {monthStr}
-        </button>
+        {/* 右: 月（カレンダーボタン）- ロゴと同じ幅でカルーセルを中央に配置 */}
+        <div className="w-24 flex justify-end">
+          <button
+            onClick={toggleCalendar}
+            className={cn(
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-lg',
+              'text-sm font-medium',
+              'text-primary-600 dark:text-primary-400',
+              'bg-primary-100 hover:bg-primary-200',
+              'dark:bg-primary-100 dark:hover:bg-primary-200',
+              'transition-all active:scale-95'
+            )}
+            aria-label={isCalendarOpen ? 'カレンダーを閉じる' : 'カレンダーを開く'}
+            aria-expanded={isCalendarOpen}
+          >
+            <Calendar className="w-4 h-4" aria-hidden="true" />
+            {monthStr}
+          </button>
+        </div>
       </div>
     </header>
   )

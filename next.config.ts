@@ -98,7 +98,8 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: https: blob:",
               "font-src 'self' https://fonts.gstatic.com data:",
-              "connect-src 'self' https://*.supabase.co https://api.stripe.com wss://*.supabase.co",
+              // 開発環境ではローカルSupabase（127.0.0.1:54321）への接続を許可
+              `connect-src 'self' https://*.supabase.co https://api.stripe.com wss://*.supabase.co${process.env.NODE_ENV === 'development' ? ' http://127.0.0.1:54321 ws://127.0.0.1:54321' : ''}`,
               "frame-src 'self' https://js.stripe.com https://hooks.stripe.com",
               "object-src 'none'",
               "base-uri 'self'",
