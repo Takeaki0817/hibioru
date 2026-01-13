@@ -77,8 +77,15 @@ export const createEntry = authActionClient
       throw new Error(getRateLimitErrorMessage(rateCheck.resetAt))
     }
 
-    // 投稿制限チェック
-    const entryLimitResult = await checkEntryLimit(user.id)
+    // 投稿制限チェック・画像制限チェックを並列実行
+    const [entryLimitResult, imageLimitResult] = await Promise.all([
+      checkEntryLimit(user.id),
+      input.imageUrls && input.imageUrls.length > 0
+        ? checkImageLimit(user.id)
+        : Promise.resolve({ ok: true as const, value: { allowed: true, limit: 0, current: 0 } }),
+    ])
+
+    // 投稿制限バリデーション
     if (!entryLimitResult.ok) {
       logger.error('投稿制限チェック失敗', entryLimitResult.error)
       throw new Error('制限チェックに失敗しました')
@@ -87,16 +94,13 @@ export const createEntry = authActionClient
       throw new Error(`本日の投稿上限（${entryLimitResult.value.limit}件）に達しました`)
     }
 
-    // 画像制限チェック（画像付きの場合）
-    if (input.imageUrls && input.imageUrls.length > 0) {
-      const imageLimitResult = await checkImageLimit(user.id)
-      if (!imageLimitResult.ok) {
-        logger.error('画像制限チェック失敗', imageLimitResult.error)
-        throw new Error('制限チェックに失敗しました')
-      }
-      if (!imageLimitResult.value.allowed) {
-        throw new Error(`今月の画像上限（${imageLimitResult.value.limit}枚）に達しました`)
-      }
+    // 画像制限バリデーション
+    if (!imageLimitResult.ok) {
+      logger.error('画像制限チェック失敗', imageLimitResult.error)
+      throw new Error('制限チェックに失敗しました')
+    }
+    if (!imageLimitResult.value.allowed) {
+      throw new Error(`今月の画像上限（${imageLimitResult.value.limit}枚）に達しました`)
     }
 
     const insertData: EntryInsert = {
@@ -119,9 +123,10 @@ export const createEntry = authActionClient
 
     const entry = data as Entry
 
-    // ストリーク更新、通知連携、達成チェックを並列実行（パフォーマンス最適化）
-    // これらの処理の失敗はエントリー作成結果に影響しない（ログのみ）
-    await Promise.allSettled([
+    // 副作用を非同期で実行（Fire-and-Forget）
+    // エントリ作成の成功をすぐに返すため、完了を待機しない
+    const effectNames = ['updateStreakOnEntry', 'handleEntryCreated', 'checkAndCreateAchievements']
+    void Promise.allSettled([
       updateStreakOnEntry(user.id),
       handleEntryCreated({
         userId: user.id,
@@ -132,10 +137,7 @@ export const createEntry = authActionClient
     ]).then((results) => {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
-          logger.error(
-            `並列処理[${index}]失敗`,
-            result.reason instanceof Error ? result.reason : result.reason
-          )
+          logger.error(`副作用失敗: ${effectNames[index]}`, result.reason)
         }
       })
     })
