@@ -1,0 +1,21 @@
+import { Skeleton } from '@/components/ui/skeleton'
+
+/**
+ * プラン選択ページのローディングUI
+ * Suspenseバウンダリのフォールバックとして使用
+ */
+export default function PlansLoading() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-4">
+      <div className="w-full max-w-3xl space-y-4 px-4">
+        <Skeleton className="h-16 w-full rounded-lg bg-primary-100" />
+        <div className="grid gap-4 md:grid-cols-2">
+          <Skeleton className="h-64 w-full rounded-lg bg-primary-100" />
+          <Skeleton className="h-64 w-full rounded-lg bg-primary-100" />
+        </div>
+      </div>
+      <p className="text-muted-foreground">プラン情報を読み込み中...</p>
+      <span className="sr-only">プラン情報を読み込んでいます</span>
+    </div>
+  )
+}
