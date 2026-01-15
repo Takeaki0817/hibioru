@@ -75,7 +75,7 @@ export function FlameAnimation({
               scale: [scale, scale * 1.8, scale],
               transition: { duration: 0.5, ease: 'easeOut' },
             }
-          : {}
+          : undefined
       }
       aria-hidden="true"
     >

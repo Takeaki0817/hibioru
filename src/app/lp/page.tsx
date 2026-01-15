@@ -1,13 +1,34 @@
+import dynamic from 'next/dynamic'
 import { HeroSection } from './components/hero-section'
-import { PainPointsSection } from './components/pain-points-section'
-import { FailureStorySection } from './components/failure-story-section'
-import { SolutionSection } from './components/solution-section'
-import { FeaturesSection } from './components/features-section'
-import { DemoSection } from './components/demo-section'
-import { HowToUseSection } from './components/how-to-use-section'
-import { SocialProofSection } from './components/social-proof-section'
-import { FAQSection } from './components/faq-section'
-import { FinalCTASection } from './components/final-cta-section'
+
+// Below-the-fold sections - dynamic imports for bundle optimization
+const PainPointsSection = dynamic(() =>
+  import('./components/pain-points-section').then((m) => ({ default: m.PainPointsSection }))
+)
+const FailureStorySection = dynamic(() =>
+  import('./components/failure-story-section').then((m) => ({ default: m.FailureStorySection }))
+)
+const SolutionSection = dynamic(() =>
+  import('./components/solution-section').then((m) => ({ default: m.SolutionSection }))
+)
+const FeaturesSection = dynamic(() =>
+  import('./components/features-section').then((m) => ({ default: m.FeaturesSection }))
+)
+const DemoSection = dynamic(() =>
+  import('./components/demo-section').then((m) => ({ default: m.DemoSection }))
+)
+const HowToUseSection = dynamic(() =>
+  import('./components/how-to-use-section').then((m) => ({ default: m.HowToUseSection }))
+)
+const SocialProofSection = dynamic(() =>
+  import('./components/social-proof-section').then((m) => ({ default: m.SocialProofSection }))
+)
+const FAQSection = dynamic(() =>
+  import('./components/faq-section').then((m) => ({ default: m.FAQSection }))
+)
+const FinalCTASection = dynamic(() =>
+  import('./components/final-cta-section').then((m) => ({ default: m.FinalCTASection }))
+)
 
 export default function LandingPage() {
   return (
