@@ -78,8 +78,8 @@ export function useDateCarousel({
     (date: Date) => {
       // 今日は常にアクティブ（投稿がなくても空セクションを表示するため）
       if (isToday(date)) return true
-      // entryDatesが未取得の場合は全てアクティブとして扱う
-      if (!entryDates || entryDates.size === 0) return true
+      // entryDatesが空の場合は今日のみアクティブ（過去日付への移動を防止）
+      if (!entryDates || entryDates.size === 0) return false
       return entryDates.has(format(date, 'yyyy-MM-dd'))
     },
     [entryDates]

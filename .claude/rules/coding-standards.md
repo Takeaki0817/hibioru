@@ -72,3 +72,22 @@ import type { Entry } from '@/lib/types'
 // 3. 相対インポート（同一機能内のみ）
 import { useEntryForm } from './hooks'
 ```
+
+## Result型（Railway Oriented Programming）
+
+```typescript
+// Server Actions での使用
+export async function myAction(): Promise<Result<Data, AppError>> {
+  if (!valid) return err({ code: 'INVALID_INPUT', message: '...' })
+  return ok(data)
+}
+
+// 呼び出し側
+const result = await myAction()
+if (isOk(result)) {
+  // result.value にアクセス
+}
+```
+
+- `Result<T, E>` は Server Actions で必須
+- `isOk()` / `isError()` でパターンマッチ

@@ -9,10 +9,12 @@ paths: src/features/**/api/**, src/features/**/hooks/use-*.ts
 ### エラーチェック必須
 
 ```typescript
+import { logger } from '@/lib/logger'
+
 const { data, error } = await supabase.from('table').select()
 
 if (error) {
-  console.error('取得失敗:', error.message)
+  logger.error('取得失敗:', error.message)
 }
 ```
 
@@ -53,7 +55,7 @@ await Promise.allSettled([
 ]).then((results) => {
   results.forEach((result, index) => {
     if (result.status === 'rejected') {
-      console.error(`並列処理[${index}]失敗:`, result.reason)
+      logger.error(`並列処理[${index}]失敗:`, result.reason)
     }
   })
 })

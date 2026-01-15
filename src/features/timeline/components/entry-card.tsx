@@ -4,6 +4,7 @@ import { useCallback, useMemo, memo, forwardRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
+import { Loader2 } from 'lucide-react'
 import type { TimelineEntry } from '../types'
 import { cn } from '@/lib/utils'
 
@@ -63,21 +64,29 @@ export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
   function EntryCard({ entry }, ref) {
     const router = useRouter()
 
+    // 楽観的エントリかどうかを判定
+    const isOptimistic = useMemo(
+      () => entry.id.startsWith('optimistic-'),
+      [entry.id]
+    )
+
     // 絵文字のみかどうか
     const emojiOnly = useMemo(() => isEmojiOnly(entry.content), [entry.content])
 
     // タップ処理
     const handleTap = useCallback(() => {
+      if (isOptimistic) return
       router.push(`/edit/${entry.id}`)
-    }, [router, entry.id])
+    }, [router, entry.id, isOptimistic])
 
     // キーボード操作（Enter/Spaceで編集画面へ）
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+      if (isOptimistic) return
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
         router.push(`/edit/${entry.id}`)
       }
-    }, [router, entry.id])
+    }, [router, entry.id, isOptimistic])
 
     // アクセシビリティラベル用・表示用の時刻文字列（メモ化）
     const timeLabel = useMemo(
@@ -92,31 +101,35 @@ export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
     return (
       <motion.div
         ref={ref}
-        role="button"
-        tabIndex={0}
+        role={isOptimistic ? 'article' : 'button'}
+        tabIndex={isOptimistic ? -1 : 0}
         aria-label={`${timeLabel}の記録を編集`}
+        aria-disabled={isOptimistic ? true : undefined}
+        aria-busy={isOptimistic}
         variants={cardVariants}
         initial="initial"
         animate="animate"
-        whileHover="hover"
-        whileTap="tap"
+        whileHover={isOptimistic ? undefined : 'hover'}
+        whileTap={isOptimistic ? undefined : 'tap'}
         className={cn(
-        'relative cursor-pointer rounded-xl',
-        'transition-colors',
-        // フォーカスリング
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        // セパレータ線（擬似要素）
-        'after:absolute after:bottom-0 after:left-4 after:right-4',
-        'after:h-px after:bg-border'
-      )}
-      onClick={handleTap}
-      onKeyDown={handleKeyDown}
-    >
-      <div className="px-4 py-6">
-        {/* 時刻表示 */}
-        <div className="text-xs text-muted-foreground font-medium">
-          {timeLabel}
-        </div>
+          'relative rounded-xl',
+          'transition-colors',
+          // カーソルとオパシティ
+          isOptimistic ? 'cursor-default opacity-75' : 'cursor-pointer',
+          // フォーカスリング（楽観的でない場合のみ）
+          !isOptimistic && 'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          // セパレータ線（擬似要素）
+          'after:absolute after:bottom-0 after:left-4 after:right-4',
+          'after:h-px after:bg-border'
+        )}
+        onClick={handleTap}
+        onKeyDown={handleKeyDown}
+      >
+        <div className="px-4 py-6">
+          {/* 時刻表示 */}
+          <div className="text-xs text-muted-foreground font-medium">
+            {timeLabel}
+          </div>
 
         {/* コンテンツ表示 */}
         {emojiOnly ? (
@@ -131,39 +144,47 @@ export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
           </div>
         )}
 
-        {/* 画像表示 */}
-        {entry.imageUrls && entry.imageUrls.length > 0 && (() => {
-          const imageUrls = entry.imageUrls
-          const isSingle = imageUrls.length === 1
-          return (
-            <div className={cn(
-              'mt-3 gap-2',
-              isSingle ? 'block' : 'flex'
-            )}>
-              {imageUrls.map((url, index) => (
-                <div
-                  key={index}
-                  className={cn(
-                    'relative overflow-hidden rounded-lg',
-                    isSingle ? 'w-full h-64' : 'flex-1 h-48'
-                  )}
-                >
-                  <Image
-                    src={url}
-                    alt={`投稿画像 ${index + 1}`}
-                    fill
-                    sizes={isSingle
-                      ? '(max-width: 672px) 100vw, 672px'
-                      : '(max-width: 672px) 50vw, 336px'}
-                    className="object-cover transition-transform hover:scale-105"
-                  />
-                </div>
-              ))}
+          {/* 画像表示 */}
+          {entry.imageUrls && entry.imageUrls.length > 0 && (() => {
+            const imageUrls = entry.imageUrls
+            const isSingle = imageUrls.length === 1
+            return (
+              <div className={cn(
+                'mt-3 gap-2',
+                isSingle ? 'block' : 'flex'
+              )}>
+                {imageUrls.map((url, index) => (
+                  <div
+                    key={index}
+                    className={cn(
+                      'relative overflow-hidden rounded-lg',
+                      isSingle ? 'w-full h-64' : 'flex-1 h-48'
+                    )}
+                  >
+                    <Image
+                      src={url}
+                      alt={`投稿画像 ${index + 1}`}
+                      fill
+                      sizes={isSingle
+                        ? '(max-width: 672px) 100vw, 672px'
+                        : '(max-width: 672px) 50vw, 336px'}
+                      className="object-cover transition-transform hover:scale-105"
+                    />
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+
+          {/* 保存中インジケーター */}
+          {isOptimistic && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-2">
+              <Loader2 className="size-3 animate-spin" />
+              <span>保存中...</span>
             </div>
-          )
-        })()}
-      </div>
-    </motion.div>
+          )}
+        </div>
+      </motion.div>
     )
   }
 ), areEntryPropsEqual)

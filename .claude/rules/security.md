@@ -1,5 +1,5 @@
 ---
-paths: src/**/*.ts, src/**/*.tsx
+paths: src/**/api/**/*.ts, src/**/actions/**/*.ts, src/features/**/api/**
 ---
 
 # セキュリティ規約
