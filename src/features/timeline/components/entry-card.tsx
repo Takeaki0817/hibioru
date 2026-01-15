@@ -1,10 +1,14 @@
 'use client'
 
-import { useCallback, useMemo, memo, forwardRef } from 'react'
+import { useCallback, useMemo, useState, memo, forwardRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { useQueryClient } from '@tanstack/react-query'
+import type { InfiniteData } from '@tanstack/react-query'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import type { TimelineEntry } from '../types'
+import { Loader2 } from 'lucide-react'
+import { toast } from 'sonner'
+import type { TimelineEntry, TimelinePage } from '../types'
 import { cn } from '@/lib/utils'
 
 export interface EntryCardProps {
@@ -59,25 +63,112 @@ function isEmojiOnly(content: string): boolean {
   return trimmed.length <= 20 && emojiRegex.test(trimmed)
 }
 
+// 楽観的エントリかどうかを判定
+function isOptimisticEntry(id: string): boolean {
+  return id.startsWith('optimistic-')
+}
+
+// 楽観的エントリが実際のエントリに置き換わるまで待機
+async function waitForActualEntry(
+  queryClient: ReturnType<typeof useQueryClient>,
+  userId: string,
+  createdAt: Date,
+  timeoutMs: number = 5000
+): Promise<string | null> {
+  const startTime = Date.now()
+  const pollInterval = 100 // 100msごとにチェック
+
+  return new Promise((resolve) => {
+    const checkCache = () => {
+      // タイムアウトチェック
+      if (Date.now() - startTime > timeoutMs) {
+        resolve(null)
+        return
+      }
+
+      // キャッシュからタイムラインデータを取得
+      const queryCache = queryClient.getQueryCache()
+      const queries = queryCache.findAll({
+        queryKey: ['entries', 'timeline', userId],
+        exact: false,
+      })
+
+      // 全てのタイムラインキャッシュを走査
+      for (const query of queries) {
+        const data = query.state.data as InfiniteData<TimelinePage> | undefined
+        if (!data?.pages) continue
+
+        for (const page of data.pages) {
+          for (const entry of page.entries) {
+            // 楽観的エントリでないかつ、同じcreatedAtを持つエントリを探す
+            // （createdAtは秒精度で比較）
+            if (
+              !isOptimisticEntry(entry.id) &&
+              Math.abs(entry.createdAt.getTime() - createdAt.getTime()) < 1000
+            ) {
+              resolve(entry.id)
+              return
+            }
+          }
+        }
+      }
+
+      // 見つからなければ次のポーリング
+      setTimeout(checkCache, pollInterval)
+    }
+
+    checkCache()
+  })
+}
+
 export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
   function EntryCard({ entry }, ref) {
     const router = useRouter()
+    const queryClient = useQueryClient()
+    const [isWaiting, setIsWaiting] = useState(false)
 
     // 絵文字のみかどうか
     const emojiOnly = useMemo(() => isEmojiOnly(entry.content), [entry.content])
 
+    // 楽観的エントリかどうか
+    const isOptimistic = isOptimisticEntry(entry.id)
+
     // タップ処理
-    const handleTap = useCallback(() => {
+    const handleTap = useCallback(async () => {
+      // 楽観的エントリの場合は保存完了を待機
+      if (isOptimistic) {
+        setIsWaiting(true)
+        try {
+          const actualId = await waitForActualEntry(
+            queryClient,
+            entry.userId,
+            entry.createdAt
+          )
+
+          if (actualId) {
+            router.push(`/edit/${actualId}`)
+          } else {
+            // タイムアウト：エラーメッセージを表示
+            toast.error('保存処理中です', {
+              description: 'しばらくしてから再度お試しください',
+            })
+          }
+        } finally {
+          setIsWaiting(false)
+        }
+        return
+      }
+
       router.push(`/edit/${entry.id}`)
-    }, [router, entry.id])
+    }, [router, entry.id, entry.userId, entry.createdAt, isOptimistic, queryClient])
 
     // キーボード操作（Enter/Spaceで編集画面へ）
     const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault()
-        router.push(`/edit/${entry.id}`)
+        handleTap()
       }
-    }, [router, entry.id])
+    }, [handleTap])
 
     // アクセシビリティラベル用・表示用の時刻文字列（メモ化）
     const timeLabel = useMemo(
@@ -95,24 +186,33 @@ export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
         role="button"
         tabIndex={0}
         aria-label={`${timeLabel}の記録を編集`}
+        aria-busy={isWaiting}
         variants={cardVariants}
         initial="initial"
         animate="animate"
-        whileHover="hover"
-        whileTap="tap"
+        whileHover={isWaiting ? undefined : 'hover'}
+        whileTap={isWaiting ? undefined : 'tap'}
         className={cn(
-        'relative cursor-pointer rounded-xl',
-        'transition-colors',
-        // フォーカスリング
-        'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-        // セパレータ線（擬似要素）
-        'after:absolute after:bottom-0 after:left-4 after:right-4',
-        'after:h-px after:bg-border'
-      )}
-      onClick={handleTap}
-      onKeyDown={handleKeyDown}
-    >
-      <div className="px-4 py-6">
+          'relative cursor-pointer rounded-xl',
+          'transition-colors',
+          // フォーカスリング
+          'focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          // セパレータ線（擬似要素）
+          'after:absolute after:bottom-0 after:left-4 after:right-4',
+          'after:h-px after:bg-border',
+          // ローディング中は操作を無効化
+          isWaiting && 'pointer-events-none'
+        )}
+        onClick={handleTap}
+        onKeyDown={handleKeyDown}
+      >
+        {/* ローディングオーバーレイ */}
+        {isWaiting && (
+          <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/80">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+          </div>
+        )}
+        <div className="px-4 py-6">
         {/* 時刻表示 */}
         <div className="text-xs text-muted-foreground font-medium">
           {timeLabel}
