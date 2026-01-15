@@ -110,8 +110,7 @@ export const createEntry = authActionClient
       image_urls: input.imageUrls ?? null,
       is_shared: input.isShared ?? false,
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('entries')
       .insert(insertData)
       .select()
@@ -168,8 +167,7 @@ export const updateEntry = authActionClient
       image_urls: input.imageUrls ?? null,
       is_shared: input.isShared,
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('entries')
       .update(updateData)
       .eq('id', input.id)
@@ -233,8 +231,7 @@ export const deleteEntry = authActionClient
       throw new BusinessLogicError('このエントリを削除する権限がありません')
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('entries')
       .update({ is_deleted: true })
       .eq('id', id)

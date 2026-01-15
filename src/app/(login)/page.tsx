@@ -4,7 +4,6 @@ import { Suspense, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Roboto } from 'next/font/google'
 import { createClient } from '@/lib/supabase/client'
 import { classifyAuthError, parseErrorParam } from '@/features/auth/errors'
 import type { AuthError } from '@/lib/types/auth'
@@ -12,13 +11,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Logo } from '@/components/brand/logo'
 import { cn } from '@/lib/utils'
-
-// Google Sign-In ブランドガイドライン準拠のためのフォント
-const roboto = Roboto({
-  weight: ['500'],
-  subsets: ['latin'],
-  display: 'swap',
-})
 
 // アニメーション設定 - より滑らかで落ち着いた動き
 const fadeIn = {
@@ -214,9 +206,8 @@ function LoginContent() {
               onClick={handleGoogleLogin}
               disabled={isLoading}
               className={cn(
-                roboto.className,
                 'w-full h-[40px] flex items-center justify-center gap-[10px]',
-                'text-sm leading-5', // 14px / 20px
+                'text-sm leading-5 font-medium', // 14px / 20px
                 'rounded-[4px]',
                 'transition-opacity duration-200',
                 'cursor-pointer',

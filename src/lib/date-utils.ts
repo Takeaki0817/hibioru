@@ -57,6 +57,18 @@ export function isoToJSTDateString(isoString: string): string {
 }
 
 /**
+ * YYYY-MM-DD形式の日付文字列をJST基準のDateオブジェクトに変換
+ * タイムゾーン未指定の日付文字列をJSTとして解釈する
+ * @param dateString YYYY-MM-DD形式の日付文字列
+ * @returns JSTの0:00:00を示すDateオブジェクト
+ */
+export function parseJSTDateString(dateString: string): Date {
+  // YYYY-MM-DD形式にJSTオフセット（+09:00）を付与して解析
+  // これにより、どのタイムゾーンのブラウザでも同じUTC時刻として解釈される
+  return new Date(`${dateString}T00:00:00+09:00`)
+}
+
+/**
  * JST基準で指定月の開始・終了時刻を取得（UTC）
  * @param referenceDate 基準日時（デフォルト: 現在時刻）
  * @returns start: 当月1日0:00:00のUTC、end: 翌月1日0:00:00のUTC

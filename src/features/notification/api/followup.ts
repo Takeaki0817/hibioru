@@ -57,17 +57,20 @@ export interface FollowUpSchedule {
 }
 
 /**
- * 通知設定（DBから取得）
+ * リマインダー設定の型（reminders JSONカラムの構造）
  */
-interface NotificationSettingsRow {
-  user_id: string;
+interface ReminderEntry {
+  time: string;
   enabled: boolean;
-  primary_time: string;
-  timezone: string;
-  follow_up_enabled: boolean;
-  follow_up_interval_minutes: number;
-  follow_up_max_count: number;
-  active_days: number[];
+}
+
+/**
+ * reminders JSON から primary_time を取得する
+ */
+function getPrimaryTimeFromReminders(reminders: unknown): string | null {
+  if (!Array.isArray(reminders)) return null;
+  const enabledReminder = (reminders as ReminderEntry[]).find((r) => r.enabled);
+  return enabledReminder?.time ?? null;
 }
 
 /**
@@ -258,8 +261,7 @@ export async function getNextFollowUpTime(
     const supabase = await createClient();
 
     // 通知設定を取得
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingsData, error: settingsError } = await (supabase as any)
+    const { data: settingsData, error: settingsError } = await supabase
       .from('notification_settings')
       .select()
       .eq('user_id', userId)
@@ -272,27 +274,30 @@ export async function getNextFollowUpTime(
       return err({ type: 'DATABASE_ERROR', message: settingsError.message });
     }
 
-    const settings = settingsData as NotificationSettingsRow;
-
     // 追いリマインドが無効の場合
-    if (!settings.follow_up_enabled) {
+    if (!settingsData.chase_reminder_enabled) {
+      return ok(null);
+    }
+
+    // primary_time を reminders JSON から取得
+    const primaryTime = getPrimaryTimeFromReminders(settingsData.reminders);
+    if (!primaryTime) {
       return ok(null);
     }
 
     // スケジュールを計算
     const schedule = calculateFollowUpSchedule(
-      settings.primary_time,
-      settings.follow_up_interval_minutes,
-      settings.follow_up_max_count,
-      settings.timezone,
+      primaryTime,
+      settingsData.chase_reminder_delay_minutes,
+      settingsData.follow_up_max_count,
+      settingsData.timezone,
       currentTime
     );
 
     // 当日の送信履歴を取得
-    const { startOfDay, endOfDay } = getDayBoundaries(settings.timezone, currentTime);
+    const { startOfDay, endOfDay } = getDayBoundaries(settingsData.timezone, currentTime);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: logsData, error: logsError } = await (supabase as any)
+    const { data: logsData, error: logsError } = await supabase
       .from('notification_logs')
       .select('type, sent_at')
       .eq('user_id', userId)
@@ -312,7 +317,7 @@ export async function getNextFollowUpTime(
     ).length;
 
     // maxCountに達している場合
-    if (chaseReminderCount >= settings.follow_up_max_count) {
+    if (chaseReminderCount >= settingsData.follow_up_max_count) {
       return ok(null);
     }
 
@@ -348,8 +353,7 @@ export async function shouldSendFollowUp(
     const supabase = await createClient();
 
     // 通知設定を取得
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: settingsData, error: settingsError } = await (supabase as any)
+    const { data: settingsData, error: settingsError } = await supabase
       .from('notification_settings')
       .select()
       .eq('user_id', userId)
@@ -362,10 +366,18 @@ export async function shouldSendFollowUp(
       return err({ type: 'DATABASE_ERROR', message: settingsError.message });
     }
 
-    const settings = settingsData as NotificationSettingsRow;
-
     // 追いリマインドが無効の場合
-    if (!settings.follow_up_enabled) {
+    if (!settingsData.chase_reminder_enabled) {
+      return ok({
+        shouldSend: false,
+        followUpCount: 0,
+        reason: 'disabled',
+      });
+    }
+
+    // primary_time を reminders JSON から取得
+    const primaryTime = getPrimaryTimeFromReminders(settingsData.reminders);
+    if (!primaryTime) {
       return ok({
         shouldSend: false,
         followUpCount: 0,
@@ -374,11 +386,10 @@ export async function shouldSendFollowUp(
     }
 
     // タイムゾーン考慮した当日の範囲を取得
-    const { startOfDay, endOfDay } = getDayBoundaries(settings.timezone, currentTime);
+    const { startOfDay, endOfDay } = getDayBoundaries(settingsData.timezone, currentTime);
 
     // 当日の送信履歴を取得
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: logsData, error: logsError } = await (supabase as any)
+    const { data: logsData, error: logsError } = await supabase
       .from('notification_logs')
       .select('type, sent_at')
       .eq('user_id', userId)
@@ -399,7 +410,7 @@ export async function shouldSendFollowUp(
     ).length;
 
     // maxCountに達している場合
-    if (chaseReminderCount >= settings.follow_up_max_count) {
+    if (chaseReminderCount >= settingsData.follow_up_max_count) {
       return ok({
         shouldSend: false,
         followUpCount: chaseReminderCount,
@@ -409,10 +420,10 @@ export async function shouldSendFollowUp(
 
     // スケジュールを計算
     const schedule = calculateFollowUpSchedule(
-      settings.primary_time,
-      settings.follow_up_interval_minutes,
-      settings.follow_up_max_count,
-      settings.timezone,
+      primaryTime,
+      settingsData.chase_reminder_delay_minutes,
+      settingsData.follow_up_max_count,
+      settingsData.timezone,
       currentTime
     );
 
@@ -472,8 +483,7 @@ export async function cancelFollowUps(
     const dateStr = targetDate.toISOString().split('T')[0];
 
     // キャンセルレコードを挿入（既に存在する場合は無視）
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('follow_up_cancellations')
       .insert({
         user_id: userId,
@@ -513,8 +523,7 @@ export async function isFollowUpCancelled(
     // 日付文字列を作成（YYYY-MM-DD形式）
     const dateStr = targetDate.toISOString().split('T')[0];
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('follow_up_cancellations')
       .select('id')
       .eq('user_id', userId)

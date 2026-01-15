@@ -18,7 +18,7 @@ async function getTodayEntryCount(userId: string): Promise<number> {
 
   const { count, error } = await supabase
     .from('entries')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('is_deleted', false)
     .gte('created_at', start.toISOString())
@@ -40,7 +40,7 @@ async function getTotalEntryCount(userId: string): Promise<number> {
 
   const { count, error } = await supabase
     .from('entries')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('is_deleted', false)
 

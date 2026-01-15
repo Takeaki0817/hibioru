@@ -15,7 +15,6 @@ export function ServiceWorkerRegistration() {
   const handleWaitingServiceWorker = useCallback((registration: ServiceWorkerRegistration) => {
     const waitingSW = registration.waiting
     if (waitingSW) {
-      console.log('[PWA] 新しいバージョンが利用可能です。更新中...')
       // 待機中のSWにスキップを指示
       waitingSW.postMessage({ type: 'SKIP_WAITING' })
     }
@@ -27,12 +26,12 @@ export function ServiceWorkerRegistration() {
     }
 
     let refreshing = false
+    let updateIntervalId: ReturnType<typeof setInterval> | null = null
 
     // コントローラーが変わったらページをリロード
     const handleControllerChange = () => {
       if (refreshing) return
       refreshing = true
-      console.log('[PWA] Service Workerが更新されました。リロードします...')
       window.location.reload()
     }
 
@@ -42,8 +41,6 @@ export function ServiceWorkerRegistration() {
     navigator.serviceWorker
       .register('/sw.js')
       .then((registration) => {
-        console.log('[PWA] Service Worker登録成功')
-
         // 既に待機中のSWがあれば更新
         if (registration.waiting) {
           handleWaitingServiceWorker(registration)
@@ -55,32 +52,32 @@ export function ServiceWorkerRegistration() {
           const newSW = registration.installing
           if (!newSW) return
 
-          console.log('[PWA] 新しいService Workerをインストール中...')
-
           // 新SWの状態変化を監視
           newSW.addEventListener('statechange', () => {
             if (newSW.state === 'installed' && navigator.serviceWorker.controller) {
               // 新しいSWがインストール完了し、既存のコントローラーがある場合
               // （= アップデート時）
-              console.log('[PWA] 新しいService Workerがインストールされました')
               handleWaitingServiceWorker(registration)
             }
           })
         })
 
         // 定期的に更新をチェック（1時間ごと）
-        setInterval(() => {
+        updateIntervalId = setInterval(() => {
           registration.update().catch(() => {
             // 更新チェックエラーは無視
           })
         }, 60 * 60 * 1000)
       })
-      .catch((error) => {
-        console.warn('[PWA] Service Worker登録エラー:', error)
+      .catch(() => {
+        // Service Worker登録エラーは無視（ユーザー体験に影響しない）
       })
 
     return () => {
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange)
+      if (updateIntervalId !== null) {
+        clearInterval(updateIntervalId)
+      }
     }
   }, [handleWaitingServiceWorker])
 
