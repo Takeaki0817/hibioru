@@ -1,6 +1,7 @@
 import { createSafeActionClient } from 'next-safe-action'
 import { createClient } from '@/lib/supabase/server'
 import { logger } from '@/lib/logger'
+import { isBusinessLogicError } from '@/lib/errors'
 import type { User, SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/database.generated'
 
@@ -18,6 +19,13 @@ export interface AuthContext {
  */
 export const actionClient = createSafeActionClient({
   handleServerError: (error) => {
+    // ビジネスロジックエラー（ユーザー向け）はそのまま返す
+    if (isBusinessLogicError(error)) {
+      logger.warn('ビジネスロジックエラー', { message: error.message })
+      return error.message
+    }
+
+    // 内部エラーは汎用化（詳細はログのみ）
     logger.error('Server Action エラー', error)
     return '処理中にエラーが発生しました'
   },
