@@ -53,14 +53,14 @@ const cardVariants = {
   },
 }
 
+// 絵文字のみかどうかを判定するための正規表現（モジュールレベルでホイスト）
+const EMOJI_ONLY_REGEX = /^[\p{Emoji}\s]+$/u
+
 // 絵文字のみかどうかを判定
 function isEmojiOnly(content: string): boolean {
-  // 絵文字の正規表現パターン（絵文字とスペースのみ）
-  const emojiRegex = /^[\p{Emoji}\s]+$/u
   const trimmed = content.trim()
-
   // 短い（20文字以下）かつ絵文字のみの場合
-  return trimmed.length <= 20 && emojiRegex.test(trimmed)
+  return trimmed.length <= 20 && EMOJI_ONLY_REGEX.test(trimmed)
 }
 
 export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(

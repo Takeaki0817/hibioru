@@ -10,6 +10,24 @@ import { useCalendarData } from '../hooks/use-calendar-data'
 import { useTimelineStore } from '../stores/timeline-store'
 import 'react-day-picker/dist/style.css'
 
+// 静的な凡例JSXをモジュールレベルでホイスト（再レンダー時の再生成を防止）
+const CALENDAR_LEGEND = (
+  <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-border pt-4 text-sm text-muted-foreground">
+    <div className="flex items-center gap-2">
+      <span className="inline-block h-2 w-2 rounded-full bg-accent-400"></span>
+      <span>今日</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <span className="inline-block h-1 w-6 rounded-full bg-primary-300"></span>
+      <span>記録あり</span>
+    </div>
+    <div className="flex items-center gap-2">
+      <Spool className="h-3 w-3 text-primary-400" />
+      <span>ほつれ</span>
+    </div>
+  </div>
+)
+
 // カスタムDayButtonコンポーネント
 function CustomDayButton(props: DayButtonProps) {
   const { day, modifiers, ...buttonProps } = props
@@ -131,16 +149,21 @@ export function MonthCalendar({
     }
   }, [days])
 
-  const {
-    entryDays,
-    streakStartDays,
-    streakMiddleDays,
-    streakEndDays,
-    streakSingleDays,
-    hotsureDays,
-    noEntryDays,
-    today,
-  } = calendarCategories
+  const { noEntryDays, today } = calendarCategories
+
+  // DayPickerモディファイアをメモ化（毎レンダーでのオブジェクト再生成を防止）
+  const modifiers = useMemo(
+    () => ({
+      entry: calendarCategories.entryDays,
+      streakStart: calendarCategories.streakStartDays,
+      streakMiddle: calendarCategories.streakMiddleDays,
+      streakEnd: calendarCategories.streakEndDays,
+      streakSingle: calendarCategories.streakSingleDays,
+      hotsure: calendarCategories.hotsureDays,
+      today: today ? [today] : [],
+    }),
+    [calendarCategories, today]
+  )
 
   if (!isOpen) return null
 
@@ -175,15 +198,7 @@ export function MonthCalendar({
               locale={ja}
               disabled={noEntryDays}
               fixedWeeks={true}
-              modifiers={{
-                entry: entryDays,
-                streakStart: streakStartDays,
-                streakMiddle: streakMiddleDays,
-                streakEnd: streakEndDays,
-                streakSingle: streakSingleDays,
-                hotsure: hotsureDays,
-                today: today ? [today] : [],
-              }}
+              modifiers={modifiers}
               components={{
                 DayButton: CustomDayButton,
                 Chevron: CustomChevron,
@@ -196,20 +211,7 @@ export function MonthCalendar({
         </div>
 
         {/* 凡例 */}
-        <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-2 border-t border-border pt-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <span className="inline-block h-2 w-2 rounded-full bg-accent-400"></span>
-            <span>今日</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="inline-block h-1 w-6 rounded-full bg-primary-300"></span>
-            <span>記録あり</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Spool className="h-3 w-3 text-primary-400" />
-            <span>ほつれ</span>
-          </div>
-        </div>
+        {CALENDAR_LEGEND}
       </div>
     </>
   )
