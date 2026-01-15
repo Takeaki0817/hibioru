@@ -18,7 +18,7 @@ describe('entry-form-store', () => {
       expect(state.content).toBe('')
       expect(state.images).toEqual([])
       expect(state.existingImageUrls).toEqual([])
-      expect(state.removedImageUrls).toEqual([])
+      expect(state.removedImageUrls).toEqual(new Set())
       expect(state.isSubmitting).toBe(false)
       expect(state.isDeleting).toBe(false)
       expect(state.showDeleteConfirm).toBe(false)

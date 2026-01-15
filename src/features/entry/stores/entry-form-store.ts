@@ -10,7 +10,7 @@ const initialState = {
   content: '',
   images: [] as CompressedImage[], // 新規追加する画像（最大2枚）
   existingImageUrls: [] as string[], // 編集時の既存画像URL
-  removedImageUrls: [] as string[], // 削除予定としてマークされた既存画像URL
+  removedImageUrls: new Set<string>(), // 削除予定としてマークされた既存画像URL（Set.has()で高速ルックアップ）
   isShared: false, // ソーシャルタイムラインに共有するか
 
   // UI状態
@@ -29,7 +29,7 @@ interface EntryFormState {
   content: string
   images: CompressedImage[]
   existingImageUrls: string[]
-  removedImageUrls: string[]
+  removedImageUrls: Set<string>
   isShared: boolean
 
   // UI状態
@@ -80,7 +80,7 @@ export const selectCanSubmit = (state: EntryFormState): boolean =>
 // 現在の合計画像数を計算するセレクター
 export const selectTotalImageCount = (state: EntryFormState): number => {
   const existingCount = state.existingImageUrls.filter(
-    (url) => !state.removedImageUrls.includes(url)
+    (url) => !state.removedImageUrls.has(url)
   ).length
   return state.images.length + existingCount
 }
@@ -116,13 +116,15 @@ export const useEntryFormStore = create<EntryFormStore>((set) => ({
     }),
   toggleExistingImageRemoval: (url) =>
     set((state) => {
-      if (state.removedImageUrls.includes(url)) {
+      const newSet = new Set(state.removedImageUrls)
+      if (newSet.has(url)) {
         // 削除予定から復帰
-        return { removedImageUrls: state.removedImageUrls.filter((u) => u !== url) }
+        newSet.delete(url)
       } else {
         // 削除予定に追加
-        return { removedImageUrls: [...state.removedImageUrls, url] }
+        newSet.add(url)
       }
+      return { removedImageUrls: newSet }
     }),
 
   // UI状態
@@ -146,6 +148,7 @@ export const useEntryFormStore = create<EntryFormStore>((set) => ({
       ...initialState,
       content: initialContent,
       existingImageUrls: existingImageUrls ?? [],
+      removedImageUrls: new Set<string>(),
       isShared: initialIsShared,
     }),
 

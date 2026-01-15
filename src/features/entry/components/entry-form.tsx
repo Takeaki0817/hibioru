@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useImperativeHandle, forwardRef, useCallback } from 'react'
+import { useShallow } from 'zustand/shallow'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cva } from 'class-variance-authority'
 import { MessageCircleMore, Trash2, Users } from 'lucide-react'
@@ -70,27 +71,45 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
   { mode, initialEntry, userId, onSuccess, hideSubmitButton },
   ref
 ) {
-  // Zustandストアから状態とアクションを取得
-  const content = useEntryFormStore((s) => s.content)
-  const images = useEntryFormStore((s) => s.images)
-  const existingImageUrls = useEntryFormStore((s) => s.existingImageUrls)
-  const removedImageUrls = useEntryFormStore((s) => s.removedImageUrls)
-  const isShared = useEntryFormStore((s) => s.isShared)
-  const isSubmitting = useEntryFormStore((s) => s.isSubmitting)
-  const isSuccess = useEntryFormStore((s) => s.isSuccess)
-  const isFocused = useEntryFormStore((s) => s.isFocused)
-  const error = useEntryFormStore((s) => s.error)
+  // Zustandストアから状態とアクションを取得（useShallowで依存配列チェック削減）
+  // Form state group
+  const formState = useEntryFormStore(
+    useShallow((s) => ({
+      content: s.content,
+      images: s.images,
+      existingImageUrls: s.existingImageUrls,
+      removedImageUrls: s.removedImageUrls,
+      isShared: s.isShared,
+    }))
+  )
+
+  // UI state group
+  const uiState = useEntryFormStore(
+    useShallow((s) => ({
+      isSubmitting: s.isSubmitting,
+      isSuccess: s.isSuccess,
+      isFocused: s.isFocused,
+      error: s.error,
+    }))
+  )
+
+  // Actions group
+  const actions = useEntryFormStore(
+    useShallow((s) => ({
+      setContent: s.setContent,
+      setIsShared: s.setIsShared,
+      addImage: s.addImage,
+      removeImage: s.removeImage,
+      toggleExistingImageRemoval: s.toggleExistingImageRemoval,
+      setFocused: s.setFocused,
+      initialize: s.initialize,
+      reset: s.reset,
+    }))
+  )
+
+  // Keep selector-based values separate
   const canSubmit = useEntryFormStore(selectCanSubmit)
   const canAddImage = useEntryFormStore(selectCanAddImage)
-
-  const setContent = useEntryFormStore((s) => s.setContent)
-  const setIsShared = useEntryFormStore((s) => s.setIsShared)
-  const addImage = useEntryFormStore((s) => s.addImage)
-  const removeImage = useEntryFormStore((s) => s.removeImage)
-  const toggleExistingImageRemoval = useEntryFormStore((s) => s.toggleExistingImageRemoval)
-  const setFocused = useEntryFormStore((s) => s.setFocused)
-  const initialize = useEntryFormStore((s) => s.initialize)
-  const reset = useEntryFormStore((s) => s.reset)
 
   // 送信・削除フック
   const { formRef, handleSubmit, submitForm } = useEntrySubmit({
@@ -124,17 +143,17 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
     if (mode === 'create') {
       // 下書き復元
       const draft = loadDraft()
-      initialize(draft?.content || '', null, false)
+      actions.initialize(draft?.content || '', null, false)
     } else {
       // 編集モード：既存コンテンツ、画像URL、共有状態で初期化
-      initialize(initialEntry?.content || '', initialEntry?.image_urls || null, initialEntry?.is_shared ?? false)
+      actions.initialize(initialEntry?.content || '', initialEntry?.image_urls || null, initialEntry?.is_shared ?? false)
     }
 
     // アンマウント時にリセット
     return () => {
-      reset()
+      actions.reset()
     }
-  }, [mode, initialEntry?.content, initialEntry?.image_urls, initialEntry?.is_shared, initialize, reset])
+  }, [mode, initialEntry?.content, initialEntry?.image_urls, initialEntry?.is_shared, actions])
 
   // 下書き自動保存（300msデバウンス、新規作成時のみ）
   useEffect(() => {
@@ -142,14 +161,14 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
     const timer = setTimeout(() => {
       saveDraft({
-        content,
-        imagePreview: images[0]?.previewUrl || null,
+        content: formState.content,
+        imagePreview: formState.images[0]?.previewUrl || null,
         savedAt: new Date().toISOString(),
       })
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [content, images, mode])
+  }, [formState.content, formState.images, mode])
 
   // マウント時にtextareaにフォーカス
   useEffect(() => {
@@ -168,14 +187,14 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
   // テキストエリアのイベントハンドラー（useCallbackで安定化）
   const handleContentChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => setContent(e.target.value),
-    [setContent]
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => actions.setContent(e.target.value),
+    [actions]
   )
-  const handleFocus = useCallback(() => setFocused(true), [setFocused])
-  const handleBlur = useCallback(() => setFocused(false), [setFocused])
+  const handleFocus = useCallback(() => actions.setFocused(true), [actions])
+  const handleBlur = useCallback(() => actions.setFocused(false), [actions])
 
   // 操作無効化フラグ
-  const isDisabled = isSubmitting || isSuccess
+  const isDisabled = uiState.isSubmitting || uiState.isSuccess
 
   return (
     <motion.form
@@ -196,25 +215,25 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           <Users className="size-5 text-muted-foreground" />
           <Switch
             id="share-toggle"
-            checked={isShared}
-            onCheckedChange={setIsShared}
+            checked={formState.isShared}
+            onCheckedChange={actions.setIsShared}
             disabled={isDisabled}
           />
         </label>
       </div>
 
       {/* テキストエリア */}
-      <div className={formContainerVariants({ state: getFormState(isFocused, isSuccess) })}>
+      <div className={formContainerVariants({ state: getFormState(uiState.isFocused, uiState.isSuccess) })}>
         <textarea
           ref={textareaRef}
-          value={content}
+          value={formState.content}
           onChange={handleContentChange}
           onFocus={handleFocus}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           placeholder="残しておきたいこと、なんでも"
           aria-label="記録内容"
-          aria-busy={isSubmitting}
+          aria-busy={uiState.isSubmitting}
           className={cn(
             'w-full min-h-full resize-none border-none outline-none text-base p-4 rounded-xl',
             'bg-transparent placeholder:text-muted-foreground/60',
@@ -225,24 +244,24 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
         {/* 成功オーバーレイ */}
         <AnimatePresence>
-          {isSuccess && <SuccessOverlay />}
+          {uiState.isSuccess && <SuccessOverlay />}
         </AnimatePresence>
       </div>
 
       {/* 画像プレビュー行 */}
       <ImagePreviewGrid
-        newImages={images}
-        existingImageUrls={existingImageUrls}
-        removedImageUrls={removedImageUrls}
-        onRemoveNewImage={removeImage}
-        onToggleExistingImageRemoval={toggleExistingImageRemoval}
+        newImages={formState.images}
+        existingImageUrls={formState.existingImageUrls}
+        removedImageUrls={formState.removedImageUrls}
+        onRemoveNewImage={actions.removeImage}
+        onToggleExistingImageRemoval={actions.toggleExistingImageRemoval}
         disabled={isDisabled}
       />
 
       {/* 画像添付 & 削除ボタン */}
       <div className="mt-4 flex items-center justify-between">
         <ImageAttachment
-          onImageSelect={addImage}
+          onImageSelect={actions.addImage}
           disabled={isDisabled || !canAddImage}
         />
 
@@ -263,14 +282,14 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
 
       {/* エラー表示 */}
       <AnimatePresence>
-        {error && (
+        {uiState.error && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
           >
             <Alert variant="destructive" className="mt-4">
-              <AlertDescription>{error}</AlertDescription>
+              <AlertDescription>{uiState.error}</AlertDescription>
             </Alert>
           </motion.div>
         )}
@@ -285,7 +304,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
           disabled={!canSubmit}
           className="mt-4 w-full"
         >
-          {isSubmitting ? (
+          {uiState.isSubmitting ? (
             <span className="flex items-center gap-2">
               <motion.span
                 animate={{ rotate: 360 }}
@@ -294,7 +313,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
               />
               送信中...
             </span>
-          ) : isSuccess ? (
+          ) : uiState.isSuccess ? (
             '完了！'
           ) : mode === 'create' ? (
             '記録する →'

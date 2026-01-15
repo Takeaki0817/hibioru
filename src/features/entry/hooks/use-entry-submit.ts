@@ -77,21 +77,22 @@ export function useEntrySubmit({
     },
   })
 
-  // 画像アップロード処理（editモード用）
+  // 画像アップロード処理（editモード用）- 並列アップロード
   const uploadImages = useCallback(
     async (imagesToUpload: CompressedImage[]): Promise<string[] | null> => {
-      const uploadedUrls: string[] = []
+      const results = await Promise.all(
+        imagesToUpload.map((img) => uploadImage(img.file, userId))
+      )
 
-      for (const img of imagesToUpload) {
-        const uploadResult = await uploadImage(img.file, userId)
-        if (!uploadResult.ok) {
-          submitError(uploadResult.error.message)
-          return null
-        }
-        uploadedUrls.push(uploadResult.value)
+      // Check for any failures
+      const failedResult = results.find((r) => !r.ok)
+      if (failedResult && !failedResult.ok) {
+        submitError(failedResult.error.message)
+        return null
       }
 
-      return uploadedUrls
+      // All succeeded - extract URLs
+      return results.map((r) => (r as { ok: true; value: string }).value)
     },
     [userId, submitError]
   )
@@ -102,7 +103,7 @@ export function useEntrySubmit({
       const allUrls = [...uploadedUrls]
 
       for (const url of existingImageUrls) {
-        if (!removedImageUrls.includes(url)) {
+        if (!removedImageUrls.has(url)) {
           allUrls.push(url)
         }
       }
