@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useEffect, useState, useTransition } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import type { StoreApi } from 'zustand'
 import type { TimelineStore } from '../stores/timeline-store'
 import { TIMELINE_CONFIG } from '../constants'
@@ -27,8 +27,6 @@ interface UseDateDetectionResult {
   visibleDate: string
   /** 現在表示中の日付文字列への参照（同期用） */
   visibleDateRef: React.RefObject<string>
-  /** 日付変更のトランジションが保留中かどうか */
-  isPending: boolean
 }
 
 /**
@@ -45,7 +43,6 @@ export function useDateDetection({
 }: UseDateDetectionOptions): UseDateDetectionResult {
   const [visibleDate, setVisibleDate] = useState<string>(initialDateStr)
   const visibleDateRef = useRef<string>(initialDateStr)
-  const [isPending, startTransition] = useTransition()
   // onDateChange をrefで保持（再作成防止）
   const onDateChangeRef = useRef(onDateChange)
 
@@ -77,10 +74,7 @@ export function useDateDetection({
           if (dateKey !== visibleDateRef.current) {
             visibleDateRef.current = dateKey
             setVisibleDate(dateKey)
-            // 日付変更を非緊急更新としてマーク（スクロールのブロッキングを防止）
-            startTransition(() => {
-              onDateChangeRef.current?.(new Date(dateKey))
-            })
+            onDateChangeRef.current?.(new Date(dateKey))
           }
           break
         }
@@ -113,6 +107,5 @@ export function useDateDetection({
   return {
     visibleDate,
     visibleDateRef,
-    isPending,
   }
 }

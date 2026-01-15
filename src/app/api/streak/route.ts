@@ -3,7 +3,7 @@
  * GET /api/streak
  */
 
-import { NextResponse, connection } from 'next/server'
+import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getStreakInfo } from '@/features/streak/api/service'
 import { logger } from '@/lib/logger'
@@ -11,9 +11,6 @@ import { logger } from '@/lib/logger'
 // Next.js 16: createClient()使用で自動的に動的レンダリング
 
 export async function GET() {
-  // プリレンダリングからオプトアウト
-  await connection()
-
   try {
     // 認証確認
     const supabase = await createClient()

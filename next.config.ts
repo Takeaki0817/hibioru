@@ -9,8 +9,8 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
 
   // Cache Components（'use cache'ディレクティブを有効化）
-  // Suspense境界を追加済み
-  cacheComponents: true,
+  // 有効化には<Suspense>でのラッピングが必要なため、将来のリファクタリングで導入予定
+  // cacheComponents: true,
 
   // リモート画像の許可設定
   images: {

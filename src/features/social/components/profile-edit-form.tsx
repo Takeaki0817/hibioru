@@ -1,6 +1,6 @@
 'use client'
 
-import { useReducer, useTransition, useCallback } from 'react'
+import { useState, useTransition, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -9,78 +9,6 @@ import { Pencil, Check, X, Loader2, Copy } from 'lucide-react'
 import { updateProfile, checkUsernameAvailability } from '../api/profile'
 import { USERNAME_RULES } from '../constants'
 import { useDebouncedCallback } from 'use-debounce'
-
-// フォームの状態型定義
-interface FormState {
-  isEditing: boolean
-  username: string
-  displayName: string
-  usernameError: string | null
-  isCheckingUsername: boolean
-  error: string | null
-  isCopied: boolean
-}
-
-// アクション型定義
-type FormAction =
-  | { type: 'START_EDIT' }
-  | { type: 'CANCEL_EDIT'; payload: { username: string; displayName: string } }
-  | { type: 'SET_USERNAME'; payload: string }
-  | { type: 'SET_DISPLAY_NAME'; payload: string }
-  | { type: 'SET_USERNAME_ERROR'; payload: string | null }
-  | { type: 'SET_CHECKING'; payload: boolean }
-  | { type: 'SET_ERROR'; payload: string | null }
-  | { type: 'SET_COPIED'; payload: boolean }
-  | { type: 'SAVE_SUCCESS' }
-
-// 初期状態を生成する関数
-function createInitialState(
-  initialUsername: string | null,
-  initialDisplayName: string | null
-): FormState {
-  return {
-    isEditing: false,
-    username: initialUsername ?? '',
-    displayName: initialDisplayName ?? '',
-    usernameError: null,
-    isCheckingUsername: false,
-    error: null,
-    isCopied: false,
-  }
-}
-
-// リデューサー関数（コンポーネント外で定義）
-function formReducer(state: FormState, action: FormAction): FormState {
-  switch (action.type) {
-    case 'START_EDIT':
-      return { ...state, isEditing: true }
-    case 'CANCEL_EDIT':
-      return {
-        ...state,
-        isEditing: false,
-        username: action.payload.username,
-        displayName: action.payload.displayName,
-        usernameError: null,
-        error: null,
-      }
-    case 'SET_USERNAME':
-      return { ...state, username: action.payload, usernameError: null }
-    case 'SET_DISPLAY_NAME':
-      return { ...state, displayName: action.payload }
-    case 'SET_USERNAME_ERROR':
-      return { ...state, usernameError: action.payload }
-    case 'SET_CHECKING':
-      return { ...state, isCheckingUsername: action.payload }
-    case 'SET_ERROR':
-      return { ...state, error: action.payload }
-    case 'SET_COPIED':
-      return { ...state, isCopied: action.payload }
-    case 'SAVE_SUCCESS':
-      return { ...state, isEditing: false, error: null }
-    default:
-      return state
-  }
-}
 
 interface ProfileEditFormProps {
   initialUsername: string | null
@@ -95,22 +23,22 @@ export function ProfileEditForm({
   initialUsername,
   initialDisplayName,
 }: ProfileEditFormProps) {
-  const [state, dispatch] = useReducer(
-    formReducer,
-    { initialUsername, initialDisplayName },
-    (init) => createInitialState(init.initialUsername, init.initialDisplayName)
-  )
+  const [isEditing, setIsEditing] = useState(false)
+  const [username, setUsername] = useState(initialUsername ?? '')
+  const [displayName, setDisplayName] = useState(initialDisplayName ?? '')
+  const [usernameError, setUsernameError] = useState<string | null>(null)
+  const [isCheckingUsername, setIsCheckingUsername] = useState(false)
   const [isPending, startTransition] = useTransition()
-
-  const { isEditing, username, displayName, usernameError, isCheckingUsername, error, isCopied } = state
+  const [error, setError] = useState<string | null>(null)
+  const [isCopied, setIsCopied] = useState(false)
 
   // ユーザーIDをクリップボードにコピー
   const handleCopyUserId = useCallback(async () => {
     if (!initialUsername) return
     try {
       await navigator.clipboard.writeText(`@${initialUsername}`)
-      dispatch({ type: 'SET_COPIED', payload: true })
-      setTimeout(() => dispatch({ type: 'SET_COPIED', payload: false }), 2000)
+      setIsCopied(true)
+      setTimeout(() => setIsCopied(false), 2000)
     } catch {
       // コピー失敗時は何もしない
     }
@@ -134,55 +62,54 @@ export function ProfileEditForm({
   const checkUsername = useDebouncedCallback(async (value: string) => {
     const validationError = validateUsernameLocal(value)
     if (validationError) {
-      dispatch({ type: 'SET_USERNAME_ERROR', payload: validationError })
-      dispatch({ type: 'SET_CHECKING', payload: false })
+      setUsernameError(validationError)
+      setIsCheckingUsername(false)
       return
     }
 
     // 変更がない場合はスキップ
     if (value === initialUsername) {
-      dispatch({ type: 'SET_USERNAME_ERROR', payload: null })
-      dispatch({ type: 'SET_CHECKING', payload: false })
+      setUsernameError(null)
+      setIsCheckingUsername(false)
       return
     }
 
-    dispatch({ type: 'SET_CHECKING', payload: true })
+    setIsCheckingUsername(true)
     const result = await checkUsernameAvailability({ username: value })
-    dispatch({ type: 'SET_CHECKING', payload: false })
+    setIsCheckingUsername(false)
 
     if (result.serverError) {
-      dispatch({ type: 'SET_USERNAME_ERROR', payload: '確認中にエラーが発生しました' })
+      setUsernameError('確認中にエラーが発生しました')
     } else if (result.data) {
       if (result.data.available) {
-        dispatch({ type: 'SET_USERNAME_ERROR', payload: null })
+        setUsernameError(null)
       } else {
-        dispatch({ type: 'SET_USERNAME_ERROR', payload: 'このユーザーIDは既に使用されています' })
+        setUsernameError('このユーザーIDは既に使用されています')
       }
     }
   }, 500)
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase()
-    dispatch({ type: 'SET_USERNAME', payload: value })
+    setUsername(value)
+    setUsernameError(null)
 
     if (value.length >= USERNAME_RULES.MIN_LENGTH) {
-      dispatch({ type: 'SET_CHECKING', payload: true })
+      setIsCheckingUsername(true)
       checkUsername(value)
     }
   }
 
   const handleDisplayNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    dispatch({ type: 'SET_DISPLAY_NAME', payload: e.target.value })
+    setDisplayName(e.target.value)
   }
 
   const handleCancel = () => {
-    dispatch({
-      type: 'CANCEL_EDIT',
-      payload: {
-        username: initialUsername ?? '',
-        displayName: initialDisplayName ?? '',
-      },
-    })
+    setUsername(initialUsername ?? '')
+    setDisplayName(initialDisplayName ?? '')
+    setUsernameError(null)
+    setError(null)
+    setIsEditing(false)
   }
 
   const handleSave = () => {
@@ -195,9 +122,10 @@ export function ProfileEditForm({
       })
 
       if (result.serverError) {
-        dispatch({ type: 'SET_ERROR', payload: result.serverError })
+        setError(result.serverError)
       } else if (result.data) {
-        dispatch({ type: 'SAVE_SUCCESS' })
+        setIsEditing(false)
+        setError(null)
         // ページをリロードしてデータを更新
         window.location.reload()
       }
@@ -216,7 +144,7 @@ export function ProfileEditForm({
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => dispatch({ type: 'START_EDIT' })}
+              onClick={() => setIsEditing(true)}
               className="h-8 w-8 p-0"
               aria-label="プロフィールを編集"
             >

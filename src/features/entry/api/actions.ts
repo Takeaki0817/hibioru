@@ -2,7 +2,6 @@
 
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
-import { after } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { authActionClient } from '@/lib/safe-action'
 import { logger } from '@/lib/logger'
@@ -124,18 +123,18 @@ export const createEntry = authActionClient
 
     const entry = data as Entry
 
-    // 副作用をafter()で実行（レスポンス送信後に実行）
-    after(async () => {
-      const effectNames = ['updateStreakOnEntry', 'handleEntryCreated', 'checkAndCreateAchievements']
-      const results = await Promise.allSettled([
-        updateStreakOnEntry(user.id),
-        handleEntryCreated({
-          userId: user.id,
-          entryId: entry.id,
-          createdAt: new Date(entry.created_at),
-        }),
-        checkAndCreateAchievements(user.id, entry.id, input.isShared ?? false),
-      ])
+    // 副作用を非同期で実行（Fire-and-Forget）
+    // エントリ作成の成功をすぐに返すため、完了を待機しない
+    const effectNames = ['updateStreakOnEntry', 'handleEntryCreated', 'checkAndCreateAchievements']
+    void Promise.allSettled([
+      updateStreakOnEntry(user.id),
+      handleEntryCreated({
+        userId: user.id,
+        entryId: entry.id,
+        createdAt: new Date(entry.created_at),
+      }),
+      checkAndCreateAchievements(user.id, entry.id, input.isShared ?? false),
+    ]).then((results) => {
       results.forEach((result, index) => {
         if (result.status === 'rejected') {
           logger.error(`副作用失敗: ${effectNames[index]}`, result.reason)
