@@ -233,58 +233,30 @@ export function useCreateEntryMutation({
             }
           }
 
+          // 1. すべてのページから楽観的エントリを削除
+          const pagesWithoutOptimistic = oldData.pages.map((page) => ({
+            ...page,
+            entries: page.entries.filter(
+              (entry) => !entry.id.startsWith('optimistic-')
+            ),
+          }))
+
+          // 2. 最初のページに実際のエントリを追加（重複チェック付き）
+          const firstPage = pagesWithoutOptimistic[0]
+          const hasActualEntry = firstPage.entries.some(
+            (entry) => entry.id === actualEntry.id
+          )
+
+          if (!hasActualEntry) {
+            pagesWithoutOptimistic[0] = {
+              ...firstPage,
+              entries: [actualEntry, ...firstPage.entries],
+            }
+          }
+
           return {
             ...oldData,
-            pages: oldData.pages.map((page, index) => {
-              if (index === 0) {
-                // 楽観的エントリを探して置換
-                const optimisticIndex = page.entries.findIndex(
-                  (entry) => entry.id === context?.optimisticId
-                )
-
-                if (optimisticIndex !== -1) {
-                  // 楽観的エントリが見つかった場合、置換
-                  // ただし、既に同じIDのエントリが存在する場合は、楽観的エントリを削除するだけ
-                  const existingIndex = page.entries.findIndex(
-                    (entry) => entry.id === actualEntry.id && entry.id !== context?.optimisticId
-                  )
-
-                  if (existingIndex !== -1) {
-                    // 既に同じIDのエントリが存在する場合、楽観的エントリを削除するだけ
-                    return {
-                      ...page,
-                      entries: page.entries.filter(
-                        (entry) => entry.id !== context?.optimisticId
-                      ),
-                    }
-                  }
-
-                  // 楽観的エントリを実際のエントリに置換
-                  return {
-                    ...page,
-                    entries: page.entries.map((entry) =>
-                      entry.id === context?.optimisticId ? actualEntry : entry
-                    ),
-                  }
-                } else {
-                  // 楽観的エントリが見つからない場合（SSRで初期データが取得された場合など）、
-                  // 実際のエントリが既に存在するかチェック
-                  const existingIndex = page.entries.findIndex(
-                    (entry) => entry.id === actualEntry.id
-                  )
-
-                  if (existingIndex === -1) {
-                    // 実際のエントリが存在しない場合、先頭に追加
-                    return {
-                      ...page,
-                      entries: [actualEntry, ...page.entries],
-                    }
-                  }
-                  // 実際のエントリが既に存在する場合、そのまま返す（重複を防ぐ）
-                }
-              }
-              return page
-            }),
+            pages: pagesWithoutOptimistic,
           }
         }
       )
