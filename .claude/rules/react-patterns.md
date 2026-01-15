@@ -1,5 +1,5 @@
 ---
-paths: src/app/**, src/**/*.tsx
+paths: src/app/**/*.tsx, src/features/**/components/**/*.tsx
 ---
 
 # React & Next.js パターン規約
