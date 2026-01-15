@@ -226,6 +226,10 @@ export function TimelineList({
             data-date={dateKey}
             aria-label={`${dateKey.replace(/-/g, '/')}の記録`}
             className="min-h-full border-b border-border snap-start"
+            style={{
+              contentVisibility: 'auto',
+              containIntrinsicSize: '0 500px',
+            }}
           >
             <div className="space-y-2 px-4 py-2">
               <h2 className="pt-3 text-center text-sm text-gray-400 dark:text-gray-500">
