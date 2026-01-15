@@ -1,5 +1,6 @@
 import 'server-only'
 
+import { cache } from 'react'
 import { cookies } from 'next/headers'
 import type { User } from '@supabase/supabase-js'
 import { logger } from '@/lib/logger'
@@ -141,16 +142,18 @@ export async function getE2EMockUser(): Promise<MockUser | null> {
  * @param supabase Supabaseクライアント
  * @returns ユーザーオブジェクトまたはnull
  */
-export async function getAuthenticatedUser(
-  supabase: { auth: { getUser: () => Promise<{ data: { user: User | null } }> } }
-): Promise<AuthenticatedUser | null> {
-  // E2Eテストモードの場合はモックユーザーを優先
-  const mockUser = await getE2EMockUser()
-  if (mockUser) {
-    return mockUser
-  }
+export const getAuthenticatedUser = cache(
+  async (
+    supabase: { auth: { getUser: () => Promise<{ data: { user: User | null } }> } }
+  ): Promise<AuthenticatedUser | null> => {
+    // E2Eテストモードの場合はモックユーザーを優先
+    const mockUser = await getE2EMockUser()
+    if (mockUser) {
+      return mockUser
+    }
 
-  // 通常のSupabase認証
-  const { data } = await supabase.auth.getUser()
-  return data.user
-}
+    // 通常のSupabase認証
+    const { data } = await supabase.auth.getUser()
+    return data.user
+  }
+)
