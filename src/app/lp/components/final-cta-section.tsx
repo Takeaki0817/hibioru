@@ -104,7 +104,7 @@ export function FinalCTASection() {
 
           {/* コピーライト */}
           <div className="mt-6 text-center text-sm text-muted-foreground">
-            <p>© {new Date().getFullYear()} ヒビオル. All rights reserved.</p>
+            <p>© 2025 ヒビオル. All rights reserved.</p>
           </div>
         </div>
       </footer>
