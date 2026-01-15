@@ -94,13 +94,25 @@ export async function getUserPlanType(userId: string): Promise<PlanType> {
 
     const { data } = await supabase
       .from('subscriptions')
-      .select('plan_type, status')
+      .select('plan_type, status, current_period_end')
       .eq('user_id', userId)
       .single()
 
-    // アクティブなプレミアムサブスクリプションのみ有効
+    // アクティブなプレミアムサブスクリプションは有効
     if (data?.status === 'active' && data.plan_type !== 'free') {
       return data.plan_type as PlanType
+    }
+
+    // キャンセル済みでも有効期間内なら有効
+    if (
+      data?.status === 'canceled' &&
+      data.plan_type !== 'free' &&
+      data.current_period_end
+    ) {
+      const periodEnd = new Date(data.current_period_end)
+      if (periodEnd > new Date()) {
+        return data.plan_type as PlanType
+      }
     }
 
     return 'free'

@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { authActionClient } from '@/lib/safe-action'
 import { logger } from '@/lib/logger'
+import { BusinessLogicError } from '@/lib/errors'
 import { rateLimits, checkRateLimit, getRateLimitErrorMessage } from '@/lib/rate-limit'
 import type { EntryInsert, EntryUpdate } from '@/lib/types/database'
 import type { Entry } from '../types'
@@ -68,13 +69,13 @@ export const createEntry = authActionClient
   .action(async ({ parsedInput: input, ctx: { user, supabase } }) => {
     // 空白のみのコンテンツをチェック
     if (input.content.trim().length === 0) {
-      throw new Error('内容を入力してください')
+      throw new BusinessLogicError('内容を入力してください')
     }
 
     // レート制限チェック
     const rateCheck = await checkRateLimit(rateLimits.entryCreate, user.id)
     if (!rateCheck.success) {
-      throw new Error(getRateLimitErrorMessage(rateCheck.resetAt))
+      throw new BusinessLogicError(getRateLimitErrorMessage(rateCheck.resetAt))
     }
 
     // 投稿制限チェック・画像制限チェックを並列実行
@@ -91,7 +92,7 @@ export const createEntry = authActionClient
       throw new Error('制限チェックに失敗しました')
     }
     if (!entryLimitResult.value.allowed) {
-      throw new Error(`本日の投稿上限（${entryLimitResult.value.limit}件）に達しました`)
+      throw new BusinessLogicError(`本日の投稿上限（${entryLimitResult.value.limit}件）に達しました`)
     }
 
     // 画像制限バリデーション
@@ -100,7 +101,7 @@ export const createEntry = authActionClient
       throw new Error('制限チェックに失敗しました')
     }
     if (!imageLimitResult.value.allowed) {
-      throw new Error(`今月の画像上限（${imageLimitResult.value.limit}枚）に達しました`)
+      throw new BusinessLogicError(`今月の画像上限（${imageLimitResult.value.limit}枚）に達しました`)
     }
 
     const insertData: EntryInsert = {
@@ -159,7 +160,7 @@ export const updateEntry = authActionClient
     const existingEntry = await getEntryInternal(input.id)
 
     if (!isEditable(existingEntry)) {
-      throw new Error('編集可能期間（24時間）を過ぎています')
+      throw new BusinessLogicError('編集可能期間（24時間）を過ぎています')
     }
 
     const updateData: EntryUpdate = {
@@ -229,7 +230,7 @@ export const deleteEntry = authActionClient
 
     // 権限チェック: 自分のエントリのみ削除可能
     if (entry.user_id !== user.id) {
-      throw new Error('このエントリを削除する権限がありません')
+      throw new BusinessLogicError('このエントリを削除する権限がありません')
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
