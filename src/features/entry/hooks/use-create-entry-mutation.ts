@@ -205,7 +205,7 @@ export function useCreateEntryMutation({
       onError?.(error instanceof Error ? error : new Error('投稿に失敗しました'))
     },
 
-    onSuccess: (createdEntry, input, context) => {
+    onSuccess: (createdEntry, input) => {
       // 楽観的エントリを実際のエントリで置換
       const actualEntry: TimelineEntry = {
         id: createdEntry.id,
