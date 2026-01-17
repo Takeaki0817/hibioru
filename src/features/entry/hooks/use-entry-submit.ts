@@ -6,7 +6,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useShallow } from 'zustand/shallow'
 import type { Entry, CompressedImage } from '@/features/entry/types'
 import { updateEntry } from '@/features/entry/api/actions'
-import { uploadImage } from '@/features/entry/api/image-service'
+import { uploadImage, deleteImage } from '@/features/entry/api/image-service'
 import { clearDraft } from '@/features/entry/api/draft-storage'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { useEntryFormStore } from '../stores/entry-form-store'
@@ -87,22 +87,49 @@ export function useEntrySubmit({
     },
   })
 
-  // 画像アップロード処理（editモード用）- 並列アップロード
+  // 画像アップロード処理（editモード用）- 並列アップロード with cleanup
   const uploadImages = useCallback(
     async (imagesToUpload: CompressedImage[]): Promise<string[] | null> => {
-      const results = await Promise.all(
+      const settledResults = await Promise.allSettled(
         imagesToUpload.map((img) => uploadImage(img.file, userId))
       )
 
-      // Check for any failures
-      const failedResult = results.find((r) => !r.ok)
-      if (failedResult && !failedResult.ok) {
-        actions.submitError(failedResult.error.message)
+      // Collect successful uploads and check for failures
+      const successfulUrls: string[] = []
+      let hasFailure = false
+      let failureMessage = 'アップロードに失敗しました'
+
+      for (const settled of settledResults) {
+        if (settled.status === 'rejected') {
+          hasFailure = true
+          failureMessage = settled.reason instanceof Error
+            ? settled.reason.message
+            : 'アップロードに失敗しました'
+        } else if (!settled.value.ok) {
+          hasFailure = true
+          failureMessage = settled.value.error.message
+        } else {
+          successfulUrls.push(settled.value.value)
+        }
+      }
+
+      // If any upload failed, clean up successfully uploaded images
+      if (hasFailure) {
+        await Promise.allSettled(successfulUrls.map((url) => deleteImage(url)))
+        actions.submitError(failureMessage)
         return null
       }
 
-      // All succeeded - extract URLs
-      return results.map((r) => (r as { ok: true; value: string }).value)
+      // All succeeded - extract URLs with explicit type narrowing
+      return settledResults.map((settled) => {
+        if (settled.status === 'rejected') {
+          throw new Error('Unexpected rejected state')
+        }
+        if (!settled.value.ok) {
+          throw new Error('Unexpected error state')
+        }
+        return settled.value.value
+      })
     },
     [userId, actions]
   )
