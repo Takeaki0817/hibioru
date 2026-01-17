@@ -15,7 +15,11 @@ import {
 } from '@/features/timeline/stores/timeline-store'
 import { useAllEntryDates } from '@/features/timeline/hooks/use-all-entry-dates'
 import { queryKeys } from '@/lib/constants/query-keys'
-import { parseJSTDateString } from '@/lib/date-utils'
+import {
+  parseJSTDateString,
+  getJSTDayBounds,
+  getJSTToday,
+} from '@/lib/date-utils'
 import { convertToTimelineEntry } from '@/features/timeline/types'
 import type { TimelinePage } from '@/features/timeline/types'
 import type { Entry } from '@/lib/types/database'
@@ -50,11 +54,7 @@ function TimelineContent({
   useEffect(() => {
     // initialDateをJSTとして解析し、翌日の0:00をカーソルとして使用
     const initialCursor = initialDate
-      ? (() => {
-          const jstDate = parseJSTDateString(initialDate)
-          // 翌日の0:00（JSTの翌日開始時刻）を計算
-          return new Date(jstDate.getTime() + 24 * 60 * 60 * 1000).toISOString()
-        })()
+      ? getJSTDayBounds(parseJSTDateString(initialDate)).end.toISOString()
       : undefined
 
     const timelineKey = queryKeys.entries.timeline(userId, initialCursor)
@@ -109,7 +109,7 @@ function TimelineContent({
   // 初期日付をJSTとして解析
   const parsedInitialDate = initialDate
     ? parseJSTDateString(initialDate)
-    : new Date()
+    : parseJSTDateString(getJSTToday())
 
   // 初期日付をストアに設定
   useEffect(() => {

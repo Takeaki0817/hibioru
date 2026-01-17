@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import type { InfiniteData } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/constants/query-keys'
+import { getJSTDayBounds } from '@/lib/date-utils'
 import { fetchEntries } from '../api/queries'
 import type { TimelineEntry, TimelinePage } from '../types'
 
@@ -35,17 +36,10 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
   const { userId, initialDate, pageSize = 20 } = options
   const queryClient = useQueryClient()
 
-  // initialDateが指定されている場合、その日付の翌日0:00をcursorとして使用
+  // initialDateが指定されている場合、その日付の翌日0:00(JST)をcursorとして使用
   // これにより、その日付を含むデータから取得を開始する
   const initialCursor = initialDate
-    ? new Date(
-        initialDate.getFullYear(),
-        initialDate.getMonth(),
-        initialDate.getDate() + 1,
-        0,
-        0,
-        0
-      ).toISOString()
+    ? getJSTDayBounds(initialDate).end.toISOString()
     : undefined
 
   // 既存のキャッシュがあれば初期データとして使用（ローディング状態を回避）

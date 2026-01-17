@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo } from 'react'
-import { format, eachDayOfInterval, max, startOfDay } from 'date-fns'
+import { eachDayOfInterval, max } from 'date-fns'
+import { getJSTDateString, parseJSTDateString } from '@/lib/date-utils'
 import type { TimelineEntry } from '../types'
 
 interface UseTimelineGroupingOptions {
@@ -72,9 +73,10 @@ export function useTimelineGrouping({
       return [todayStr]
     }
 
-    // エントリがある日付をDateオブジェクトに変換
-    const entryDateObjects = entryDates.map((d) => new Date(d))
-    const today = startOfDay(new Date())
+    // エントリがある日付をDateオブジェクトに変換（JST基準の日付文字列をパース）
+    const entryDateObjects = entryDates.map((d) => parseJSTDateString(d))
+    // JST基準の今日をDateオブジェクトに変換
+    const today = parseJSTDateString(getJSTDateString())
 
     // 最新のエントリ日付と今日の日付のうち、より新しい方を終点とする
     const latestEntryDate = max(entryDateObjects)
@@ -89,7 +91,8 @@ export function useTimelineGrouping({
       end: endDate,
     })
 
-    return allDateObjects.map((d) => format(d, 'yyyy-MM-dd'))
+    // JST基準で日付文字列に変換
+    return allDateObjects.map((d) => getJSTDateString(d))
   }, [groupedEntries, todayStr])
 
   // 日付 → インデックスのMap（O(1)検索用）
@@ -104,7 +107,8 @@ export function useTimelineGrouping({
   const displayedDates = useMemo(() => {
     // initialDateが指定されている場合、その日付から最新までを表示
     if (initialDate) {
-      const initialDateStr = format(initialDate, 'yyyy-MM-dd')
+      // JST基準で日付文字列に変換
+      const initialDateStr = getJSTDateString(initialDate)
       const initialIndex = dateIndexMap.get(initialDateStr) // O(1) 参照
       if (initialIndex !== undefined) {
         // initialDateから最新までの日付数を計算
