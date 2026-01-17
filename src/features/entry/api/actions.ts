@@ -110,8 +110,7 @@ export const createEntry = authActionClient
       image_urls: input.imageUrls ?? null,
       is_shared: input.isShared ?? false,
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('entries')
       .insert(insertData)
       .select()
@@ -155,9 +154,14 @@ export const createEntry = authActionClient
  */
 export const updateEntry = authActionClient
   .inputSchema(updateEntrySchema)
-  .action(async ({ parsedInput: input, ctx: { supabase } }) => {
+  .action(async ({ parsedInput: input, ctx: { user, supabase } }) => {
     // 既存エントリを取得して編集可能かチェック
     const existingEntry = await getEntryInternal(input.id)
+
+    // 権限チェック: 自分のエントリのみ更新可能
+    if (existingEntry.user_id !== user.id) {
+      throw new BusinessLogicError('このエントリを更新する権限がありません')
+    }
 
     if (!isEditable(existingEntry)) {
       throw new BusinessLogicError('編集可能期間（24時間）を過ぎています')
@@ -168,11 +172,11 @@ export const updateEntry = authActionClient
       image_urls: input.imageUrls ?? null,
       is_shared: input.isShared,
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('entries')
       .update(updateData)
       .eq('id', input.id)
+      .eq('user_id', user.id) // 所有者チェック（RLS誤設定時の多層防御）
       .select()
       .single()
 
@@ -233,11 +237,11 @@ export const deleteEntry = authActionClient
       throw new BusinessLogicError('このエントリを削除する権限がありません')
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('entries')
       .update({ is_deleted: true })
       .eq('id', id)
+      .eq('user_id', user.id) // 所有者チェック（RLS誤設定時の多層防御）
 
     if (error) {
       logger.error('エントリ削除失敗', error)

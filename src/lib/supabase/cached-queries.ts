@@ -2,6 +2,7 @@ import 'server-only'
 
 import { cache } from 'react'
 import { createClient } from './server'
+import { logger } from '@/lib/logger'
 
 /**
  * React cache() によるSupabaseクエリのメモ化
@@ -26,7 +27,7 @@ export const getUser = cache(async () => {
   const { data, error } = await supabase.auth.getUser()
 
   if (error) {
-    console.error('ユーザー取得エラー:', error.message)
+    logger.error('ユーザー取得エラー:', error.message)
     return null
   }
 
@@ -45,7 +46,7 @@ export const getUserProfile = cache(async (userId: string) => {
     .single()
 
   if (error) {
-    console.error('プロフィール取得エラー:', error.message)
+    logger.error('プロフィール取得エラー:', error.message)
     return null
   }
 
@@ -65,7 +66,7 @@ export const getNotificationSettingsCached = cache(async (userId: string) => {
 
   if (error && error.code !== 'PGRST116') {
     // PGRST116: 行が見つからない（新規ユーザー）
-    console.error('通知設定取得エラー:', error.message)
+    logger.error('通知設定取得エラー:', error.message)
     return null
   }
 

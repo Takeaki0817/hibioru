@@ -239,11 +239,16 @@ export function TimelineList({
                     const isLatestEntry =
                       dateKey === displayedDates[displayedDates.length - 1] &&
                       index === arr.length - 1
+                    // LCP対象: 最新日付の最初のエントリ
+                    const isFirstEntry =
+                      dateKey === displayedDates[displayedDates.length - 1] &&
+                      index === 0
                     return (
                       <EntryCard
                         key={entry.id}
                         entry={entry}
                         ref={isLatestEntry ? latestEntryRef : undefined}
+                        isFirstEntry={isFirstEntry}
                       />
                     )
                   })

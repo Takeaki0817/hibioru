@@ -1,6 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { queryKeys } from '@/lib/constants/query-keys'
 import { fetchAllEntryDates } from '../api/queries'
 
 export interface UseAllEntryDatesOptions {
@@ -26,7 +27,7 @@ export function useAllEntryDates(
   const { userId } = options
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['entries', 'dates', userId],
+    queryKey: queryKeys.entries.dates(userId),
     queryFn: () => fetchAllEntryDates({ userId }),
     staleTime: 5 * 60 * 1000, // 5分間はstaleにしない
     gcTime: 30 * 60 * 1000, // 30分間キャッシュ保持

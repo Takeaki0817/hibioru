@@ -1,15 +1,6 @@
 import type { Metadata } from 'next'
-import { M_PLUS_1p } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import './lp.css'
-
-const mPlus1p = M_PLUS_1p({
-  variable: '--font-m-plus-1p',
-  weight: ['400', '500', '700'],
-  subsets: ['latin'],
-  display: 'swap',
-  preload: false,
-})
 
 export const metadata: Metadata = {
   title: 'ヒビオル - 「続かない」を終わりにする思考記録アプリ',
@@ -53,7 +44,7 @@ export default function LPLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className={`${mPlus1p.variable} font-sans`}>
+    <div>
       <ThemeProvider>{children}</ThemeProvider>
     </div>
   )

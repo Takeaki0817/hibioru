@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { M_PLUS_Rounded_1c } from 'next/font/google'
 import { ThemeProvider } from '@/components/providers/ThemeProvider'
 import { DocsHeader } from './components/docs-header'
 import { DocsSidebar } from './components/docs-sidebar'
@@ -8,14 +7,6 @@ import { DocsBreadcrumb } from './components/docs-breadcrumb'
 import { DocsPagination } from './components/docs-pagination'
 import { DocsBodyStyle } from './components/docs-body-style'
 import './docs.css'
-
-const mPlusRounded1c = M_PLUS_Rounded_1c({
-  variable: '--font-m-plus-rounded-1c',
-  weight: ['500', '700'],
-  subsets: ['latin'],
-  display: 'swap',
-  preload: false,
-})
 
 export const metadata: Metadata = {
   title: {
@@ -32,7 +23,7 @@ export default function DocsLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className={`${mPlusRounded1c.variable} font-sans`}>
+    <div>
       <ThemeProvider>
         {/* globals.cssのoverflow-hiddenを上書き */}
         <DocsBodyStyle />

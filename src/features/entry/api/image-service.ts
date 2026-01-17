@@ -98,3 +98,25 @@ export async function uploadImage(
     }
   }
 }
+
+/**
+ * 画像をSupabase Storageから削除
+ * アップロード失敗時のクリーンアップに使用
+ */
+export async function deleteImage(publicUrl: string): Promise<void> {
+  try {
+    const supabase = createClient()
+
+    // publicUrlからファイルパスを抽出
+    // 例: https://xxx.supabase.co/storage/v1/object/public/entry-images/userId/timestamp_random.webp
+    // → userId/timestamp_random.webp
+    const urlObj = new URL(publicUrl)
+    const pathMatch = urlObj.pathname.match(/\/entry-images\/(.+)$/)
+    if (!pathMatch) return
+
+    const filePath = pathMatch[1]
+    await supabase.storage.from('entry-images').remove([filePath])
+  } catch {
+    // クリーンアップ失敗は無視（ベストエフォート）
+  }
+}

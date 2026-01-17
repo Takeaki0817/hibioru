@@ -3,7 +3,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useNotificationPermission } from './use-notification-permission'
 import { usePushSubscription } from './use-push-subscription'
-import { useAuthStore } from '@/features/auth/stores/auth-store'
+import {
+  useAuthStore,
+  selectIsAuthenticated,
+  selectUserId,
+} from '@/features/auth/stores/auth-store'
 import { logger } from '@/lib/logger'
 
 interface UseNotificationPromptReturn {
@@ -23,8 +27,9 @@ interface UseNotificationPromptReturn {
  * 初回通知許可プロンプト管理フック
  */
 export function useNotificationPrompt(): UseNotificationPromptReturn {
-  const user = useAuthStore((s) => s.user)
-  const isInitialized = useAuthStore((s) => s.isInitialized)
+  // プリミティブ値を取得して不要な再レンダリングを防止
+  const isAuthenticated = useAuthStore(selectIsAuthenticated)
+  const userId = useAuthStore(selectUserId)
 
   const { isSupported, permission, requestPermission } = useNotificationPermission()
   const { subscribe } = usePushSubscription()
@@ -35,7 +40,7 @@ export function useNotificationPrompt(): UseNotificationPromptReturn {
 
   // 通知設定を取得
   useEffect(() => {
-    if (!user || !isInitialized) return
+    if (!isAuthenticated) return
 
     let isMounted = true
 
@@ -63,7 +68,7 @@ export function useNotificationPrompt(): UseNotificationPromptReturn {
     return () => {
       isMounted = false
     }
-  }, [user, isInitialized])
+  }, [isAuthenticated])
 
   // 通知設定を更新
   const updateSettings = async (updates: Record<string, unknown>) => {
@@ -82,15 +87,14 @@ export function useNotificationPrompt(): UseNotificationPromptReturn {
 
   // プロンプト表示条件
   const shouldShowPrompt =
-    isInitialized &&
-    user !== null &&
+    isAuthenticated &&
     promptShown === false &&
     isSupported &&
     permission === 'default' // まだ許可/拒否していない
 
   // 「許可する」ハンドラ
   const handleAllow = useCallback(async () => {
-    if (!user) return
+    if (!userId) return
 
     setIsLoading(true)
     setError(null)
@@ -123,11 +127,11 @@ export function useNotificationPrompt(): UseNotificationPromptReturn {
     } finally {
       setIsLoading(false)
     }
-  }, [user, requestPermission, subscribe])
+  }, [userId, requestPermission, subscribe])
 
   // 「後で」ハンドラ
   const handleDismiss = useCallback(async () => {
-    if (!user) return
+    if (!userId) return
 
     try {
       // プロンプト表示済みに（再表示しない）
@@ -139,7 +143,7 @@ export function useNotificationPrompt(): UseNotificationPromptReturn {
     } catch (err) {
       logger.error('通知設定の更新に失敗', err)
     }
-  }, [user])
+  }, [userId])
 
   return {
     shouldShowPrompt,

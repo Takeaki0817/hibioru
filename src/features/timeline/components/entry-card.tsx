@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils'
 
 export interface EntryCardProps {
   entry: TimelineEntry
+  /** LCP対象として最初の画像にpriorityを適用するかどうか */
+  isFirstEntry?: boolean
 }
 
 // EntryCardのprops比較関数
@@ -27,7 +29,8 @@ function areEntryPropsEqual(prevProps: EntryCardProps, nextProps: EntryCardProps
     prev.id === next.id &&
     prev.content === next.content &&
     imagesEqual &&
-    prev.createdAt.getTime() === next.createdAt.getTime()
+    prev.createdAt.getTime() === next.createdAt.getTime() &&
+    prevProps.isFirstEntry === nextProps.isFirstEntry
   )
 }
 
@@ -50,28 +53,25 @@ const cardVariants = {
   },
 }
 
+// 絵文字のみかどうかを判定するための正規表現（モジュールレベルでホイスト）
+const EMOJI_ONLY_REGEX = /^[\p{Emoji}\s]+$/u
+
 // 絵文字のみかどうかを判定
 function isEmojiOnly(content: string): boolean {
-  // 絵文字の正規表現パターン（絵文字とスペースのみ）
-  const emojiRegex = /^[\p{Emoji}\s]+$/u
   const trimmed = content.trim()
-
   // 短い（20文字以下）かつ絵文字のみの場合
-  return trimmed.length <= 20 && emojiRegex.test(trimmed)
+  return trimmed.length <= 20 && EMOJI_ONLY_REGEX.test(trimmed)
 }
 
 export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
-  function EntryCard({ entry }, ref) {
+  function EntryCard({ entry, isFirstEntry = false }, ref) {
     const router = useRouter()
 
-    // 楽観的エントリかどうかを判定
-    const isOptimistic = useMemo(
-      () => entry.id.startsWith('optimistic-'),
-      [entry.id]
-    )
+    // 楽観的エントリかどうかを判定（軽量な文字列操作なのでReact Compilerに任せる）
+    const isOptimistic = entry.id.startsWith('optimistic-')
 
-    // 絵文字のみかどうか
-    const emojiOnly = useMemo(() => isEmojiOnly(entry.content), [entry.content])
+    // 絵文字のみかどうか（軽量な判定なのでReact Compilerに任せる）
+    const emojiOnly = isEmojiOnly(entry.content)
 
     // タップ処理
     const handleTap = useCallback(() => {
@@ -169,6 +169,7 @@ export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
                         ? '(max-width: 672px) 100vw, 672px'
                         : '(max-width: 672px) 50vw, 336px'}
                       className="object-cover transition-transform hover:scale-105"
+                      priority={isFirstEntry && index === 0}
                     />
                   </div>
                 ))}

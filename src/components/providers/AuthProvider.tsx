@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useCallback } from 'react'
+import { useShallow } from 'zustand/shallow'
 import { createClient } from '@/lib/supabase/client'
 import type { User as SupabaseUser } from '@supabase/supabase-js'
 import type { User } from '@/lib/types/auth'
@@ -17,8 +18,12 @@ function mapSupabaseUser(supabaseUser: SupabaseUser): User {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const initialize = useAuthStore((s) => s.initialize)
-  const setUser = useAuthStore((s) => s.setUser)
+  const { initialize, setUser } = useAuthStore(
+    useShallow((s) => ({
+      initialize: s.initialize,
+      setUser: s.setUser,
+    }))
+  )
   const supabase = createClient()
 
   useEffect(() => {
@@ -42,8 +47,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 // useAuth フック（後方互換性のため維持）
 export function useAuth() {
-  const user = useAuthStore((s) => s.user)
-  const isLoading = useAuthStore((s) => s.isLoading)
+  const { user, isLoading } = useAuthStore(
+    useShallow((s) => ({
+      user: s.user,
+      isLoading: s.isLoading,
+    }))
+  )
   const supabase = createClient()
 
   const signOut = useCallback(async () => {

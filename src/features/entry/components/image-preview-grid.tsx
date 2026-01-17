@@ -14,8 +14,8 @@ interface ImagePreviewGridProps {
   newImages: ImageData[]
   /** 既存の画像URL */
   existingImageUrls: string[]
-  /** 削除予定の画像URL */
-  removedImageUrls: string[]
+  /** 削除予定の画像URL（Set.has()で高速ルックアップ） */
+  removedImageUrls: Set<string>
   /** 新規画像を削除 */
   onRemoveNewImage: (index: number) => void
   /** 既存画像の削除/復元をトグル */
@@ -67,7 +67,7 @@ export function ImagePreviewGrid({
 
       {/* 既存画像の表示（編集モード） */}
       {existingImageUrls.map((url, index) => {
-        const isRemoved = removedImageUrls.includes(url)
+        const isRemoved = removedImageUrls.has(url)
         return (
           <div key={`existing-${index}`} className="relative size-20">
             <Image

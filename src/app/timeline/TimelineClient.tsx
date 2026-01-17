@@ -15,6 +15,7 @@ import {
 } from '@/features/timeline/stores/timeline-store'
 import { useAllEntryDates } from '@/features/timeline/hooks/use-all-entry-dates'
 import { queryKeys } from '@/lib/constants/query-keys'
+import { parseJSTDateString } from '@/lib/date-utils'
 import { convertToTimelineEntry } from '@/features/timeline/types'
 import type { TimelinePage } from '@/features/timeline/types'
 import type { Entry } from '@/lib/types/database'
@@ -47,15 +48,13 @@ function TimelineContent({
   // SSRで取得したinitialEntriesをクライアント側のキャッシュにセット
   // 楽観的更新が既に存在する場合は、それを優先する（SSRデータを無視）
   useEffect(() => {
+    // initialDateをJSTとして解析し、翌日の0:00をカーソルとして使用
     const initialCursor = initialDate
-      ? new Date(
-          new Date(initialDate).getFullYear(),
-          new Date(initialDate).getMonth(),
-          new Date(initialDate).getDate() + 1,
-          0,
-          0,
-          0
-        ).toISOString()
+      ? (() => {
+          const jstDate = parseJSTDateString(initialDate)
+          // 翌日の0:00（JSTの翌日開始時刻）を計算
+          return new Date(jstDate.getTime() + 24 * 60 * 60 * 1000).toISOString()
+        })()
       : undefined
 
     const timelineKey = queryKeys.entries.timeline(userId, initialCursor)
@@ -107,8 +106,10 @@ function TimelineContent({
   // ストアAPIに直接アクセス（初期化用）
   const storeApi = useTimelineStoreApi()
 
-  // 初期日付を解析
-  const parsedInitialDate = initialDate ? new Date(initialDate) : new Date()
+  // 初期日付をJSTとして解析
+  const parsedInitialDate = initialDate
+    ? parseJSTDateString(initialDate)
+    : new Date()
 
   // 初期日付をストアに設定
   useEffect(() => {
@@ -129,7 +130,7 @@ function TimelineContent({
   // initialDateが指定されている場合、その日付にスクロール
   useEffect(() => {
     if (initialDate && scrollToDateRef.current) {
-      const targetDate = new Date(initialDate)
+      const targetDate = parseJSTDateString(initialDate)
       // 少し遅延させてDOMが準備できてからスクロール
       const timer = setTimeout(() => {
         scrollToDateRef.current?.(targetDate)

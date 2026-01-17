@@ -4,19 +4,12 @@ import { redirect } from 'next/navigation'
 import { getAuthenticatedUser } from '@/lib/supabase/e2e-auth'
 import { TimelineClient } from './TimelineClient'
 import type { Entry } from '@/lib/types/database'
+import { logger } from '@/lib/logger'
+import { getJSTDayBounds } from '@/lib/date-utils'
 
 export const metadata: Metadata = {
   title: 'タイムライン - ヒビオル',
   description: 'あなたの日々の記録を確認',
-}
-
-// 今日の日付範囲を取得
-function getTodayRange() {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-  return { today, tomorrow }
 }
 
 export default async function TimelinePage({
@@ -26,7 +19,7 @@ export default async function TimelinePage({
 }) {
   const { date: initialDate } = await searchParams
   const supabase = await createClient()
-  const { today, tomorrow } = getTodayRange()
+  const { start: todayStart, end: todayEnd } = getJSTDayBounds()
 
   // 認証チェック（E2Eテストモードではモックユーザーを使用）
   const user = await getAuthenticatedUser(supabase)
@@ -40,13 +33,13 @@ export default async function TimelinePage({
     .from('entries')
     .select('id, user_id, content, image_urls, created_at')
     .eq('is_deleted', false)
-    .gte('created_at', today.toISOString())
-    .lt('created_at', tomorrow.toISOString())
+    .gte('created_at', todayStart.toISOString())
+    .lt('created_at', todayEnd.toISOString())
     .order('created_at', { ascending: false })
 
   // エントリ取得エラーはログのみ（空リストで続行可能）
   if (entriesResult.error) {
-    console.error('エントリ取得失敗:', entriesResult.error.message)
+    logger.error('エントリ取得失敗:', entriesResult.error.message)
   }
 
   // 二重防御: RLSが無効化された場合に備えてuser_idでフィルタリング
