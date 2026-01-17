@@ -11,6 +11,19 @@ import type {
 // ほつれの最大付与数（週あたり）
 const MAX_HOTSURE_PER_WEEK = 2
 
+// RPC関数の戻り値型
+interface ConsumeHotsureRpcResult {
+  success: boolean
+  remaining?: number
+  error?: string
+}
+
+interface ResetHotsureRpcResult {
+  success: boolean
+  affected_users?: number
+  error?: string
+}
+
 /**
  * ほつれ情報を取得
  * @param userId ユーザーID
@@ -21,8 +34,7 @@ export async function getHotsureInfo(
 ): Promise<HotsureInfo | null> {
   const supabase = await createClient()
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any)
+  const { data, error } = await supabase
     .from('streaks')
     .select('hotsure_remaining, hotsure_used_dates')
     .eq('user_id', userId)
@@ -32,10 +44,9 @@ export async function getHotsureInfo(
     return null
   }
 
-  const streakData = data as { hotsure_remaining: number; hotsure_used_dates: string[] }
   return {
-    remaining: streakData.hotsure_remaining,
-    usedDates: streakData.hotsure_used_dates,
+    remaining: data.hotsure_remaining,
+    usedDates: data.hotsure_used_dates,
     maxPerWeek: MAX_HOTSURE_PER_WEEK,
   }
 }
@@ -80,8 +91,7 @@ export async function consumeHotsure(
   const supabase = await createClient()
 
   // RPC関数を呼び出し（FOR UPDATEで同時実行を防止）
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any).rpc('consume_hotsure', {
+  const { data, error } = await supabase.rpc('consume_hotsure', {
     p_user_id: userId,
   })
 
@@ -92,17 +102,18 @@ export async function consumeHotsure(
     }
   }
 
-  // RPCの戻り値をパース
-  if (!data.success) {
+  // RPCの戻り値をパース（Json型から具体的な型にキャスト）
+  const result = data as unknown as ConsumeHotsureRpcResult
+  if (!result.success) {
     return {
       success: false,
-      error: data.error,
+      error: result.error,
     }
   }
 
   return {
     success: true,
-    remaining: data.remaining,
+    remaining: result.remaining,
   }
 }
 
@@ -117,8 +128,7 @@ export async function resetHotsureWeekly(): Promise<ResetHotsureResult> {
   const supabase = await createClient()
 
   // RPC関数を呼び出し
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any).rpc('reset_hotsure_weekly')
+  const { data, error } = await supabase.rpc('reset_hotsure_weekly')
 
   if (error) {
     return {
@@ -127,16 +137,17 @@ export async function resetHotsureWeekly(): Promise<ResetHotsureResult> {
     }
   }
 
-  // RPCの戻り値をパース
-  if (!data.success) {
+  // RPCの戻り値をパース（Json型から具体的な型にキャスト）
+  const result = data as unknown as ResetHotsureRpcResult
+  if (!result.success) {
     return {
       success: false,
-      error: data.error,
+      error: result.error,
     }
   }
 
   return {
     success: true,
-    affectedUsers: data.affected_users,
+    affectedUsers: result.affected_users,
   }
 }

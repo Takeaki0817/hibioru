@@ -17,20 +17,6 @@ import type { NotificationType, NotificationResult } from '../types'
 export type { Result }
 
 /**
- * データベースのログ行
- */
-interface NotificationLogRow {
-  id: string;
-  user_id: string;
-  type: string;
-  sent_at: string;
-  result: string;
-  error_message: string | null;
-  entry_recorded_at: string | null;
-  created_at: string;
-}
-
-/**
  * 通知ログの入力
  */
 export interface NotificationLogInput {
@@ -86,8 +72,7 @@ export async function logNotification(
   try {
     const supabase = await createClient();
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('notification_logs')
       .insert({
         user_id: log.userId,
@@ -105,18 +90,17 @@ export async function logNotification(
       };
     }
 
-    const row = data as NotificationLogRow;
     return {
       ok: true,
       value: {
-        id: row.id,
-        userId: row.user_id,
-        type: row.type as NotificationType,
-        sentAt: new Date(row.sent_at),
-        result: row.result as NotificationResult,
-        errorMessage: row.error_message,
-        entryRecordedAt: row.entry_recorded_at
-          ? new Date(row.entry_recorded_at)
+        id: data.id,
+        userId: data.user_id,
+        type: data.type as NotificationType,
+        sentAt: new Date(data.sent_at),
+        result: data.result as NotificationResult,
+        errorMessage: data.error_message,
+        entryRecordedAt: data.entry_recorded_at
+          ? new Date(data.entry_recorded_at)
           : null,
       },
     };
@@ -156,8 +140,7 @@ export async function updateEntryRecorded(
     endOfDay.setUTCHours(23, 59, 59, 999);
 
     // 当日のまだentry_recorded_atが設定されていない通知ログを更新
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('notification_logs')
       .update({ entry_recorded_at: entryCreatedAt.toISOString() })
       .is('entry_recorded_at', null)
@@ -203,8 +186,7 @@ export async function cleanupOldLogs(
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error, count } = await (supabase as any)
+    const { error, count } = await supabase
       .from('notification_logs')
       .delete()
       .lt('created_at', cutoffDate.toISOString());

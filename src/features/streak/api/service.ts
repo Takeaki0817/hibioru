@@ -135,11 +135,10 @@ export async function updateStreakOnEntry(
       last_entry_date: today
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data: updatedData, error: updateError } = await (supabase as any)
+    const { data: updatedData, error: updateError } = await supabase
       .from('streaks')
       .upsert(updateData)
-      .select('current_streak, longest_streak, last_entry_date, hotsure_remaining, hotsure_used_dates')
+      .select('current_streak, longest_streak, last_entry_date, hotsure_remaining, bonus_hotsure, hotsure_used_dates')
       .single()
 
     if (updateError) {
@@ -149,24 +148,15 @@ export async function updateStreakOnEntry(
       }
     }
 
-    const updated = updatedData as {
-      current_streak: number
-      longest_streak: number
-      last_entry_date: string | null
-      hotsure_remaining: number
-      bonus_hotsure: number
-      hotsure_used_dates: string[]
-    }
-
     return {
       ok: true,
       value: {
-        currentStreak: updated.current_streak,
-        longestStreak: updated.longest_streak,
-        lastEntryDate: updated.last_entry_date,
-        hotsureRemaining: updated.hotsure_remaining,
-        bonusHotsure: updated.bonus_hotsure ?? 0,
-        hotsureUsedCount: updated.hotsure_used_dates?.length || 0
+        currentStreak: updatedData.current_streak,
+        longestStreak: updatedData.longest_streak,
+        lastEntryDate: updatedData.last_entry_date,
+        hotsureRemaining: updatedData.hotsure_remaining,
+        bonusHotsure: updatedData.bonus_hotsure ?? 0,
+        hotsureUsedCount: updatedData.hotsure_used_dates?.length || 0
       }
     }
   } catch (error) {
@@ -329,8 +319,7 @@ export async function breakStreak(
   try {
     const supabase = await createClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('streaks')
       .update({ current_streak: 0 })
       .eq('user_id', userId)

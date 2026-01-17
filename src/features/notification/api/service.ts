@@ -3,6 +3,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import type { Database } from '@/lib/types/database.generated'
 import type { Result } from '@/lib/types/result'
 import type { NotificationSettings } from '../types'
 import { DEFAULT_REMINDERS } from '../types'
@@ -84,13 +85,26 @@ export async function updateNotificationSettings(
     const supabase = await createClient()
 
     // upsert（存在すれば更新、なければ挿入）
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    // settingsの型（reminders: Reminder[]）とDBの型（reminders: Json）が異なるため、
+    // TablesInsert型として明示的にキャストする
+    type NotificationSettingsInsert = {
+      user_id: string
+      enabled?: boolean
+      reminders?: unknown // Json型として扱う
+      chase_reminder_enabled?: boolean
+      chase_reminder_delay_minutes?: number
+      follow_up_max_count?: number
+      social_notifications_enabled?: boolean
+    }
+
+    const upsertData: NotificationSettingsInsert = {
+      user_id: userId,
+      ...settings,
+    }
+
+    const { data, error } = await supabase
       .from('notification_settings')
-      .upsert({
-        user_id: userId,
-        ...settings,
-      })
+      .upsert(upsertData as Database['public']['Tables']['notification_settings']['Insert'])
       .select()
       .single()
 
@@ -101,7 +115,18 @@ export async function updateNotificationSettings(
       }
     }
 
-    return { ok: true, value: data as NotificationSettings }
+    // DBのJson型からアプリケーションの型に変換
+    const result: NotificationSettings = {
+      user_id: data.user_id,
+      enabled: data.enabled,
+      reminders: data.reminders as unknown as NotificationSettings['reminders'],
+      chase_reminder_enabled: data.chase_reminder_enabled,
+      chase_reminder_delay_minutes: data.chase_reminder_delay_minutes,
+      follow_up_max_count: data.follow_up_max_count,
+      social_notifications_enabled: data.social_notifications_enabled,
+    }
+
+    return { ok: true, value: result }
   } catch (error) {
     return {
       ok: false,
