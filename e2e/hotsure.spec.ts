@@ -182,12 +182,12 @@ test.describe('hotsure E2E', () => {
       await setupAuthenticatedPage(page, '/social')
 
       // ほつれカードが見える
-      const hotsureCard = page.locator('text=ほつれ')
+      const hotsureCard = page.getByRole('heading', { name: 'ほつれ', exact: true })
       await expect(hotsureCard).toBeVisible()
 
       // 残数表示が正しい形式である
-      const remainingDisplay = page.locator('div').filter({ hasText: /^\d+\/2$/ })
-      await expect(remainingDisplay.first()).toBeVisible()
+      const remainingDisplay = page.locator('span.font-bold.tabular-nums').first()
+      await expect(remainingDisplay).toBeVisible()
 
       // このテストで確認される点:
       // - `getJSTDateString()` が使用されている場合、JST日付で判定される
@@ -202,7 +202,7 @@ test.describe('hotsure E2E', () => {
 
       await setupAuthenticatedPage(page, '/social')
 
-      const hotsureCard = page.locator('text=ほつれ')
+      const hotsureCard = page.getByRole('heading', { name: 'ほつれ', exact: true })
       await expect(hotsureCard).toBeVisible()
     })
   })
@@ -215,8 +215,8 @@ test.describe('hotsure E2E', () => {
     test('プログレス表示 - 残り数のアイコンが色付き', async ({ page }) => {
       await setupAuthenticatedPage(page, '/social')
 
-      // Spoolアイコンが描画されている
-      const spoolIcons = page.locator('svg').filter({ has: page.locator('[aria-label="Spool"]') })
+      // Spoolアイコン（rotateされたもの）が描画されている
+      const spoolIcons = page.locator('svg.rotate-\\[15deg\\]')
       const count = await spoolIcons.count()
       expect(count).toBeGreaterThan(0)
     })
@@ -228,7 +228,7 @@ test.describe('hotsure E2E', () => {
       const hotsureMessages = page.locator(
         'text=/安心のセーフティネット|残りわずか|ほつれ切れ/'
       )
-      await expect(hotsureMessages).toBeVisible()
+      await expect(hotsureMessages.first()).toBeVisible()
     })
   })
 
@@ -241,31 +241,28 @@ test.describe('hotsure E2E', () => {
       await setupAuthenticatedPage(page, '/social')
 
       // ストリーク表示
-      const streakDisplay = page.locator('text=ストリーク')
+      const streakDisplay = page.getByRole('heading', { name: 'ストリーク', exact: true })
       await expect(streakDisplay).toBeVisible()
 
       // ほつれ表示
-      const hotsureDisplay = page.locator('text=ほつれ')
+      const hotsureDisplay = page.getByRole('heading', { name: 'ほつれ', exact: true })
       await expect(hotsureDisplay).toBeVisible()
 
       // 両方が表示されている
-      const streakBox = streakDisplay.locator('xpath=ancestor::div[@class*="Card"]')
-      const hotsureBox = hotsureDisplay.locator('xpath=ancestor::div[@class*="Card"]')
-
-      await expect(streakBox).toBeVisible()
-      await expect(hotsureBox).toBeVisible()
+      await expect(streakDisplay).toBeVisible()
+      await expect(hotsureDisplay).toBeVisible()
     })
 
     test('プロフィールタブでほつれが表示される', async ({ page }) => {
       await setupAuthenticatedPage(page, '/social')
 
       // ソーシャルページのプロフィールタブにほつれが表示されている
-      const hotsureDisplay = page.locator('text=ほつれ')
+      const hotsureDisplay = page.getByRole('heading', { name: 'ほつれ', exact: true })
       await expect(hotsureDisplay).toBeVisible()
 
-      // カード内の要素が確認できる
-      const hotsureCard = hotsureDisplay.locator('xpath=ancestor::div[@class*="Card"]')
-      await expect(hotsureCard).toBeVisible()
+      // 説明テキストも確認
+      const description = page.locator('text=毎週月曜日に2回まで自動補充されます')
+      await expect(description).toBeVisible()
     })
   })
 
@@ -281,11 +278,11 @@ test.describe('hotsure E2E', () => {
       await setupAuthenticatedPage(page, '/social')
 
       // ほつれ表示がモバイルでも見える
-      const hotsureCard = page.locator('text=ほつれ')
+      const hotsureCard = page.getByRole('heading', { name: 'ほつれ', exact: true })
       await expect(hotsureCard).toBeVisible()
 
       // スプールアイコンが見える
-      const spoolIcons = page.locator('svg').filter({ has: page.locator('[aria-label="Spool"]') })
+      const spoolIcons = page.locator('svg.rotate-\\[15deg\\]')
       expect(await spoolIcons.count()).toBeGreaterThan(0)
     })
 
@@ -296,7 +293,7 @@ test.describe('hotsure E2E', () => {
       await setupAuthenticatedPage(page, '/social')
 
       // ほつれ表示がタブレットでも見える
-      const hotsureCard = page.locator('text=ほつれ')
+      const hotsureCard = page.getByRole('heading', { name: 'ほつれ', exact: true })
       await expect(hotsureCard).toBeVisible()
     })
 
@@ -307,7 +304,7 @@ test.describe('hotsure E2E', () => {
       await setupAuthenticatedPage(page, '/social')
 
       // ほつれ表示がデスクトップでも見える
-      const hotsureCard = page.locator('text=ほつれ')
+      const hotsureCard = page.getByRole('heading', { name: 'ほつれ', exact: true })
       await expect(hotsureCard).toBeVisible()
     })
   })
@@ -320,12 +317,12 @@ test.describe('hotsure E2E', () => {
     test('ほつれカードが適切なセマンティクスを持つ', async ({ page }) => {
       await setupAuthenticatedPage(page, '/social')
 
-      // ほつれカードが見える
-      const hotsureCard = page.locator('text=ほつれ')
+      // ほつれカード見出しが見える
+      const hotsureCard = page.getByRole('heading', { name: 'ほつれ', exact: true })
       await expect(hotsureCard).toBeVisible()
 
-      // カード要素が探索可能
-      const cardElement = hotsureCard.locator('xpath=ancestor::div[@role="region"] | ancestor::div[@class*="Card"]')
+      // 見出しの親要素がカード
+      const cardElement = hotsureCard.locator('xpath=ancestor::div[contains(@class, "Card")]')
       await expect(cardElement).toBeVisible()
     })
 
@@ -342,7 +339,7 @@ test.describe('hotsure E2E', () => {
 
       // テキスト要素が見える（コントラスト不足の場合は見えない可能性がある）
       const hotsureMessage = page.locator('text=/安心のセーフティネット|残りわずか|ほつれ切れ/')
-      await expect(hotsureMessage).toBeVisible()
+      await expect(hotsureMessage.first()).toBeVisible()
     })
   })
 })

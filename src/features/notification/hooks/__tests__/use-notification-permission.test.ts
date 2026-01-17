@@ -1,16 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { renderHook, act, waitFor } from '@testing-library/react'
+import { renderHook, act } from '@testing-library/react'
 import { useNotificationPermission } from '../use-notification-permission'
 
 describe('useNotificationPermission', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
     // ブラウザAPIをモック
     Object.defineProperty(global, 'window', {
       value: {
         Notification: {
           permission: 'default',
-          requestPermission: vi.fn(),
+          requestPermission: jest.fn(),
         },
       },
       writable: true,
@@ -18,7 +17,7 @@ describe('useNotificationPermission', () => {
   })
 
   afterEach(() => {
-    vi.clearAllMocks()
+    jest.clearAllMocks()
   })
 
   describe('サポート検出', () => {
@@ -27,7 +26,7 @@ describe('useNotificationPermission', () => {
       global.window = {
         Notification: {
           permission: 'default',
-          requestPermission: vi.fn(),
+          requestPermission: jest.fn(),
         },
       } as any
 
@@ -68,7 +67,7 @@ describe('useNotificationPermission', () => {
       global.window = {
         Notification: {
           permission: 'default',
-          requestPermission: vi.fn(),
+          requestPermission: jest.fn(),
         },
       } as any
 
@@ -84,7 +83,7 @@ describe('useNotificationPermission', () => {
       global.window = {
         Notification: {
           permission: 'granted',
-          requestPermission: vi.fn(),
+          requestPermission: jest.fn(),
         },
       } as any
 
@@ -100,7 +99,7 @@ describe('useNotificationPermission', () => {
       global.window = {
         Notification: {
           permission: 'denied',
-          requestPermission: vi.fn(),
+          requestPermission: jest.fn(),
         },
       } as any
 
@@ -115,7 +114,7 @@ describe('useNotificationPermission', () => {
   describe('権限リクエスト', () => {
     it('権限リクエスト成功 (granted)', async () => {
       // Arrange
-      const mockRequestPermission = vi.fn().mockResolvedValue('granted')
+      const mockRequestPermission = jest.fn().mockResolvedValue('granted')
       global.window = {
         Notification: {
           permission: 'default',
@@ -138,7 +137,7 @@ describe('useNotificationPermission', () => {
 
     it('権限リクエスト拒否 (denied)', async () => {
       // Arrange
-      const mockRequestPermission = vi.fn().mockResolvedValue('denied')
+      const mockRequestPermission = jest.fn().mockResolvedValue('denied')
       global.window = {
         Notification: {
           permission: 'default',
@@ -211,7 +210,7 @@ describe('useNotificationPermission', () => {
       global.window = {
         Notification: {
           permission: 'default',
-          requestPermission: vi.fn(),
+          requestPermission: jest.fn(),
         },
       } as any
 
@@ -231,7 +230,7 @@ describe('useNotificationPermission', () => {
   describe('requestPermissionの型', () => {
     it('requestPermissionはPromiseを返す', async () => {
       // Arrange
-      const mockRequestPermission = vi.fn().mockResolvedValue('granted')
+      const mockRequestPermission = jest.fn().mockResolvedValue('granted')
       global.window = {
         Notification: {
           permission: 'default',
