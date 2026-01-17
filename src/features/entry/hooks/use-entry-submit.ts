@@ -121,12 +121,14 @@ export function useEntrySubmit({
       }
 
       // All succeeded - extract URLs with explicit type narrowing
+      // 注: hasFailureチェック後なので以下のエラーは理論上到達不能
+      // TypeScriptの型ガードとして防御的に記述
       return settledResults.map((settled) => {
         if (settled.status === 'rejected') {
-          throw new Error('Unexpected rejected state')
+          throw new Error('Unreachable: all rejections filtered by hasFailure check')
         }
         if (!settled.value.ok) {
-          throw new Error('Unexpected error state')
+          throw new Error('Unreachable: all errors filtered by hasFailure check')
         }
         return settled.value.value
       })

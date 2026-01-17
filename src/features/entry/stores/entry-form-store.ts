@@ -148,6 +148,8 @@ export const useEntryFormStore = create<EntryFormStore>((set) => ({
       ...initialState,
       content: initialContent,
       existingImageUrls: existingImageUrls ?? [],
+      // initialStateのSetを再利用せず、初期化ごとに新しいインスタンスを作成
+      // （同一参照による意図しない状態共有を防止）
       removedImageUrls: new Set<string>(),
       isShared: initialIsShared,
     }),
