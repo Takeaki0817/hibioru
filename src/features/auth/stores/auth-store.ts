@@ -39,3 +39,10 @@ export const useAuthStore = create<AuthStore>((set) => ({
   // リセット（サインアウト時）
   reset: () => set({ ...initialState, isLoading: false, isInitialized: true }),
 }))
+
+// セレクター
+export const selectIsAuthenticated = (state: AuthStore): boolean =>
+  state.isInitialized && state.user !== null
+
+export const selectUserId = (state: AuthStore): string | undefined =>
+  state.user?.id

@@ -2,6 +2,7 @@
 
 import { createStore } from 'zustand/vanilla'
 import { createStoreContext } from '@/stores/create-store-context'
+import { getJSTDateString } from '@/lib/date-utils'
 
 // ========================================
 // 型定義
@@ -103,6 +104,26 @@ export const createTimelineStore = (
     reset: () => set(defaultInitState),
   }))
 }
+
+// ========================================
+// セレクター
+// ========================================
+
+export const selectIsCalendarOpen = (state: TimelineState): boolean =>
+  state.isCalendarOpen
+
+export const selectCurrentDateString = (state: TimelineState): string =>
+  getJSTDateString(state.currentDate)
+
+export const selectHasEntryOnDate = (
+  state: TimelineState,
+  date: string
+): boolean => state.entryDates.has(date)
+
+export const selectHasHotsureOnDate = (
+  state: TimelineState,
+  date: string
+): boolean => state.hotsureDates.has(date)
 
 // ========================================
 // Provider/Hook生成
