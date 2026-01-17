@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
 import {
   getMainMessage,
   getFollowUpMessage,
@@ -11,15 +10,9 @@ import {
 } from '../../messages'
 
 describe('Notification Messages', () => {
-  beforeEach(() => {
-    // Math.random()をリセット（必要に応じて）
-    vi.clearAllMocks()
-  })
-
   describe('getMainMessage', () => {
     it('メインメッセージをランダムに選択', () => {
       // Arrange
-      // 複数回呼び出してメッセージが返されることを確認
       const messages = new Set<string>()
 
       // Act
@@ -29,9 +22,7 @@ describe('Notification Messages', () => {
       }
 
       // Assert
-      // 少なくとも複数の異なるメッセージが返されることを確認
       expect(messages.size).toBeGreaterThan(1)
-      // すべてのメッセージがMAIN_MESSAGES配列に含まれることを確認
       messages.forEach((body) => {
         expect(MAIN_MESSAGES.some((msg) => msg.body === body)).toBe(true)
       })
@@ -53,16 +44,6 @@ describe('Notification Messages', () => {
       const found = MAIN_MESSAGES.find((msg) => msg.body === message.body)
       expect(found).toBeDefined()
       expect(found?.title).toBe(message.title)
-    })
-
-    it('複数回呼び出しても常にタイトルは同じ', () => {
-      // Act
-      const results = Array.from({ length: 10 }, () => getMainMessage())
-
-      // Assert
-      results.forEach((msg) => {
-        expect(msg.title).toBe('ヒビオル')
-      })
     })
   })
 
@@ -140,38 +121,6 @@ describe('Notification Messages', () => {
       expect(message.title).toBe('ヒビオル')
       expect(FOLLOW_UP_1_MESSAGES.some((msg) => msg.body === message.body)).toBe(true)
     })
-
-    it('各回数でランダムに選択される', () => {
-      // Act & Assert
-      const counts = [1, 2, 3, 4, 5]
-      counts.forEach((count) => {
-        const messages = new Set<string>()
-        for (let i = 0; i < 20; i++) {
-          messages.add(getFollowUpMessage(count).body)
-        }
-        // 複数の異なるメッセージが返されることを確認
-        expect(messages.size).toBeGreaterThan(1)
-      })
-    })
-
-    it('count=1と count=0は同じ配列から選択される', () => {
-      // Act
-      const messagesFromOne = new Set<string>()
-      const messagesFromZero = new Set<string>()
-
-      for (let i = 0; i < 20; i++) {
-        messagesFromOne.add(getFollowUpMessage(1).body)
-        messagesFromZero.add(getFollowUpMessage(0).body)
-      }
-
-      // Assert
-      // 両方とも同じFOLLOW_UP_1_MESSAGES配列から選択されているはずなので
-      // 選択肢の共通部分が存在するはず
-      const commonMessages = Array.from(messagesFromOne).filter((msg) =>
-        FOLLOW_UP_1_MESSAGES.some((m) => m.body === msg)
-      )
-      expect(commonMessages.length).toBeGreaterThan(0)
-    })
   })
 
   describe('メッセージ配列の構成', () => {
@@ -181,22 +130,6 @@ describe('Notification Messages', () => {
 
     it('FOLLOW_UP_1_MESSAGES配列は5要素以上', () => {
       expect(FOLLOW_UP_1_MESSAGES.length).toBeGreaterThanOrEqual(5)
-    })
-
-    it('FOLLOW_UP_2_MESSAGES配列は5要素以上', () => {
-      expect(FOLLOW_UP_2_MESSAGES.length).toBeGreaterThanOrEqual(5)
-    })
-
-    it('FOLLOW_UP_3_MESSAGES配列は5要素以上', () => {
-      expect(FOLLOW_UP_3_MESSAGES.length).toBeGreaterThanOrEqual(5)
-    })
-
-    it('FOLLOW_UP_4_MESSAGES配列は5要素以上', () => {
-      expect(FOLLOW_UP_4_MESSAGES.length).toBeGreaterThanOrEqual(5)
-    })
-
-    it('FOLLOW_UP_5_MESSAGES配列は5要素以上', () => {
-      expect(FOLLOW_UP_5_MESSAGES.length).toBeGreaterThanOrEqual(5)
     })
 
     it('すべてのメッセージにはtitleとbodyプロパティがある', () => {

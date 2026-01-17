@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeEach } from 'vitest'
 import {
   createTimelineStore,
   selectIsCalendarOpen,
@@ -363,7 +362,7 @@ describe('TimelineStore', () => {
   describe('ストアの購読機能', () => {
     it('subscribe: 状態変更時に購読者がコールバック受け取る', () => {
       // Arrange
-      const callback = vi.fn()
+      const callback = jest.fn()
       const unsubscribe = store.subscribe(
         (state) => state.isCalendarOpen,
         callback
@@ -379,7 +378,6 @@ describe('TimelineStore', () => {
   })
 })
 
-// 型安全性テスト（コンパイル時に確認）
 describe('TimelineStore 型安全性', () => {
   it('各アクション関数の戻り値は void', () => {
     // Arrange
