@@ -1,5 +1,5 @@
 ---
-paths: **/__tests__/**/*.ts, **/*.test.ts, **/*.spec.ts, e2e/**/*.ts
+globs: **/__tests__/**/*.ts, **/*.test.ts, **/*.spec.ts, e2e/**/*.ts
 ---
 
 # テスト規約

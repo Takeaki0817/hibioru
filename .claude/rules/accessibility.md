@@ -1,5 +1,5 @@
 ---
-paths: src/components/**/*.tsx, src/features/**/components/**/*.tsx
+globs: src/components/**/*.tsx, src/features/**/components/**/*.tsx
 ---
 
 # アクセシビリティ規約

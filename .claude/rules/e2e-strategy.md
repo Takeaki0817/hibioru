@@ -1,5 +1,5 @@
 ---
-paths: e2e/**/*.ts, playwright.config.ts
+globs: e2e/**/*.ts, playwright.config.ts
 ---
 
 # E2Eテスト戦略

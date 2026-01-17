@@ -1,6 +1,5 @@
 ---
-paths:
-  - ".mcp.json"
+globs: .mcp.json
 ---
 
 # MCP 活用ガイド

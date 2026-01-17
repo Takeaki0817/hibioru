@@ -1,5 +1,5 @@
 ---
-paths: next.config.ts, src/app/**/page.tsx, src/app/**/layout.tsx
+globs: next.config.ts, src/app/**/page.tsx, src/app/**/layout.tsx
 ---
 
 # パフォーマンス目標
