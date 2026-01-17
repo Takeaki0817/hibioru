@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import type { Entry } from '@/features/entry/types'
+import { parseJSTDateString, getJSTDateString, isoToJSTDateString } from '@/lib/date-utils'
 
 // Next.js 16: createClient()使用で自動的に動的レンダリング
 
@@ -39,12 +40,18 @@ export async function GET(request: NextRequest) {
       .eq('is_deleted', false)
       .order('created_at', { ascending: true })
 
-    // 期間フィルタ
+    // 期間フィルタ（JST基準）
+    // fromDateをJSTの0:00として解釈し、UTC時刻に変換
     if (fromDate) {
-      query = query.gte('created_at', `${fromDate}T00:00:00Z`)
+      const fromDateJST = parseJSTDateString(fromDate)
+      query = query.gte('created_at', fromDateJST.toISOString())
     }
+    // toDateをJSTの23:59:59として解釈し、UTC時刻に変換
     if (toDate) {
-      query = query.lte('created_at', `${toDate}T23:59:59Z`)
+      const toDateJST = parseJSTDateString(toDate)
+      // JSTの翌日0:00の直前（23:59:59.999）まで含める
+      const toDateEndJST = new Date(toDateJST.getTime() + 24 * 60 * 60 * 1000 - 1)
+      query = query.lte('created_at', toDateEndJST.toISOString())
     }
 
     const { data: entries, error } = await query
@@ -64,8 +71,8 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ファイル名（日付を含む）
-    const dateStr = new Date().toISOString().split('T')[0]
+    // ファイル名（JST基準の日付を含む）
+    const dateStr = getJSTDateString()
     let filename: string
     let content: string
     let contentType: string
@@ -99,15 +106,16 @@ export async function GET(request: NextRequest) {
 }
 
 /**
- * エントリーをMarkdown形式に変換
+ * エントリーをMarkdown形式に変換（JST基準で日付グループ化）
  */
 function entriesToMarkdown(entries: Entry[]): string {
   let markdown = '# ヒビオル エクスポート\n\n'
 
-  // 日付でグループ化
+  // 日付でグループ化（JST基準）
   const entriesByDate = new Map<string, Entry[]>()
   for (const entry of entries) {
-    const date = entry.created_at.split('T')[0]
+    // ISO文字列をJST基準のYYYY-MM-DD形式に変換
+    const date = isoToJSTDateString(entry.created_at)
     if (!entriesByDate.has(date)) {
       entriesByDate.set(date, [])
     }
@@ -119,7 +127,14 @@ function entriesToMarkdown(entries: Entry[]): string {
     markdown += `## ${date}\n\n`
 
     for (const entry of dateEntries) {
-      const time = entry.created_at.split('T')[1].substring(0, 5)
+      // 時刻をJST形式で表示
+      const entryDate = new Date(entry.created_at)
+      const time = entryDate.toLocaleTimeString('ja-JP', {
+        timeZone: 'Asia/Tokyo',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      })
       markdown += `### ${time}\n\n`
       markdown += `${entry.content}\n\n`
 
