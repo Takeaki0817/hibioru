@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react'
 
+import { logger } from '@/lib/logger'
+
 /**
  * BeforeInstallPromptEvent の型定義
  * ブラウザのPWAインストールプロンプトイベント
@@ -80,14 +82,14 @@ export function usePwaInstall() {
       // イベントを保存
       setDeferredPrompt(event as BeforeInstallPromptEvent)
       setCanInstall(true)
-      console.log('[PWA] インストールプロンプトが利用可能になりました')
+      logger.info('[PWA] インストールプロンプトが利用可能になりました')
     }
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 
     // インストール完了時
     const handleAppInstalled = () => {
-      console.log('[PWA] アプリがインストールされました')
+      logger.info('[PWA] アプリがインストールされました')
       setDeferredPrompt(null)
       setCanInstall(false)
       setIsStandalone(true)
@@ -104,7 +106,7 @@ export function usePwaInstall() {
   // インストールを実行
   const install = useCallback(async (): Promise<boolean> => {
     if (!deferredPrompt) {
-      console.warn('[PWA] インストールプロンプトが利用できません')
+      logger.warn('[PWA] インストールプロンプトが利用できません')
       return false
     }
 
@@ -114,7 +116,7 @@ export function usePwaInstall() {
       // ユーザーの選択を待つ
       const { outcome } = await deferredPrompt.userChoice
 
-      console.log('[PWA] ユーザーの選択:', outcome)
+      logger.info('[PWA] ユーザーの選択:', outcome)
 
       if (outcome === 'accepted') {
         setDeferredPrompt(null)
@@ -124,7 +126,7 @@ export function usePwaInstall() {
 
       return false
     } catch (error) {
-      console.error('[PWA] インストールエラー:', error)
+      logger.error('[PWA] インストールエラー:', error)
       return false
     }
   }, [deferredPrompt])
@@ -133,7 +135,7 @@ export function usePwaInstall() {
   const dismiss = useCallback(() => {
     localStorage.setItem(INSTALL_DISMISSED_KEY, Date.now().toString())
     setIsDismissed(true)
-    console.log('[PWA] インストールプロンプトを非表示にしました')
+    logger.info('[PWA] インストールプロンプトを非表示にしました')
   }, [])
 
   // バナーを表示すべきか
