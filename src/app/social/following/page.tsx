@@ -24,7 +24,7 @@ export default async function FollowingPage() {
     <PageLayout header={<SocialHeader />} mainClassName="overflow-y-auto">
       <div className="container mx-auto max-w-2xl py-6 px-4">
         <h1 className="text-2xl font-bold mb-6">フォロー中</h1>
-        <FollowListPage userId={user.id} type="following" />
+        <FollowListPage type="following" />
       </div>
     </PageLayout>
   )

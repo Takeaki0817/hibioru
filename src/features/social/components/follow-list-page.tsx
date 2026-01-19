@@ -29,14 +29,13 @@ const itemVariants = {
 }
 
 interface FollowListPageProps {
-  userId: string
   type: 'following' | 'followers'
 }
 
 /**
  * フォロー/フォロワーリストページ用コンポーネント
  */
-export function FollowListPage({ userId, type }: FollowListPageProps) {
+export function FollowListPage({ type }: FollowListPageProps) {
   const fetchFn = useMemo(
     () => (type === 'following' ? getFollowingList : getFollowerList),
     [type]
