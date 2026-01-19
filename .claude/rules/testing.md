@@ -8,15 +8,24 @@ globs: **/__tests__/**/*.ts, **/*.test.ts, **/*.spec.ts, e2e/**/*.ts
 
 ### ファイル配置
 
-各フィーチャー内の `__tests__/` ディレクトリに配置。
+各モジュールの `__tests__/` ディレクトリに配置。
 
 ```
-src/features/entry/
+src/features/{feature}/
+├── __tests__/                    # Feature-level tests
+│   └── constants.test.ts
 ├── api/
-│   └── service.ts
-├── __tests__/
-│   └── service.test.ts   # service.tsのテスト
-└── types.ts
+│   ├── service.ts
+│   └── __tests__/               # API/service tests
+│       └── service.test.ts
+├── hooks/
+│   ├── use-*.ts
+│   └── __tests__/               # Hook tests
+│       └── use-*.test.ts
+└── stores/
+    ├── *-store.ts
+    └── __tests__/               # Store tests
+        └── *-store.test.ts
 ```
 
 ### ファイル命名
@@ -41,11 +50,16 @@ pnpm test -- path/to/test    # 単一テスト実行
 ```
 e2e/
 ├── auth.spec.ts
-├── entry-create.spec.ts
-├── entry-edit-delete.spec.ts
+├── entry.spec.ts           # Consolidated (create/edit/delete)
 ├── timeline.spec.ts
+├── streak.spec.ts
+├── hotsure.spec.ts
+├── notification.spec.ts
+├── social.spec.ts
+├── billing.spec.ts
 └── fixtures/
-    └── test-helpers.ts
+    ├── test-helpers.ts     # Auth, timeline, draft, billing helpers
+    └── stripe-helpers.ts   # Stripe webhook, DB verification
 ```
 
 ### ファイル命名
