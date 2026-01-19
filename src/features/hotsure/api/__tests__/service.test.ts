@@ -11,6 +11,12 @@ import { createClient } from '@/lib/supabase/server'
 
 const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>
 
+// Mock Supabase client type for type-safe mocking
+interface MockSupabaseClient {
+  from: jest.Mock
+  rpc?: jest.Mock
+}
+
 describe('hotsure/api/service', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -45,7 +51,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.getHotsureInfo(userId)
@@ -76,7 +82,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.getHotsureInfo(userId)
@@ -106,7 +112,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.getHotsureInfo(userId)
@@ -138,7 +144,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.getHotsureInfo(userId)
@@ -173,7 +179,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.canUseHotsure(userId)
@@ -203,7 +209,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.canUseHotsure(userId)
@@ -234,7 +240,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.canUseHotsure(userId)
@@ -259,7 +265,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.canUseHotsure(userId)
@@ -307,7 +313,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // JST 2026-01-17 02:00 = UTC 2026-01-16 17:00 に時刻を固定
       const jstMidnightUtcTime = new Date('2026-01-16T17:00:00Z')
@@ -359,7 +365,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // JST 2026-01-17 00:00:00 = UTC 2026-01-16 15:00:00 に固定
       const jstBoundaryUtcTime = new Date('2026-01-16T15:00:00Z')
@@ -396,7 +402,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.consumeHotsure(userId)
@@ -422,7 +428,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.consumeHotsure(userId)
@@ -448,7 +454,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.consumeHotsure(userId)
@@ -474,7 +480,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act: 3 回呼び出し
       const result1 = await service.consumeHotsure(userId)
@@ -503,7 +509,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.consumeHotsure(userId)
@@ -537,7 +543,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.resetHotsureWeekly()
@@ -560,7 +566,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.resetHotsureWeekly()
@@ -585,7 +591,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.resetHotsureWeekly()
@@ -610,7 +616,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.resetHotsureWeekly()
@@ -634,7 +640,7 @@ describe('hotsure/api/service', () => {
         }),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const result = await service.resetHotsureWeekly()
@@ -676,7 +682,7 @@ describe('hotsure/api/service', () => {
         rpc: jest.fn(),
       }
 
-      mockCreateClient.mockResolvedValue(mockSupabaseClient as any)
+      mockCreateClient.mockResolvedValue(mockSupabaseClient as unknown as Awaited<ReturnType<typeof createClient>>)
 
       // Act
       const info = await service.getHotsureInfo(userId)

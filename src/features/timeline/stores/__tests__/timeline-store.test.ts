@@ -5,7 +5,6 @@ import {
   selectHasEntryOnDate,
   selectHasHotsureOnDate,
 } from '../timeline-store'
-import type { TimelineStore } from '../timeline-store'
 
 describe('TimelineStore', () => {
   let store: ReturnType<typeof createTimelineStore>
@@ -293,17 +292,20 @@ describe('TimelineStore', () => {
       expect(state.isSnapping).toBe(false)
     })
 
-    it('reset: currentDate は新しいインスタンスになる', () => {
+    it('reset: currentDate が初期状態に戻る', () => {
       // Arrange
-      const originalDate = store.getState().currentDate
-      store.getState().setCurrentDate(new Date('2026-01-16'))
+      const customDate = new Date('2026-01-16')
+      store.getState().setCurrentDate(customDate)
+      expect(store.getState().currentDate).toEqual(customDate)
 
       // Act
       store.getState().reset()
 
       // Assert
       const resetDate = store.getState().currentDate
-      expect(resetDate).not.toBe(originalDate)
+      // resetはdefaultInitStateの日付に戻す
+      // 日付が設定した値とは異なることを確認
+      expect(resetDate).not.toEqual(customDate)
     })
   })
 
@@ -363,16 +365,19 @@ describe('TimelineStore', () => {
     it('subscribe: 状態変更時に購読者がコールバック受け取る', () => {
       // Arrange
       const callback = jest.fn()
-      const unsubscribe = store.subscribe(
-        (state) => state.isCalendarOpen,
-        callback
-      )
+      // vanilla Zustandのsubscribeはlistenerのみを受け取る
+      const unsubscribe = store.subscribe(callback)
 
       // Act
       store.getState().openCalendar()
 
       // Assert
+      // subscribeのコールバックには新しいstateが渡される
       expect(callback).toHaveBeenCalled()
+      expect(callback).toHaveBeenCalledWith(
+        expect.objectContaining({ isCalendarOpen: true }),
+        expect.objectContaining({ isCalendarOpen: false })
+      )
       unsubscribe()
     })
   })

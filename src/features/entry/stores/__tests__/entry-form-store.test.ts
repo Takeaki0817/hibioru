@@ -4,7 +4,6 @@ import {
   selectCanSubmit,
   selectTotalImageCount,
   selectCanAddImage,
-  MAX_IMAGES,
 } from '../entry-form-store'
 import type { CompressedImage } from '../../types'
 

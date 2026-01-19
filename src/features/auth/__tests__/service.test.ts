@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { signOut, getCurrentUser, deleteAccount } from '../api/actions'
 
 // Mock modules
@@ -36,6 +37,31 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { logger } from '@/lib/logger'
 
+// Type for mock Supabase client
+type MockSupabaseClient = Partial<SupabaseClient>
+
+// Type for mock admin client
+interface MockAdminClient {
+  storage: {
+    from: jest.Mock
+  }
+  auth: {
+    admin: {
+      deleteUser: jest.Mock
+    }
+  }
+}
+
+// Type for mock user
+interface MockUser {
+  id: string
+  email?: string
+  app_metadata?: Record<string, unknown>
+  user_metadata?: Record<string, unknown>
+  aud?: string
+  created_at?: string
+}
+
 describe('Auth Actions', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -49,7 +75,7 @@ describe('Auth Actions', () => {
           signOut: jest.fn().mockResolvedValue({}),
         },
       }
-      jest.mocked(createClient).mockResolvedValue(mockSupabase as any)
+      jest.mocked(createClient).mockResolvedValue(mockSupabase as unknown as MockSupabaseClient)
 
       // Act
       await signOut()
@@ -66,7 +92,7 @@ describe('Auth Actions', () => {
           signOut: jest.fn().mockRejectedValue(new Error('Signout failed')),
         },
       }
-      jest.mocked(createClient).mockResolvedValue(mockSupabase as any)
+      jest.mocked(createClient).mockResolvedValue(mockSupabase as unknown as MockSupabaseClient)
 
       // Act & Assert
       await expect(signOut()).rejects.toThrow('Signout failed')
@@ -76,7 +102,7 @@ describe('Auth Actions', () => {
   describe('getCurrentUser', () => {
     it('should return authenticated user when user exists', async () => {
       // Arrange
-      const mockUser = {
+      const mockUser: MockUser = {
         id: 'user-123',
         email: 'test@example.com',
         app_metadata: {},
@@ -92,7 +118,7 @@ describe('Auth Actions', () => {
           }),
         },
       }
-      jest.mocked(createClient).mockResolvedValue(mockSupabase as any)
+      jest.mocked(createClient).mockResolvedValue(mockSupabase as unknown as MockSupabaseClient)
 
       // Act
       const result = await getCurrentUser()
@@ -112,7 +138,7 @@ describe('Auth Actions', () => {
           }),
         },
       }
-      jest.mocked(createClient).mockResolvedValue(mockSupabase as any)
+      jest.mocked(createClient).mockResolvedValue(mockSupabase as unknown as MockSupabaseClient)
 
       // Act
       const result = await getCurrentUser()
@@ -129,7 +155,7 @@ describe('Auth Actions', () => {
           getUser: jest.fn().mockRejectedValue(new Error('Session expired')),
         },
       }
-      jest.mocked(createClient).mockResolvedValue(mockSupabase as any)
+      jest.mocked(createClient).mockResolvedValue(mockSupabase as unknown as MockSupabaseClient)
 
       // Act & Assert
       await expect(getCurrentUser()).rejects.toThrow('Session expired')
@@ -140,12 +166,12 @@ describe('Auth Actions', () => {
     it('should delete user and associated storage files successfully', async () => {
       // Arrange
       const userId = 'user-123'
-      const mockUser = { id: userId }
+      const mockUser: MockUser = { id: userId }
       const mockFiles = [
         { name: 'image1.jpg' },
         { name: 'image2.jpg' },
       ]
-      const mockAdminClient = {
+      const mockAdminClient: MockAdminClient = {
         storage: {
           from: jest.fn().mockReturnValue({
             list: jest.fn().mockResolvedValue({ data: mockFiles }),
@@ -163,11 +189,11 @@ describe('Auth Actions', () => {
           signOut: jest.fn().mockResolvedValue({}),
         },
       }
-      jest.mocked(createAdminClient).mockReturnValue(mockAdminClient as any)
-      jest.mocked(createClient).mockResolvedValue(mockSupabase as any)
+      jest.mocked(createAdminClient).mockReturnValue(mockAdminClient as unknown as ReturnType<typeof createAdminClient>)
+      jest.mocked(createClient).mockResolvedValue(mockSupabase as unknown as MockSupabaseClient)
 
       // Act
-      const result = await deleteAccount({ ctx: { user: mockUser, supabase: mockSupabase as any } })
+      const result = await deleteAccount({ ctx: { user: mockUser, supabase: mockSupabase as unknown as MockSupabaseClient } })
 
       // Assert
       expect(mockAdminClient.storage.from).toHaveBeenCalledWith('entry-images')
@@ -179,8 +205,8 @@ describe('Auth Actions', () => {
     it('should delete user even if no files exist in storage', async () => {
       // Arrange
       const userId = 'user-123'
-      const mockUser = { id: userId }
-      const mockAdminClient = {
+      const mockUser: MockUser = { id: userId }
+      const mockAdminClient: MockAdminClient = {
         storage: {
           from: jest.fn().mockReturnValue({
             list: jest.fn().mockResolvedValue({ data: [] }),
@@ -197,11 +223,11 @@ describe('Auth Actions', () => {
           signOut: jest.fn().mockResolvedValue({}),
         },
       }
-      jest.mocked(createAdminClient).mockReturnValue(mockAdminClient as any)
-      jest.mocked(createClient).mockResolvedValue(mockSupabase as any)
+      jest.mocked(createAdminClient).mockReturnValue(mockAdminClient as unknown as ReturnType<typeof createAdminClient>)
+      jest.mocked(createClient).mockResolvedValue(mockSupabase as unknown as MockSupabaseClient)
 
       // Act
-      const result = await deleteAccount({ ctx: { user: mockUser, supabase: mockSupabase as any } })
+      const result = await deleteAccount({ ctx: { user: mockUser, supabase: mockSupabase as unknown as MockSupabaseClient } })
 
       // Assert
       expect(mockAdminClient.auth.admin.deleteUser).toHaveBeenCalledWith(userId)
@@ -211,10 +237,10 @@ describe('Auth Actions', () => {
     it('should continue with user deletion if storage deletion fails', async () => {
       // Arrange
       const userId = 'user-123'
-      const mockUser = { id: userId }
+      const mockUser: MockUser = { id: userId }
       const mockFiles = [{ name: 'image1.jpg' }]
       const storageError = new Error('Storage deletion failed')
-      const mockAdminClient = {
+      const mockAdminClient: MockAdminClient = {
         storage: {
           from: jest.fn().mockReturnValue({
             list: jest.fn().mockResolvedValue({ data: mockFiles }),
@@ -232,11 +258,11 @@ describe('Auth Actions', () => {
           signOut: jest.fn().mockResolvedValue({}),
         },
       }
-      jest.mocked(createAdminClient).mockReturnValue(mockAdminClient as any)
-      jest.mocked(createClient).mockResolvedValue(mockSupabase as any)
+      jest.mocked(createAdminClient).mockReturnValue(mockAdminClient as unknown as ReturnType<typeof createAdminClient>)
+      jest.mocked(createClient).mockResolvedValue(mockSupabase as unknown as MockSupabaseClient)
 
       // Act
-      const result = await deleteAccount({ ctx: { user: mockUser, supabase: mockSupabase as any } })
+      const result = await deleteAccount({ ctx: { user: mockUser, supabase: mockSupabase as unknown as MockSupabaseClient } })
 
       // Assert
       expect(logger.warn).toHaveBeenCalledWith('Storage deletion failed', storageError)
@@ -247,9 +273,9 @@ describe('Auth Actions', () => {
     it('should throw error when auth deletion fails', async () => {
       // Arrange
       const userId = 'user-123'
-      const mockUser = { id: userId }
+      const mockUser: MockUser = { id: userId }
       const deleteError = new Error('Auth deletion failed')
-      const mockAdminClient = {
+      const mockAdminClient: MockAdminClient = {
         storage: {
           from: jest.fn().mockReturnValue({
             list: jest.fn().mockResolvedValue({ data: [] }),
@@ -266,12 +292,12 @@ describe('Auth Actions', () => {
           signOut: jest.fn(),
         },
       }
-      jest.mocked(createAdminClient).mockReturnValue(mockAdminClient as any)
-      jest.mocked(createClient).mockResolvedValue(mockSupabase as any)
+      jest.mocked(createAdminClient).mockReturnValue(mockAdminClient as unknown as ReturnType<typeof createAdminClient>)
+      jest.mocked(createClient).mockResolvedValue(mockSupabase as unknown as MockSupabaseClient)
 
       // Act & Assert
       await expect(
-        deleteAccount({ ctx: { user: mockUser, supabase: mockSupabase as any } })
+        deleteAccount({ ctx: { user: mockUser, supabase: mockSupabase as unknown as MockSupabaseClient } })
       ).rejects.toThrow('アカウント削除に失敗しました')
       expect(logger.error).toHaveBeenCalledWith('User deletion failed', deleteError)
     })
@@ -279,8 +305,8 @@ describe('Auth Actions', () => {
     it('should clear session even if signOut fails after user deletion', async () => {
       // Arrange
       const userId = 'user-123'
-      const mockUser = { id: userId }
-      const mockAdminClient = {
+      const mockUser: MockUser = { id: userId }
+      const mockAdminClient: MockAdminClient = {
         storage: {
           from: jest.fn().mockReturnValue({
             list: jest.fn().mockResolvedValue({ data: [] }),
@@ -297,11 +323,11 @@ describe('Auth Actions', () => {
           signOut: jest.fn().mockRejectedValue(new Error('Session already deleted')),
         },
       }
-      jest.mocked(createAdminClient).mockReturnValue(mockAdminClient as any)
-      jest.mocked(createClient).mockResolvedValue(mockSupabase as any)
+      jest.mocked(createAdminClient).mockReturnValue(mockAdminClient as unknown as ReturnType<typeof createAdminClient>)
+      jest.mocked(createClient).mockResolvedValue(mockSupabase as unknown as MockSupabaseClient)
 
       // Act
-      const result = await deleteAccount({ ctx: { user: mockUser, supabase: mockSupabase as any } })
+      const result = await deleteAccount({ ctx: { user: mockUser, supabase: mockSupabase as unknown as MockSupabaseClient } })
 
       // Assert
       expect(mockSupabase.auth.signOut).toHaveBeenCalled()

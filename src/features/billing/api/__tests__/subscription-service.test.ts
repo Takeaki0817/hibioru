@@ -211,15 +211,21 @@ describe('Subscription Service - Error Handling', () => {
 describe('Subscription Service - Return Type Contracts', () => {
   it('should follow Result type contract (Either monad pattern)', () => {
     // Arrange - Result<T, E> should be either Ok(T) or Err(E), never both
-    const okResult = { ok: true, value: 'data' }
-    const errResult = { ok: false, error: 'error message' }
+    const okResult: { ok: true; value: string; error?: undefined } = {
+      ok: true,
+      value: 'data',
+    }
+    const errResult: { ok: false; error: string; value?: undefined } = {
+      ok: false,
+      error: 'error message',
+    }
 
     // Assert - ensure mutual exclusivity
     expect(okResult.ok).toBe(true)
-    expect((okResult as any).error).toBeUndefined()
+    expect(okResult.error).toBeUndefined()
 
     expect(errResult.ok).toBe(false)
-    expect((errResult as any).value).toBeUndefined()
+    expect(errResult.value).toBeUndefined()
   })
 
   it('should validate that null subscriptions are handled', () => {

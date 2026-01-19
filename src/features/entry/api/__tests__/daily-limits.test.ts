@@ -1,16 +1,21 @@
 import { describe, it, expect, beforeEach, jest } from '@jest/globals'
-import {
-  getDailyEntryCount,
-  getDailyImageCount,
-  checkDailyEntryLimit,
-  checkDailyImageLimit,
-} from '../daily-limits'
+// 関数の存在確認用にインポート（Server Onlyのため実行テストはE2E）
+import type * as DailyLimitsModule from '../daily-limits'
 
 // Supabaseクライアントとユーティリティのモック
 jest.mock('@/lib/supabase/server')
 jest.mock('@/lib/date-utils')
 
 import { DAILY_ENTRY_LIMIT, DAILY_IMAGE_LIMIT } from '../../constants'
+
+// 型アサーションで関数の存在を確認（エクスポートの型チェック）
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+type AssertDailyLimitsExports = [
+  DailyLimitsModule['getDailyEntryCount'],
+  DailyLimitsModule['getDailyImageCount'],
+  DailyLimitsModule['checkDailyEntryLimit'],
+  DailyLimitsModule['checkDailyImageLimit'],
+]
 
 describe('entry/api/daily-limits.ts', () => {
   beforeEach(() => {

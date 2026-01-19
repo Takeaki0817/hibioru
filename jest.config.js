@@ -8,6 +8,8 @@ const config = {
     '^@/(.*)$': '<rootDir>/src/$1',
     // server-onlyパッケージをモック（Jestはサーバー環境で実行）
     '^server-only$': '<rootDir>/__mocks__/server-only.js',
+    // ESMのみ提供するパッケージをモック
+    '^next-safe-action$': '<rootDir>/__mocks__/next-safe-action.js',
   },
   collectCoverageFrom: [
     'lib/**/*.ts',

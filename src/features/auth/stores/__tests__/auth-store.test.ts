@@ -1,5 +1,25 @@
-import { useAuthStore, selectIsAuthenticated, selectUserId } from '../auth-store'
+import {
+  useAuthStore,
+  selectIsAuthenticated,
+  selectUserId,
+  type AuthStore,
+} from '../auth-store'
 import type { User } from '@/lib/types/auth'
+
+// Helper function to create mock state for selectors
+function createMockState(partial: {
+  user: User | null
+  isLoading: boolean
+  isInitialized: boolean
+}): AuthStore {
+  return {
+    ...partial,
+    setUser: jest.fn(),
+    setLoading: jest.fn(),
+    initialize: jest.fn(),
+    reset: jest.fn(),
+  }
+}
 
 describe('Auth Store (Zustand)', () => {
   beforeEach(() => {
@@ -303,18 +323,14 @@ describe('Auth Store (Zustand)', () => {
         displayName: 'Test User',
         avatarUrl: null,
       }
-      const state = {
+      const state = createMockState({
         user: mockUser,
         isLoading: false,
         isInitialized: true,
-        setUser: jest.fn(),
-        setLoading: jest.fn(),
-        initialize: jest.fn(),
-        reset: jest.fn(),
-      }
+      })
 
       // Act
-      const result = selectIsAuthenticated(state as any)
+      const result = selectIsAuthenticated(state)
 
       // Assert
       expect(result).toBe(true)
@@ -322,18 +338,14 @@ describe('Auth Store (Zustand)', () => {
 
     it('should return false when user is null but initialized', () => {
       // Arrange
-      const state = {
+      const state = createMockState({
         user: null,
         isLoading: false,
         isInitialized: true,
-        setUser: jest.fn(),
-        setLoading: jest.fn(),
-        initialize: jest.fn(),
-        reset: jest.fn(),
-      }
+      })
 
       // Act
-      const result = selectIsAuthenticated(state as any)
+      const result = selectIsAuthenticated(state)
 
       // Assert
       expect(result).toBe(false)
@@ -347,18 +359,14 @@ describe('Auth Store (Zustand)', () => {
         displayName: 'Test User',
         avatarUrl: null,
       }
-      const state = {
+      const state = createMockState({
         user: mockUser,
         isLoading: true,
         isInitialized: false,
-        setUser: jest.fn(),
-        setLoading: jest.fn(),
-        initialize: jest.fn(),
-        reset: jest.fn(),
-      }
+      })
 
       // Act
-      const result = selectIsAuthenticated(state as any)
+      const result = selectIsAuthenticated(state)
 
       // Assert
       expect(result).toBe(false)
@@ -366,24 +374,23 @@ describe('Auth Store (Zustand)', () => {
 
     it('should require both initialization and valid user', () => {
       // Arrange
-      const states = [
+      const testCases: Array<{ user: User | null; isInitialized: boolean }> = [
         { user: null, isInitialized: false }, // not initialized
         { user: null, isInitialized: true }, // initialized but no user
-        { user: { id: 'u1', email: 'test@example.com', displayName: 'Test', avatarUrl: null }, isInitialized: false }, // not initialized
+        {
+          user: { id: 'u1', email: 'test@example.com', displayName: 'Test', avatarUrl: null },
+          isInitialized: false,
+        }, // not initialized
       ]
 
       // Act & Assert
-      states.forEach(({ user, isInitialized }) => {
-        const state = {
+      testCases.forEach(({ user, isInitialized }) => {
+        const state = createMockState({
           user,
           isLoading: false,
           isInitialized,
-          setUser: jest.fn(),
-          setLoading: jest.fn(),
-          initialize: jest.fn(),
-          reset: jest.fn(),
-        }
-        expect(selectIsAuthenticated(state as any)).toBe(false)
+        })
+        expect(selectIsAuthenticated(state)).toBe(false)
       })
     })
 
@@ -414,18 +421,14 @@ describe('Auth Store (Zustand)', () => {
         displayName: 'Test User',
         avatarUrl: null,
       }
-      const state = {
+      const state = createMockState({
         user: mockUser,
         isLoading: false,
         isInitialized: true,
-        setUser: jest.fn(),
-        setLoading: jest.fn(),
-        initialize: jest.fn(),
-        reset: jest.fn(),
-      }
+      })
 
       // Act
-      const result = selectUserId(state as any)
+      const result = selectUserId(state)
 
       // Assert
       expect(result).toBe('user-123')
@@ -433,18 +436,14 @@ describe('Auth Store (Zustand)', () => {
 
     it('should return undefined when user is null', () => {
       // Arrange
-      const state = {
+      const state = createMockState({
         user: null,
         isLoading: false,
         isInitialized: true,
-        setUser: jest.fn(),
-        setLoading: jest.fn(),
-        initialize: jest.fn(),
-        reset: jest.fn(),
-      }
+      })
 
       // Act
-      const result = selectUserId(state as any)
+      const result = selectUserId(state)
 
       // Assert
       expect(result).toBeUndefined()
@@ -458,18 +457,14 @@ describe('Auth Store (Zustand)', () => {
         displayName: 'User Name',
         avatarUrl: 'https://example.com/avatar.jpg',
       }
-      const state = {
+      const state = createMockState({
         user: mockUser,
         isLoading: false,
         isInitialized: true,
-        setUser: jest.fn(),
-        setLoading: jest.fn(),
-        initialize: jest.fn(),
-        reset: jest.fn(),
-      }
+      })
 
       // Act
-      const result = selectUserId(state as any)
+      const result = selectUserId(state)
 
       // Assert
       expect(result).toBe('specific-id-456')

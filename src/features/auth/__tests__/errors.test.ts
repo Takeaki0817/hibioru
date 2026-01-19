@@ -1,5 +1,4 @@
 import { classifyAuthError, createCancelledError, parseErrorParam } from '../errors'
-import type { AuthError } from '@/lib/types/auth'
 
 describe('Auth Error Handling', () => {
   describe('classifyAuthError', () => {

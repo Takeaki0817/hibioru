@@ -165,11 +165,7 @@ describe('ストリーク機能の統合フロー', () => {
 
   describe('週次リセットフロー', () => {
     it('月曜0:00にほつれが2個にリセットされる', () => {
-      // Arrange
-      const beforeReset = {
-        hotsureRemaining: 0,
-        hotsureUsedDates: ['2025-12-14', '2025-12-15'] as string[],
-      }
+      // Arrange - リセット前の状態: hotsureRemaining=0, hotsureUsedDates=['2025-12-14', '2025-12-15']
 
       // Act - 週次リセット
       const afterReset = {
@@ -183,11 +179,7 @@ describe('ストリーク機能の統合フロー', () => {
     })
 
     it('ほつれの繰り越しがない（残っていても2個に設定）', () => {
-      // Arrange
-      const beforeReset = {
-        hotsureRemaining: 1, // 1個残っている
-        hotsureUsedDates: ['2025-12-14'] as string[],
-      }
+      // Arrange - リセット前の状態: hotsureRemaining=1, hotsureUsedDates=['2025-12-14']
 
       // Act - 週次リセット（繰り越しなし）
       const afterReset = {

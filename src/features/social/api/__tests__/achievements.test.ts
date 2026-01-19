@@ -14,9 +14,26 @@ jest.mock('@/lib/supabase/admin')
 jest.mock('@/lib/date-utils')
 jest.mock('@/lib/logger')
 
-const { createClient } = require('@/lib/supabase/server')
-const { createAdminClient } = require('@/lib/supabase/admin')
-const { getJSTDayBounds } = require('@/lib/date-utils')
+import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
+import { getJSTDayBounds } from '@/lib/date-utils'
+
+const mockCreateClient = createClient as jest.MockedFunction<typeof createClient>
+const mockCreateAdminClient = createAdminClient as jest.MockedFunction<typeof createAdminClient>
+const mockGetJSTDayBounds = getJSTDayBounds as jest.MockedFunction<typeof getJSTDayBounds>
+
+// Mock Supabase client type
+interface MockSupabaseClient {
+  auth: {
+    getUser: jest.Mock
+  }
+  from: jest.Mock
+}
+
+// Mock Admin client type
+interface MockAdminClient {
+  from: jest.Mock
+}
 
 describe('achievements API', () => {
   const testUserId = 'test-user-id'
@@ -24,8 +41,8 @@ describe('achievements API', () => {
   const testAchievementId = 'test-achievement-id'
   const otherUserId = 'other-user-id'
 
-  let mockSupabase: any
-  let mockAdminClient: any
+  let mockSupabase: MockSupabaseClient
+  let mockAdminClient: MockAdminClient
 
   beforeEach(() => {
     // Supabase クライアントのモック
@@ -42,9 +59,9 @@ describe('achievements API', () => {
     }
 
     // Mock implementations
-    createClient.mockResolvedValue(mockSupabase)
-    createAdminClient.mockReturnValue(mockAdminClient)
-    getJSTDayBounds.mockReturnValue({
+    mockCreateClient.mockResolvedValue(mockSupabase as unknown as Awaited<ReturnType<typeof createClient>>)
+    mockCreateAdminClient.mockReturnValue(mockAdminClient as unknown as ReturnType<typeof createAdminClient>)
+    mockGetJSTDayBounds.mockReturnValue({
       start: new Date('2025-01-17T00:00:00+09:00'),
       end: new Date('2025-01-18T00:00:00+09:00'),
     })
@@ -220,7 +237,7 @@ describe('achievements API', () => {
         error: null,
       })
 
-      mockSupabase.from.mockImplementation((table: string) => {
+      mockSupabase.from.mockImplementation((table: unknown) => {
         if (table === 'achievements') {
           return {
             select: jest.fn().mockReturnValue(mockSelectChain),
@@ -253,7 +270,7 @@ describe('achievements API', () => {
         }),
       }
 
-      mockSupabase.from.mockImplementation((table: string) => {
+      mockSupabase.from.mockImplementation((table: unknown) => {
         if (table === 'achievements') {
           return {
             select: jest.fn().mockReturnValue(mockSelectChain),
