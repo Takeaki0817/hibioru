@@ -162,12 +162,41 @@ export async function scrollToLoadMore(page: Page, scrollAmount: number = 1000) 
 }
 
 /**
- * カレンダーを開く
+ * カレンダーを開く（リトライロジック付き）
  */
 export async function openCalendar(page: Page) {
-  const calendarButton = page.getByRole('button', { name: /カレンダーを開く/ })
-  await calendarButton.click()
-  // カレンダーが表示されるまで待機（DayPicker v9はcalendar-monthクラスを持つ）
+  const maxRetries = 3
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    // 毎回セレクターを再取得（DOM更新によるstale element対策）
+    const calendarMonth = page.locator('.calendar-month')
+
+    // 既にカレンダーが開いている場合はスキップ
+    const isAlreadyOpen = await calendarMonth.isVisible().catch(() => false)
+    if (isAlreadyOpen) {
+      return
+    }
+
+    // ボタンを再取得
+    const calendarButton = page.getByTestId('calendar-button')
+    await calendarButton.waitFor({ state: 'visible', timeout: 5000 })
+
+    // ボタンをクリック
+    await calendarButton.click()
+
+    // カレンダーモーダルの表示を待機
+    try {
+      await calendarMonth.waitFor({ state: 'visible', timeout: 3000 })
+      return // 成功
+    } catch {
+      if (attempt < maxRetries) {
+        // リトライ前に少し待機
+        await page.waitForTimeout(500)
+      }
+    }
+  }
+
+  // 最終的なフォールバック：長めのタイムアウトで待機
   await page.locator('.calendar-month').waitFor({ state: 'visible', timeout: 5000 })
 }
 
