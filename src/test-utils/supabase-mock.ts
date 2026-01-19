@@ -7,9 +7,20 @@
  *   (createClient as jest.Mock).mockResolvedValue(mockSupabase)
  */
 
+/**
+ * Supabase PostgrestError形式に準拠したエラー型
+ * @see https://supabase.com/docs/reference/javascript/handling-errors
+ */
+export interface PostgrestError {
+  message: string
+  details: string
+  hint: string
+  code: string
+}
+
 export interface MockQueryResult<T = unknown> {
   data: T | null
-  error: { message: string; code?: string } | null
+  error: PostgrestError | null
   count?: number
 }
 
@@ -194,4 +205,20 @@ export function resetSupabaseMock(mockSupabase: ReturnType<typeof createSupabase
   mockSupabase.auth.getUser.mockClear()
   mockSupabase.auth.getSession.mockClear()
   mockSupabase.rpc.mockClear()
+}
+
+/**
+ * PostgrestError形式のエラーを作成するヘルパー
+ * @param code エラーコード（例: 'PGRST116', '23505'）
+ * @param message エラーメッセージ
+ * @param details 詳細情報（省略可）
+ * @param hint ヒント情報（省略可）
+ */
+export function createPostgrestError(
+  code: string,
+  message: string,
+  details = '',
+  hint = ''
+): PostgrestError {
+  return { code, message, details, hint }
 }

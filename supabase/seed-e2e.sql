@@ -1,6 +1,9 @@
 -- E2Eテスト用シードデータ
 -- タイムライン統合テスト用のテストデータを作成
 
+-- JSTタイムゾーンを設定（NOW(), CURRENT_DATE等がJST基準で計算される）
+SET timezone = 'Asia/Tokyo';
+
 -- テスト用ユーザー（E2Eテスト専用）
 -- 注意: このユーザーIDはe2e/fixtures/test-helpers.tsのTEST_USERSと一致させる
 -- auth.usersテーブルに直接挿入（ローカル開発環境用）

@@ -85,6 +85,15 @@ test.describe('Social機能 - ユーザー検索・プロフィール表示', ()
     await expect(page.locator('[data-testid="profile-username"]')).toBeVisible()
     await expect(page.locator('[data-testid="profile-display-name"]')).toBeVisible()
   })
+
+  test('プロフィール直接URL遷移', async ({ page }) => {
+    // 直接URLでプロフィールページにアクセス
+    await page.goto('/social/profile/e2etest2')
+    await waitForPageLoad(page)
+
+    await expect(page.locator('[data-testid="profile-avatar"]')).toBeVisible()
+    await expect(page.locator('[data-testid="profile-username"]')).toContainText('e2etest2')
+  })
 })
 
 test.describe('Social機能 - フォロー・フォロー解除', () => {
@@ -210,6 +219,32 @@ test.describe('Social機能 - フォロー・フォロー解除', () => {
     await page.getByTestId('follow-list-item').first().waitFor({ timeout: 5000 }).catch(() => {})
     const followingList = page.getByTestId('follow-list-item')
     expect(await followingList.count()).toBeGreaterThanOrEqual(0)
+  })
+
+  test('フォロー中リスト_空状態', async ({ page }) => {
+    // SECONDARYユーザーでログイン（フォローがない状態）
+    await setupTestSession(page, TEST_USERS.SECONDARY.id)
+    await page.goto('/social/following')
+    await waitForPageLoad(page)
+
+    // 空状態メッセージを確認
+    await expect(page.locator('text=まだ誰もフォローしていません')).toBeVisible({ timeout: 10000 })
+  })
+
+  test('フォロー中リスト_ページネーション', async ({ page }) => {
+    // フォロー中一覧に遷移
+    await page.goto('/social/following')
+    await waitForPageLoad(page)
+
+    // 「もっと見る」ボタンがあればクリック
+    const loadMoreButton = page.locator('button:has-text("もっと見る")')
+    if (await loadMoreButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+      const initialCount = await page.getByTestId('follow-list-item').count()
+      await loadMoreButton.click()
+      await page.waitForTimeout(1000)
+      const newCount = await page.getByTestId('follow-list-item').count()
+      expect(newCount).toBeGreaterThanOrEqual(initialCount)
+    }
   })
 
   test('フォロワー一覧', async ({ page }) => {
@@ -502,6 +537,15 @@ test.describe('Social機能 - エラーハンドリング', () => {
 
     // 空メッセージが表示されるか、検索結果が0件であることを確認
     expect(isEmpty || hasNoResults).toBeTruthy()
+  })
+
+  test('存在しないユーザー_404', async ({ page }) => {
+    await setupAuthenticatedPage(page, '/social')
+    await page.goto('/social/profile/nonexistent_user_xyz123')
+    await waitForPageLoad(page)
+
+    // Next.jsデフォルト404ページのメッセージを確認
+    await expect(page.locator('text=This page could not be found')).toBeVisible({ timeout: 10000 })
   })
 
   test('自己フォロー試行', async ({ page }) => {

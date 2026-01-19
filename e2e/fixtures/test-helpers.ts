@@ -30,16 +30,13 @@ export const TEST_USERS = {
   },
 } as const
 
-/** @deprecated TEST_USERS.PRIMARY を使用してください */
-export const TEST_USER = TEST_USERS.PRIMARY
-
 /**
  * E2Eテストモードの認証バイパスを使用してセッションを設定
  * setExtraHTTPHeaders でリクエストに Cookie ヘッダーを追加
  * （middleware.ts と src/lib/supabase/e2e-auth.ts を利用）
  */
 export async function setupTestSession(page: Page, userId?: string) {
-  const testUserId = userId || TEST_USER.id
+  const testUserId = userId || TEST_USERS.PRIMARY.id
 
   // ブラウザコンテキストに Cookie ヘッダーを設定
   // すべてのリクエストに e2e-test-user-id Cookie が追加される
@@ -373,16 +370,6 @@ export async function interceptStripeCheckout(page: Page): Promise<{ getRedirect
   await page.route('**/checkout.stripe.com/**', async (route) => {
     redirectUrl = route.request().url()
     await route.abort()
-  })
-
-  // Intercept navigation to Stripe Checkout and capture the URL
-  page.on('framenavigated', (frame) => {
-    if (frame === page.mainFrame()) {
-      const url = frame.url()
-      if (url.includes('checkout.stripe.com')) {
-        redirectUrl = url
-      }
-    }
   })
 
   return {
