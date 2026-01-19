@@ -12,7 +12,7 @@ export function ProfileSection({ user }: ProfileSectionProps) {
   const displayName = user.user_metadata.full_name as string | undefined || user.email
 
   return (
-    <Card>
+    <Card data-testid="profile-section">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg">アカウント</CardTitle>
       </CardHeader>
@@ -36,8 +36,8 @@ export function ProfileSection({ user }: ProfileSectionProps) {
 
           {/* ユーザー情報 */}
           <div>
-            <h2 className="text-lg font-semibold text-foreground">{displayName}</h2>
-            <p className="text-sm text-muted-foreground">{user.email}</p>
+            <h2 className="text-lg font-semibold text-foreground" data-testid="my-display-name">{displayName}</h2>
+            <p className="text-sm text-muted-foreground" data-testid="my-username">{user.email}</p>
           </div>
         </div>
       </CardContent>

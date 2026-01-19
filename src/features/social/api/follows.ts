@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAuthenticatedUser } from '@/lib/supabase/e2e-auth'
 import { authActionClient } from '@/lib/safe-action'
 import { logger } from '@/lib/logger'
 import { createSafeError } from '@/lib/error-handler'
@@ -18,6 +19,26 @@ import { sendFollowPushNotification } from './push'
 const followSchema = z.object({
   targetUserId: z.string().uuid(),
 })
+
+/**
+ * フォロー中のユーザーIDリストを取得
+ * E2Eテストモードでは authActionClient 経由で RLS をバイパス
+ */
+export const getFollowingIdsAction = authActionClient.action(
+  async ({ ctx: { user, supabase } }) => {
+    const { data, error } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', user.id)
+
+    if (error) {
+      logger.error('フォロー中ユーザーIDの取得に失敗', error.message)
+      throw new Error(`フォロー情報の取得に失敗しました: ${error.message}`)
+    }
+
+    return data?.map((f) => f.following_id) || []
+  }
+)
 
 /**
  * ユーザーをフォロー
@@ -120,9 +141,9 @@ export const unfollowUser = authActionClient
 export async function isFollowing(targetUserId: string): Promise<SocialResult<boolean>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
@@ -132,7 +153,7 @@ export async function isFollowing(targetUserId: string): Promise<SocialResult<bo
     const { data, error } = await supabase
       .from('follows')
       .select('id')
-      .eq('follower_id', userData.user.id)
+      .eq('follower_id', user.id)
       .eq('following_id', targetUserId)
       .maybeSingle()
 
@@ -159,9 +180,9 @@ export async function isFollowing(targetUserId: string): Promise<SocialResult<bo
 export async function getFollowCounts(): Promise<SocialResult<FollowCounts>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
@@ -173,11 +194,11 @@ export async function getFollowCounts(): Promise<SocialResult<FollowCounts>> {
       supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
-        .eq('follower_id', userData.user.id),
+        .eq('follower_id', user.id),
       supabase
         .from('follows')
         .select('*', { count: 'exact', head: true })
-        .eq('following_id', userData.user.id),
+        .eq('following_id', user.id),
     ])
 
     if (followingResult.error) {
@@ -219,9 +240,9 @@ export async function getFollowingList(
 ): Promise<SocialResult<PaginatedResult<PublicUserInfo>>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
@@ -240,7 +261,7 @@ export async function getFollowingList(
           avatar_url
         )
       `)
-      .eq('follower_id', userData.user.id)
+      .eq('follower_id', user.id)
       .order('created_at', { ascending: false })
       .limit(SOCIAL_PAGINATION.USER_SEARCH_PAGE_SIZE + 1)
 
@@ -297,9 +318,9 @@ export async function getFollowerList(
 ): Promise<SocialResult<PaginatedResult<PublicUserInfo>>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
@@ -318,7 +339,7 @@ export async function getFollowerList(
           avatar_url
         )
       `)
-      .eq('following_id', userData.user.id)
+      .eq('following_id', user.id)
       .order('created_at', { ascending: false })
       .limit(SOCIAL_PAGINATION.USER_SEARCH_PAGE_SIZE + 1)
 

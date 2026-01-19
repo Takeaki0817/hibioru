@@ -4,6 +4,7 @@ import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { getAuthenticatedUser } from '@/lib/supabase/e2e-auth'
 import { getJSTDayBounds } from '@/lib/date-utils'
 import { logger } from '@/lib/logger'
 import type { Achievement, AchievementType, SocialResult } from '../types'
@@ -186,16 +187,16 @@ export async function checkAndCreateAchievements(
   try {
     // 認証チェック: 渡されたuserIdが認証ユーザーと一致することを確認
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
       }
     }
 
-    if (userData.user.id !== userId) {
+    if (user.id !== userId) {
       return {
         ok: false,
         error: { code: 'FORBIDDEN', message: '他のユーザーの達成を作成する権限がありません' },
@@ -298,16 +299,16 @@ export async function deleteSharedEntryAchievement(
 ): Promise<SocialResult<void>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
       }
     }
 
-    if (userData.user.id !== userId) {
+    if (user.id !== userId) {
       return {
         ok: false,
         error: { code: 'FORBIDDEN', message: '他のユーザーの達成を削除する権限がありません' },
@@ -354,16 +355,16 @@ export async function touchSharedEntryAchievement(
 ): Promise<SocialResult<void>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
       }
     }
 
-    if (userData.user.id !== userId) {
+    if (user.id !== userId) {
       return {
         ok: false,
         error: { code: 'FORBIDDEN', message: '他のユーザーの達成を更新する権限がありません' },
@@ -407,9 +408,9 @@ export async function touchSharedEntryAchievement(
 export async function celebrateAchievement(achievementId: string): Promise<SocialResult<void>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
@@ -433,7 +434,7 @@ export async function celebrateAchievement(achievementId: string): Promise<Socia
     // お祝いを作成
     const { error: celebrateError } = await supabase.from('celebrations').insert({
       achievement_id: achievementId,
-      from_user_id: userData.user.id,
+      from_user_id: user.id,
     })
 
     if (celebrateError) {
@@ -454,7 +455,7 @@ export async function celebrateAchievement(achievementId: string): Promise<Socia
     await adminClient.from('social_notifications').insert({
       user_id: achievement.user_id,
       type: 'celebration',
-      from_user_id: userData.user.id,
+      from_user_id: user.id,
       achievement_id: achievementId,
     })
 
@@ -476,9 +477,9 @@ export async function celebrateAchievement(achievementId: string): Promise<Socia
 export async function uncelebrateAchievement(achievementId: string): Promise<SocialResult<void>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
@@ -489,7 +490,7 @@ export async function uncelebrateAchievement(achievementId: string): Promise<Soc
       .from('celebrations')
       .delete()
       .eq('achievement_id', achievementId)
-      .eq('from_user_id', userData.user.id)
+      .eq('from_user_id', user.id)
 
     if (error) {
       return {
@@ -523,9 +524,9 @@ export async function uncelebrateAchievement(achievementId: string): Promise<Soc
 export async function getMyCelebrationCount(): Promise<SocialResult<number>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
@@ -536,7 +537,7 @@ export async function getMyCelebrationCount(): Promise<SocialResult<number>> {
     const { count, error } = await supabase
       .from('celebrations')
       .select('*, achievements!inner(user_id)', { count: 'exact', head: true })
-      .eq('achievements.user_id', userData.user.id)
+      .eq('achievements.user_id', user.id)
 
     if (error) {
       return {

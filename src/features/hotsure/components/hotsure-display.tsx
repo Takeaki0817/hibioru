@@ -149,7 +149,7 @@ export function HotsureDisplay({
         {/* 補充情報 */}
         <div className="mt-4 flex items-center justify-between text-xs text-muted-foreground">
           <span>次の補充まで</span>
-          <span className="font-medium text-primary-500">{daysUntilRefill}日</span>
+          <span className="font-medium text-primary-500" data-testid="refill-days">{daysUntilRefill}日</span>
         </div>
 
         {/* 説明パネル */}

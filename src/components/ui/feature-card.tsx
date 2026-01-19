@@ -6,6 +6,7 @@ interface FeatureCardProps {
   titleSize?: 'lg' | 'xl'
   children: React.ReactNode
   className?: string
+  'data-testid'?: string
 }
 
 /**
@@ -17,9 +18,10 @@ export function FeatureCard({
   titleSize = 'lg',
   children,
   className,
+  'data-testid': testId,
 }: FeatureCardProps) {
   return (
-    <Card className={className}>
+    <Card className={className} data-testid={testId}>
       <CardHeader className="pb-2">
         <CardTitle
           className={cn(

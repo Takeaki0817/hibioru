@@ -5,7 +5,7 @@ import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import type { InfiniteData } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { getJSTDayBounds } from '@/lib/date-utils'
-import { fetchEntries } from '../api/queries'
+import { fetchEntriesAction } from '../api/actions'
 import type { TimelineEntry, TimelinePage } from '../types'
 
 export interface UseTimelineOptions {
@@ -58,13 +58,17 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
     refetch,
   } = useInfiniteQuery({
     queryKey: queryKey,
-    queryFn: ({ pageParam }) =>
-      fetchEntries({
-        userId,
+    queryFn: async ({ pageParam }) => {
+      const result = await fetchEntriesAction({
         cursor: (pageParam as PageParam).cursor,
         limit: pageSize,
         direction: (pageParam as PageParam).direction,
-      }),
+      })
+      if (result?.data) {
+        return result.data
+      }
+      throw new Error(result?.serverError || '投稿の取得に失敗しました')
+    },
     // タイムラインは更新頻度が低いため長めのstaleTime
     staleTime: 10 * 60 * 1000, // 10分
     // 過去方向（古いデータ）
@@ -93,13 +97,17 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
       const prefetchKey = queryKeys.entries.timeline(userId, nextCursor)
       queryClient.prefetchInfiniteQuery({
         queryKey: prefetchKey,
-        queryFn: ({ pageParam }) =>
-          fetchEntries({
-            userId,
+        queryFn: async ({ pageParam }) => {
+          const result = await fetchEntriesAction({
             cursor: (pageParam as PageParam).cursor,
             limit: pageSize,
             direction: (pageParam as PageParam).direction,
-          }),
+          })
+          if (result?.data) {
+            return result.data
+          }
+          throw new Error(result?.serverError || '投稿の取得に失敗しました')
+        },
         initialPageParam: { cursor: nextCursor, direction: 'before' } as PageParam,
         staleTime: 10 * 60 * 1000, // 10分
       })
