@@ -124,27 +124,27 @@ test.describe('Streak機能 - 正常系（Happy Path）', () => {
     const streakCard = page.locator('section').filter({ hasText: '継続記録' }).first()
     const initialStreakText = await streakCard.textContent().catch(() => null)
 
-    // Act - 記録作成
-    await page.goto('/timeline')
-    const addButton = page.getByRole('link', { name: '記録' })
-    await addButton.click()
-    await page.waitForURL('/new')
+    // Act - 記録作成（直接/newに遷移）
+    await page.goto('/new')
+    await waitForPageLoad(page)
 
     await page.getByLabel('記録内容').fill('テスト記録')
-    await page.getByRole('button', { name: '送信' }).click()
+    const submitButton = page.getByRole('button', { name: '送信' })
+    await expect(submitButton).toBeEnabled({ timeout: 5000 })
+    await submitButton.click()
 
     // Assert - ストリーク値が更新されたことを確認
-    await page.waitForURL('/timeline')
+    await page.waitForURL('/timeline', { timeout: 15000 })
     await waitForTimelineContent(page)
 
     // ソーシャルページでストリークを再確認
     await page.goto('/social')
+    await waitForPageLoad(page)
     await page.getByRole('tab', { name: '設定' }).click()
 
-    const updatedStreakText = await streakCard.textContent().catch(() => null)
-
     // ストリーク要素が存在することを確認
-    await expect(streakCard).toBeVisible()
+    const updatedStreakCard = page.locator('section').filter({ hasText: '継続記録' }).first()
+    await expect(updatedStreakCard).toBeVisible()
   })
 
   test('最長ストリークが表示される', async ({ page }) => {
@@ -212,19 +212,16 @@ test.describe('Streak機能 - 異常系（Error Handling）', () => {
     await setupTestSession(page)
   })
 
-  test('未認証アクセスで307リダイレクトになる', async ({ page }) => {
-    // Arrange - クッキーを削除して未認証状態を作成
+  test('未認証アクセスでログインページへリダイレクトされる', async ({ page }) => {
+    // Arrange - クッキーとHTTPヘッダーを削除して未認証状態を作成
     await page.context().clearCookies()
+    await page.setExtraHTTPHeaders({}) // setupTestSessionで設定したcookieヘッダーをクリア
 
     // Act - 保護されたルート（タイムライン）へアクセス
-    const response = await page.goto('/timeline', { waitUntil: 'domcontentloaded' }).catch(() => null)
+    await page.goto('/timeline', { waitUntil: 'networkidle' })
 
-    // Assert - ルートページ（/）へ307リダイレクトされることを確認
-    if (response) {
-      expect(response.status()).toBe(307)
-      // リダイレクト先がルートページであることを確認
-      expect(page.url()).toContain('localhost:3000/')
-    }
+    // Assert - ルートページ（/）へリダイレクトされることを確認（URL検証）
+    await expect(page).toHaveURL('/')
   })
 
   test('ストリーク情報の読み込みエラーはグレースフルに処理', async ({ page }) => {

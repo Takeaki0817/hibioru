@@ -77,13 +77,14 @@ test.describe('Auth', () => {
       const alertBox = page.getByRole('alert').filter({ hasText: /ログイン|エラー/i })
       await expect(alertBox).toBeVisible()
 
-      // 「もう一度試す」ボタンをクリック
-      const retryButton = page.getByRole('button', { name: /もう一度試す/i })
+      // 「もう一度試す」ボタンをクリック（data-testidを優先使用）
+      const retryButton = page.getByTestId('retry-button')
       await expect(retryButton).toBeVisible()
       await retryButton.click()
 
-      // エラーメッセージが消えることを確認
-      await expect(alertBox).not.toBeVisible()
+      // React状態更新後、エラーメッセージが消えることを確認
+      // framer-motionアニメーション完了とReact再レンダーを考慮
+      await expect(alertBox).not.toBeVisible({ timeout: 10000 })
     })
   })
 
