@@ -191,6 +191,7 @@ function LoginContent() {
                         size="sm"
                         onClick={handleRetry}
                         className="mt-2 p-0 h-auto text-destructive hover:text-destructive/80"
+                        data-testid="retry-button"
                       >
                         もう一度試す
                       </Button>
