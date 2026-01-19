@@ -47,8 +47,8 @@ test.describe('hotsure E2E', () => {
       const refillLabel = page.locator('text=次の補充まで').first()
       await expect(refillLabel).toBeVisible()
 
-      // 日数表示が見える（例: 7日）- 前のspan要素を取得
-      const daysDisplay = page.locator('span.text-primary-500').last()
+      // 日数表示が見える（例: 7日）- data-testidで取得
+      const daysDisplay = page.getByTestId('refill-days')
       await expect(daysDisplay).toBeVisible()
 
       const daysText = await daysDisplay.textContent()
@@ -241,7 +241,7 @@ test.describe('hotsure E2E', () => {
       await setupAuthenticatedPage(page, '/social')
 
       // ストリーク表示
-      const streakDisplay = page.getByRole('heading', { name: 'ストリーク', exact: true })
+      const streakDisplay = page.getByRole('heading', { name: '継続記録', exact: true })
       await expect(streakDisplay).toBeVisible()
 
       // ほつれ表示
@@ -321,8 +321,8 @@ test.describe('hotsure E2E', () => {
       const hotsureCard = page.getByRole('heading', { name: 'ほつれ', exact: true })
       await expect(hotsureCard).toBeVisible()
 
-      // 見出しの親要素がカード
-      const cardElement = hotsureCard.locator('xpath=ancestor::div[contains(@class, "Card")]')
+      // 見出しの親要素がカード（data-slot="card"を持つsection要素）
+      const cardElement = hotsureCard.locator('xpath=ancestor::section[@data-slot="card"]')
       await expect(cardElement).toBeVisible()
     })
 

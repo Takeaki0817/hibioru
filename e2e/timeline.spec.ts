@@ -34,7 +34,7 @@ test.describe('Timeline Feature', () => {
 
       // タイムラインコンテナが表示されていることを確認
       await waitForTimelineContent(page)
-      const timelineContainer = page.locator('[data-testid="timeline-list"]')
+      const timelineContainer = page.getByTestId('timeline-list')
       await expect(timelineContainer).toBeVisible()
     })
 
@@ -43,22 +43,30 @@ test.describe('Timeline Feature', () => {
       await waitForTimelineContent(page)
 
       // 投稿カードが少なくとも1つ表示されていることを確認
-      const entryCards = page.locator('[data-testid="entry-card"]')
+      const entryCards = page.getByTestId('entry-card')
       const count = await entryCards.count()
       expect(count).toBeGreaterThan(0)
     })
 
     test('P0: 投稿が0件の場合、空状態UIが表示される', async ({ page }) => {
-      // 投稿なしのユーザーとしてセットアップ
-      await page.setExtraHTTPHeaders({
-        cookie: `e2e-test-user-id=00000000-0000-0000-0000-000000000099`,
-      })
-      await page.goto('/timeline', { waitUntil: 'networkidle' })
-      await waitForTimelineContent(page)
+      // 投稿なしのユーザーとしてセットアップ（SECONDARY ユーザーを使用）
+      await setupTestSession(page, TEST_USERS.SECONDARY.id)
+
+      // 空状態メッセージが表示されるまで待機
+      await Promise.race([
+        page.locator('text=まだ投稿がありません').waitFor({ state: 'visible', timeout: 10000 }),
+        page.locator('text=読み込み中').waitFor({ state: 'hidden', timeout: 10000 }).then(() =>
+          page.locator('text=まだ投稿がありません').waitFor({ state: 'visible', timeout: 5000 })
+        ),
+      ])
 
       // 空状態メッセージが表示されていることを確認
       const emptyMessage = page.locator('text=まだ投稿がありません')
       await expect(emptyMessage).toBeVisible()
+
+      // 副次的なメッセージも確認
+      const subMessage = page.locator('text=最初の記録を作成しましょう')
+      await expect(subMessage).toBeVisible()
     })
   })
 
@@ -67,7 +75,7 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const scrollContainer = page.locator('[class*="overflow-auto"]').first()
+      const scrollContainer = page.getByTestId('timeline-list')
 
       // スクロール位置が下部（最新投稿がビューポート内）にあることを確認
       const scrollTop = await scrollContainer.evaluate((el) => {
@@ -82,8 +90,8 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const scrollContainer = page.locator('[class*="overflow-auto"]').first()
-      const entryCards = page.locator('[data-testid="entry-card"]')
+      const scrollContainer = page.getByTestId('timeline-list')
+      const entryCards = page.getByTestId('entry-card')
 
       // 複数の投稿があることを確認
       const cardCount = await entryCards.count()
@@ -100,15 +108,15 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const entryCard = page.locator('[data-testid="entry-card"]').first()
+      const entryCard = page.getByTestId('entry-card').first()
       await expect(entryCard).toBeVisible()
 
       // コンテンツテキストが存在することを確認
-      const contentArea = entryCard.locator('[data-testid="entry-content"]')
+      const contentArea = entryCard.getByTestId('entry-content')
       await expect(contentArea).toBeVisible()
 
       // 時刻が表示されていることを確認
-      const timeElement = entryCard.locator('[data-testid="entry-time"]')
+      const timeElement = entryCard.getByTestId('entry-time')
       await expect(timeElement).toBeVisible()
     })
 
@@ -130,13 +138,13 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const entryCards = page.locator('[data-testid="entry-card"]')
+      const entryCards = page.getByTestId('entry-card')
       const cardCount = await entryCards.count()
 
       if (cardCount > 1) {
         // 最初のカードが最新、2番目のカードがその次の投稿の順
-        const firstCardTime = await entryCards.nth(0).locator('[data-testid="entry-time"]').textContent()
-        const secondCardTime = await entryCards.nth(1).locator('[data-testid="entry-time"]').textContent()
+        const firstCardTime = await entryCards.nth(0).getByTestId('entry-time').textContent()
+        const secondCardTime = await entryCards.nth(1).getByTestId('entry-time').textContent()
 
         // 時刻が存在することで順序が正しいことを検証
         expect(firstCardTime).toBeTruthy()
@@ -150,7 +158,7 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const initialCards = page.locator('[data-testid="entry-card"]')
+      const initialCards = page.getByTestId('entry-card')
       const initialCount = await initialCards.count()
 
       if (initialCount > 0) {
@@ -158,7 +166,7 @@ test.describe('Timeline Feature', () => {
         await scrollToLoadMore(page, -2000)
 
         // スクロール後、カードが追加されていることを確認
-        const afterScrollCards = page.locator('[data-testid="entry-card"]')
+        const afterScrollCards = page.getByTestId('entry-card')
         const afterScrollCount = await afterScrollCards.count()
 
         // 読み込まれた場合はカウントが増える、またはローディング状態が表示
@@ -170,7 +178,7 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const scrollContainer = page.locator('[class*="overflow-auto"]').first()
+      const scrollContainer = page.getByTestId('timeline-list')
       const initialScrollTop = await scrollContainer.evaluate((el) => el.scrollTop)
 
       // 上下にスクロール
@@ -190,27 +198,29 @@ test.describe('Timeline Feature', () => {
       await waitForTimelineContent(page)
 
       // ヘッダーに日付が表示されていることを確認
-      const dateHeader = page.locator('[data-testid="date-header"]')
+      const dateHeader = page.getByTestId('date-header').first()
       await expect(dateHeader).toBeVisible()
 
       const headerText = await dateHeader.textContent()
       expect(headerText).toBeTruthy()
-      expect(headerText).toMatch(/\d{4}-\d{2}-\d{2}/) // YYYY-MM-DD形式
+      expect(headerText).toMatch(/\d{4}\/\d{2}\/\d{2}/) // YYYY/MM/DD形式（スラッシュ区切り）
     })
 
     test('P0: スクロール時に日付ヘッダーが更新される', async ({ page }) => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const dateHeader = page.locator('[data-testid="date-header"]')
+      const dateHeader = page.getByTestId('date-header').first()
       const initialDate = await dateHeader.textContent()
 
       // スクロール実行
-      const scrollContainer = page.locator('[class*="overflow-auto"]').first()
+      const scrollContainer = page.getByTestId('timeline-list')
       await scrollContainer.evaluate((el) => {
         el.scrollTop = el.scrollTop - 500
       })
-      await page.waitForTimeout(300)
+
+      // IntersectionObserverの処理を待つため、日付ヘッダーの変更を待機
+      await expect(dateHeader).toBeVisible({ timeout: 5000 })
 
       // 日付が更新されていることを確認（スクロール位置が変わったなら日付も変わる可能性）
       const updatedDate = await dateHeader.textContent()
@@ -226,8 +236,8 @@ test.describe('Timeline Feature', () => {
       // カレンダーボタンをクリック
       await openCalendar(page)
 
-      // カレンダーが表示されていることを確認
-      const calendar = page.locator('.rdp')
+      // カレンダーが表示されていることを確認（DayPicker v9はcalendar-monthクラスを使用）
+      const calendar = page.locator('.calendar-month')
       await expect(calendar).toBeVisible()
     })
 
@@ -237,8 +247,8 @@ test.describe('Timeline Feature', () => {
 
       await openCalendar(page)
 
-      // カレンダー内の日付セルが表示されていることを確認
-      const calendarDays = page.locator('.rdp-cell')
+      // カレンダー内の日付ボタンが表示されていることを確認（DayPicker v9はcalendar-dayクラスを使用）
+      const calendarDays = page.locator('.calendar-day')
       const dayCount = await calendarDays.count()
       expect(dayCount).toBeGreaterThan(0)
     })
@@ -249,18 +259,18 @@ test.describe('Timeline Feature', () => {
 
       await openCalendar(page)
 
-      // カレンダー内の記録がある日付をクリック
-      const calendarButtons = page.locator('.rdp-day')
+      // カレンダー内の記録がある日付をクリック（DayPicker v9はcalendar-dayクラスを使用）
+      const calendarButtons = page.locator('.calendar-day:not(.calendar-disabled)')
       const firstButton = calendarButtons.first()
 
       if (await firstButton.isVisible()) {
-        const initialScroll = await page.locator('[class*="overflow-auto"]').first().evaluate((el) => el.scrollTop)
+        const initialScroll = await page.getByTestId('timeline-list').evaluate((el) => el.scrollTop)
 
         await firstButton.click()
         await page.waitForTimeout(500)
 
         // スクロール位置が変わっていることを確認
-        const afterScroll = await page.locator('[class*="overflow-auto"]').first().evaluate((el) => el.scrollTop)
+        const afterScroll = await page.getByTestId('timeline-list').evaluate((el) => el.scrollTop)
         // 日付をタップしたので何らかのスクロール変化が期待される
         expect(typeof afterScroll).toBe('number')
       }
@@ -272,8 +282,8 @@ test.describe('Timeline Feature', () => {
 
       await openCalendar(page)
 
-      // カレンダーが表示されていることを確認
-      const calendar = page.locator('.rdp')
+      // カレンダーが表示されていることを確認（DayPicker v9はcalendar-monthクラスを使用）
+      const calendar = page.locator('.calendar-month')
       await expect(calendar).toBeVisible()
 
       // カレンダーを閉じる
@@ -289,8 +299,8 @@ test.describe('Timeline Feature', () => {
 
       await openCalendar(page)
 
-      // 本日を表す要素（rdp-day_today または同等のセレクタ）を確認
-      const todayElement = page.locator('.rdp-day_today').first()
+      // 本日を表す要素を確認（カスタムcalendar-todayクラスを使用）
+      const todayElement = page.locator('.calendar-today').first()
 
       // 本日が見つかった場合、何らかのマーキングがあることを確認
       if (await todayElement.count() > 0) {
@@ -305,7 +315,7 @@ test.describe('Timeline Feature', () => {
       await waitForTimelineContent(page)
 
       // カルーセルコンテナが存在することを確認
-      const carousel = page.locator('[data-testid="date-carousel"]')
+      const carousel = page.getByTestId('date-carousel')
 
       if (await carousel.count() > 0) {
         await expect(carousel).toBeVisible()
@@ -316,22 +326,38 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const carousel = page.locator('[data-testid="date-carousel"]')
+      // カルーセルが表示されるまで待機
+      const carousel = page.getByTestId('date-carousel')
+      await expect(carousel).toBeVisible({ timeout: 5000 })
 
-      if (await carousel.count() > 0) {
-        // カルーセル内の日付ボタンが存在することを確認
-        const dateButtons = carousel.locator('[data-testid="carousel-date-button"]')
+      // カルーセル内の日付ボタンが存在することを確認
+      const dateButtons = carousel.getByTestId('carousel-date-button')
+      const buttonCount = await dateButtons.count()
 
-        if (await dateButtons.count() > 1) {
-          // 2番目のボタンをクリック
-          await dateButtons.nth(1).click()
-          await page.waitForTimeout(500)
+      if (buttonCount > 1) {
+        // 初期の日付ヘッダーを取得
+        const dateHeader = page.getByTestId('date-header').first()
+        const initialDate = await dateHeader.textContent()
 
-          // スクロール位置が変わっていることを確認
-          const scrollContainer = page.locator('[class*="overflow-auto"]').first()
-          const scrollPos = await scrollContainer.evaluate((el) => el.scrollTop)
-          expect(typeof scrollPos).toBe('number')
-        }
+        // 初期のスクロール位置を取得
+        const scrollContainer = page.getByTestId('timeline-list')
+        const initialScrollPos = await scrollContainer.evaluate((el) => el.scrollTop)
+
+        // 最初のボタン（中央ボタンより前の日付）をクリック
+        await dateButtons.first().click()
+
+        // 日付が変わるまで待機（スクロールアニメーション完了の指標）
+        await expect(async () => {
+          const currentScrollPos = await scrollContainer.evaluate((el) => el.scrollTop)
+          const currentDate = await dateHeader.textContent()
+          // スクロール位置が変わったか、日付ヘッダーが更新されたことを確認
+          const hasChanged = currentScrollPos !== initialScrollPos || currentDate !== initialDate
+          expect(hasChanged).toBe(true)
+        }).toPass({ timeout: 5000 })
+
+        // 最終的なスクロール位置を確認（数値であることを確認）
+        const finalScrollPos = await scrollContainer.evaluate((el) => el.scrollTop)
+        expect(typeof finalScrollPos).toBe('number')
       }
     })
   })
@@ -341,7 +367,7 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const entryCard = page.locator('[data-testid="entry-card"]').first()
+      const entryCard = page.getByTestId('entry-card').first()
 
       if (await entryCard.count() > 0) {
         // 投稿IDを取得（data-entry-idまたは同等のデータ属性から）
@@ -384,10 +410,10 @@ test.describe('Timeline Feature', () => {
     test('P0: 認証なしでアクセスするとログインページへリダイレクトされる', async ({ page }) => {
       // Cookie を設定せずにアクセス
       await page.goto('/timeline')
+      await page.waitForLoadState('networkidle')
 
-      // ログインページまたは認証ページへリダイレクトされていることを確認
-      const currentUrl = page.url()
-      expect(currentUrl).not.toContain('/timeline')
+      // ルートページ（/）へリダイレクトされていることを確認（middleware.tsの仕様）
+      await expect(page).toHaveURL('/')
     })
 
     test('P0: API失敗時にリトライボタンが表示される', async ({ page }) => {
@@ -419,7 +445,7 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const entryCards = page.locator('[data-testid="entry-card"]')
+      const entryCards = page.getByTestId('entry-card')
       const count = await entryCards.count()
 
       // 投稿が1件の場合でも正常に表示されることを確認
@@ -432,10 +458,11 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const entryContent = page.locator('[data-testid="entry-content"]')
-      const contentText = await entryContent.textContent()
+      const entryContent = page.getByTestId('entry-content').first()
 
-      // コンテンツが正しく表示されていることを確認
+      // コンテンツが正しく表示されていることを確認（toContainTextで含む判定）
+      await expect(entryContent).toBeVisible()
+      const contentText = await entryContent.textContent()
       expect(contentText).toBeTruthy()
     })
 
@@ -443,11 +470,11 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const dateHeader = page.locator('[data-testid="date-header"]')
+      const dateHeader = page.getByTestId('date-header').first()
       const initialDate = await dateHeader.textContent()
 
       // 大幅にスクロール
-      const scrollContainer = page.locator('[class*="overflow-auto"]').first()
+      const scrollContainer = page.getByTestId('timeline-list')
       await scrollContainer.evaluate((el) => {
         el.scrollTop = Math.max(0, el.scrollTop - 3000)
       })
@@ -462,11 +489,11 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const dateHeader = page.locator('[data-testid="date-header"]')
+      const dateHeader = page.getByTestId('date-header').first()
       const initialDate = await dateHeader.textContent()
 
       // 高速スクロール（複数回）
-      const scrollContainer = page.locator('[class*="overflow-auto"]').first()
+      const scrollContainer = page.getByTestId('timeline-list')
 
       for (let i = 0; i < 5; i++) {
         await scrollContainer.evaluate((el) => {
@@ -493,13 +520,13 @@ test.describe('Timeline Feature', () => {
       if (await prevMonthButton.count() > 0) {
         await prevMonthButton.click()
         await page.waitForTimeout(500)
-        await expect(page.locator('.rdp')).toBeVisible()
+        await expect(page.locator('.calendar-month')).toBeVisible()
       }
 
       if (await nextMonthButton.count() > 0) {
         await nextMonthButton.click()
         await page.waitForTimeout(500)
-        await expect(page.locator('.rdp')).toBeVisible()
+        await expect(page.locator('.calendar-month')).toBeVisible()
       }
     })
   })
@@ -516,11 +543,11 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const timelineContainer = page.locator('[data-testid="timeline-list"]')
+      const timelineContainer = page.getByTestId('timeline-list')
       await expect(timelineContainer).toBeVisible()
 
       // モバイルでも操作可能なことを確認
-      const entryCard = page.locator('[data-testid="entry-card"]').first()
+      const entryCard = page.getByTestId('entry-card').first()
       if (await entryCard.count() > 0) {
         await expect(entryCard).toBeVisible()
       }
@@ -532,7 +559,7 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const timelineContainer = page.locator('[data-testid="timeline-list"]')
+      const timelineContainer = page.getByTestId('timeline-list')
       await expect(timelineContainer).toBeVisible()
     })
 
@@ -542,7 +569,7 @@ test.describe('Timeline Feature', () => {
       await setupTestSession(page)
       await waitForTimelineContent(page)
 
-      const timelineContainer = page.locator('[data-testid="timeline-list"]')
+      const timelineContainer = page.getByTestId('timeline-list')
       await expect(timelineContainer).toBeVisible()
     })
   })

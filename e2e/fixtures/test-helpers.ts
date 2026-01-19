@@ -48,7 +48,7 @@ export async function setupTestSession(page: Page, userId?: string) {
   })
 
   // 保護されたページに遷移
-  await page.goto('/timeline', { waitUntil: 'networkidle' })
+  await page.goto('/timeline')
   await waitForPageLoad(page)
 }
 
@@ -112,7 +112,7 @@ export const TEST_IMAGE_1X1_PNG = Buffer.from(
  * ページが完全に読み込まれるまで待機
  */
 export async function waitForPageLoad(page: Page) {
-  await page.waitForLoadState('networkidle')
+  await page.waitForLoadState('domcontentloaded')
 }
 
 /**
@@ -144,9 +144,9 @@ export async function waitForTimelineLoad(page: Page) {
  */
 export async function waitForTimelineContent(page: Page) {
   await Promise.race([
-    page.waitForSelector('[data-testid="entry-card"]', { timeout: 10000 }),
-    page.waitForSelector('text=まだ投稿がありません', { timeout: 10000 }),
-    page.waitForSelector('text=エラーが発生しました', { timeout: 10000 }),
+    page.getByTestId('entry-card').first().waitFor({ timeout: 10000 }),
+    page.locator('text=まだ投稿がありません').waitFor({ timeout: 10000 }),
+    page.locator('text=エラーが発生しました').waitFor({ timeout: 10000 }),
   ]).catch(() => {
     // いずれかの状態になるまで待機
   })
@@ -156,7 +156,7 @@ export async function waitForTimelineContent(page: Page) {
  * スクロールして追加データを読み込む
  */
 export async function scrollToLoadMore(page: Page, scrollAmount: number = 1000) {
-  const scrollContainer = page.locator('[class*="overflow-auto"]')
+  const scrollContainer = page.getByTestId('timeline-list')
   await scrollContainer.evaluate((el, amount) => {
     el.scrollTop += amount
   }, scrollAmount)
@@ -168,21 +168,24 @@ export async function scrollToLoadMore(page: Page, scrollAmount: number = 1000) 
  * カレンダーを開く
  */
 export async function openCalendar(page: Page) {
-  const calendarButton = page.getByRole('button', { name: 'カレンダーを開く' })
+  const calendarButton = page.getByRole('button', { name: /カレンダーを開く/ })
   await calendarButton.click()
-  // カレンダーが表示されるまで待機
-  await page.waitForSelector('.rdp', { state: 'visible', timeout: 5000 })
+  // カレンダーが表示されるまで待機（DayPicker v9はcalendar-monthクラスを持つ）
+  await page.locator('.calendar-month').waitFor({ state: 'visible', timeout: 5000 })
 }
 
 /**
  * カレンダーを閉じる
  */
 export async function closeCalendar(page: Page) {
-  const overlay = page.locator('.fixed.inset-0.bg-black\\/20')
+  // 背景オーバーレイをクリック（month-calendar.tsxの実装を参照）
+  // カレンダーがオーバーレイの上に表示されるため、カレンダーと重ならない位置をクリック
+  const overlay = page.locator('.fixed.inset-0.z-30.bg-black\\/20')
   const isVisible = await overlay.isVisible().catch(() => false)
   if (isVisible) {
-    await overlay.click()
-    await page.waitForSelector('.rdp', { state: 'hidden', timeout: 5000 })
+    // オーバーレイの左上端をクリック（カレンダーは中央に表示されるため）
+    await overlay.click({ position: { x: 10, y: 10 } })
+    await page.locator('.calendar-month').waitFor({ state: 'hidden', timeout: 5000 })
   }
 }
 
@@ -366,9 +369,20 @@ export async function setupCanceledPlanUser(
 export async function interceptStripeCheckout(page: Page): Promise<{ getRedirectUrl: () => string | null }> {
   let redirectUrl: string | null = null
 
+  // Mock the Stripe Checkout redirect
   await page.route('**/checkout.stripe.com/**', async (route) => {
     redirectUrl = route.request().url()
     await route.abort()
+  })
+
+  // Intercept navigation to Stripe Checkout and capture the URL
+  page.on('framenavigated', (frame) => {
+    if (frame === page.mainFrame()) {
+      const url = frame.url()
+      if (url.includes('checkout.stripe.com')) {
+        redirectUrl = url
+      }
+    }
   })
 
   return {
