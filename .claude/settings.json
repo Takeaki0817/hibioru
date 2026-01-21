@@ -56,9 +56,6 @@
       "Read(./secrets/**)"
     ]
   },
-  "enabledPlugins": {
-    "claude-mem@thedotmack": false
-  },
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true,
