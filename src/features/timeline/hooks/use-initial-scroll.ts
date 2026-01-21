@@ -1,7 +1,8 @@
 'use client'
 
 import { useRef, useEffect, useCallback } from 'react'
-import { format, subDays } from 'date-fns'
+import { subDays } from 'date-fns'
+import { getJSTDateString } from '@/lib/date-utils'
 import { TIMELINE_CONFIG } from '../constants'
 
 const { DATES_PER_PAGE, PREFETCH_DAYS, WAIT_FOR_DOM_MS, WAIT_FOR_LAYOUT_MS } =
@@ -78,7 +79,7 @@ export function useInitialScroll({
 
   // 日付divへスクロール
   const scrollToDate = useCallback((date: Date) => {
-    const dateKey = format(date, 'yyyy-MM-dd')
+    const dateKey = getJSTDateString(date)
     const element = dateRefs.current.get(dateKey)
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' })
@@ -114,11 +115,10 @@ export function useInitialScroll({
   // スクロール後のずれを防ぐため、目標日付 + PREFETCH_DAYS日前までを先に読み込む
   const loadAndScrollToDate = useCallback(
     async (targetDate: Date) => {
-      const targetDateStr = format(targetDate, 'yyyy-MM-dd')
+      const targetDateStr = getJSTDateString(targetDate)
       // 先読み目標: 目標日付の4日前
-      const prefetchTargetStr = format(
-        subDays(targetDate, PREFETCH_DAYS),
-        'yyyy-MM-dd'
+      const prefetchTargetStr = getJSTDateString(
+        subDays(targetDate, PREFETCH_DAYS)
       )
 
       // ヘルパー: 過去方向に先読み目標まで読み込む
@@ -271,7 +271,7 @@ export function useInitialScroll({
       requestAnimationFrame(() => {
         if (initialDate) {
           // initialDateが指定されている場合はその日付セクションにスクロール
-          const targetDate = format(initialDate, 'yyyy-MM-dd')
+          const targetDate = getJSTDateString(initialDate)
           const element = dateRefs.current.get(targetDate)
           if (element) {
             element.scrollIntoView({ behavior: 'instant', block: 'start' })

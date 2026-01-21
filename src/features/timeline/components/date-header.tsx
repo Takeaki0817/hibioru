@@ -81,6 +81,7 @@ export function DateHeader({
             )}
             aria-label={isCalendarOpen ? 'カレンダーを閉じる' : 'カレンダーを開く'}
             aria-expanded={isCalendarOpen}
+            data-testid="calendar-button"
           >
             <Calendar className="w-4 h-4" aria-hidden="true" />
             {monthStr}

@@ -48,6 +48,7 @@ export function FeedItem({ item }: FeedItemProps) {
   return (
     <motion.button
       type="button"
+      data-testid="feed-item"
       onClick={toggle}
       disabled={isPending}
       aria-pressed={isCelebrated}

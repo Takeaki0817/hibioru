@@ -1,7 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useAuthStore, selectUserId } from '@/features/auth/stores/auth-store'
 
 interface UseCurrentUserIdReturn {
   /** 現在のユーザーID（未ログイン時はundefined） */
@@ -14,7 +13,7 @@ interface UseCurrentUserIdReturn {
  * 現在のユーザーIDを取得するフック
  *
  * 責務:
- * - Supabase Authから現在ログイン中のユーザーIDを取得
+ * - AuthStoreから現在ログイン中のユーザーIDを取得
  * - ローディング状態の管理
  *
  * 使用例:
@@ -26,17 +25,8 @@ interface UseCurrentUserIdReturn {
  * ```
  */
 export function useCurrentUserId(): UseCurrentUserIdReturn {
-  const [userId, setUserId] = useState<string | undefined>()
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const supabase = createClient()
-
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUserId(user?.id)
-      setIsLoading(false)
-    })
-  }, [])
+  const userId = useAuthStore(selectUserId)
+  const isLoading = useAuthStore((s) => !s.isInitialized)
 
   return {
     userId,

@@ -183,10 +183,10 @@ describe('FollowUpScheduler', () => {
         data: {
           user_id: userId,
           enabled: true,
-          primary_time: '21:00',
+          reminders: [{ time: '21:00', enabled: true }],
           timezone: 'Asia/Tokyo',
-          follow_up_enabled: true,
-          follow_up_interval_minutes: 60,
+          chase_reminder_enabled: true,
+          chase_reminder_delay_minutes: 60,
           follow_up_max_count: 2,
           active_days: [0, 1, 2, 3, 4, 5, 6],
         },
@@ -217,15 +217,15 @@ describe('FollowUpScheduler', () => {
       const userId = 'test-user-123';
       const currentTime = new Date('2024-01-15T13:30:00Z');
 
-      // モック: notification_settings（follow_up_enabled: false）
+      // モック: notification_settings（chase_reminder_enabled: false）
       mockSupabase.single.mockResolvedValueOnce({
         data: {
           user_id: userId,
           enabled: true,
-          primary_time: '21:00',
+          reminders: [{ time: '21:00', enabled: true }],
           timezone: 'Asia/Tokyo',
-          follow_up_enabled: false,
-          follow_up_interval_minutes: 60,
+          chase_reminder_enabled: false,
+          chase_reminder_delay_minutes: 60,
           follow_up_max_count: 2,
           active_days: [0, 1, 2, 3, 4, 5, 6],
         },
@@ -254,10 +254,10 @@ describe('FollowUpScheduler', () => {
         data: {
           user_id: userId,
           enabled: true,
-          primary_time: '21:00',
+          reminders: [{ time: '21:00', enabled: true }],
           timezone: 'Asia/Tokyo',
-          follow_up_enabled: true,
-          follow_up_interval_minutes: 60,
+          chase_reminder_enabled: true,
+          chase_reminder_delay_minutes: 60,
           follow_up_max_count: 2,
           active_days: [0, 1, 2, 3, 4, 5, 6],
         },
@@ -296,10 +296,10 @@ describe('FollowUpScheduler', () => {
         data: {
           user_id: userId,
           enabled: true,
-          primary_time: '21:00',
+          reminders: [{ time: '21:00', enabled: true }],
           timezone: 'Asia/Tokyo',
-          follow_up_enabled: true,
-          follow_up_interval_minutes: 60,
+          chase_reminder_enabled: true,
+          chase_reminder_delay_minutes: 60,
           follow_up_max_count: 2,
           active_days: [0, 1, 2, 3, 4, 5, 6],
         },
@@ -338,10 +338,10 @@ describe('FollowUpScheduler', () => {
         data: {
           user_id: userId,
           enabled: true,
-          primary_time: '21:00',
+          reminders: [{ time: '21:00', enabled: true }],
           timezone: 'Asia/Tokyo',
-          follow_up_enabled: true,
-          follow_up_interval_minutes: 60,
+          chase_reminder_enabled: true,
+          chase_reminder_delay_minutes: 60,
           follow_up_max_count: 2,
           active_days: [0, 1, 2, 3, 4, 5, 6],
         },
@@ -379,10 +379,10 @@ describe('FollowUpScheduler', () => {
         data: {
           user_id: userId,
           enabled: true,
-          primary_time: '21:00',
+          reminders: [{ time: '21:00', enabled: true }],
           timezone: 'Asia/Tokyo',
-          follow_up_enabled: true,
-          follow_up_interval_minutes: 60, // 60分間隔
+          chase_reminder_enabled: true,
+          chase_reminder_delay_minutes: 60, // 60分間隔
           follow_up_max_count: 2,
           active_days: [0, 1, 2, 3, 4, 5, 6],
         },

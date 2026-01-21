@@ -14,7 +14,7 @@ interface CreateEntryMutationInput {
   content: string
   images: CompressedImage[]
   existingImageUrls: string[]
-  removedImageUrls: string[]
+  removedImageUrls: Set<string>
   isShared: boolean
 }
 
@@ -59,7 +59,7 @@ export function useCreateEntryMutation({
 
       // 2. 既存画像（削除されていないもの）と結合
       const keptExistingUrls = input.existingImageUrls.filter(
-        (url) => !input.removedImageUrls.includes(url)
+        (url) => !input.removedImageUrls.has(url)
       )
       const finalImageUrls = [...uploadedUrls, ...keptExistingUrls]
 
@@ -107,7 +107,7 @@ export function useCreateEntryMutation({
       // プレビューURLを使用（新規画像）+ 既存画像（削除されていないもの）
       const previewUrls = input.images.map((img) => img.previewUrl)
       const keptExistingUrls = input.existingImageUrls.filter(
-        (url) => !input.removedImageUrls.includes(url)
+        (url) => !input.removedImageUrls.has(url)
       )
       const optimisticImageUrls = [...previewUrls, ...keptExistingUrls]
 

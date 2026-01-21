@@ -205,6 +205,7 @@ interface UserListItemProps {
 function UserListItem({ user, showFollowButton }: UserListItemProps) {
   return (
     <motion.div
+      data-testid="follow-list-item"
       role="listitem"
       aria-label={`${user.displayName} (@${user.username})`}
       variants={itemVariants}

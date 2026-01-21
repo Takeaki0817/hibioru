@@ -1,5 +1,6 @@
 import { exec } from 'child_process'
 import { promisify } from 'util'
+import crypto from 'crypto'
 import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../../src/lib/types/database.generated'
 import Stripe from 'stripe'
@@ -285,7 +286,6 @@ export async function createTestCheckoutSession(
  * Stripe CLIのwhsecを使用して署名を生成
  */
 export function generateWebhookSignature(payload: string, secret: string): string {
-  const crypto = require('crypto')
   const timestamp = Math.floor(Date.now() / 1000)
   const signedPayload = `${timestamp}.${payload}`
   const signature = crypto.createHmac('sha256', secret).update(signedPayload).digest('hex')

@@ -17,7 +17,7 @@ export async function getDailyEntryCount(userId: string): Promise<number> {
 
     const { count, error } = await supabase
       .from('entries')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('is_deleted', false)
       .gte('created_at', start.toISOString())
@@ -43,7 +43,7 @@ export async function getDailyImageCount(userId: string): Promise<number> {
 
     const { count, error } = await supabase
       .from('entries')
-      .select('*', { count: 'exact', head: true })
+      .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
       .eq('is_deleted', false)
       .not('image_urls', 'is', null)

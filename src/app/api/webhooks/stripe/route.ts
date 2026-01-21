@@ -288,6 +288,15 @@ async function handleHotsurePurchase(
   })
 
   if (purchaseError) {
+    // UNIQUE制約違反（PostgreSQL error code 23505）は冪等性による重複処理
+    // 既に処理済みとして成功扱いにする
+    if (purchaseError.code === '23505') {
+      logger.info('Hotsure purchase already processed (idempotent)', {
+        paymentIntentId: paymentIntent.id,
+        userId,
+      })
+      return
+    }
     logger.error('Failed to create hotsure purchase record', purchaseError)
     throw purchaseError
   }

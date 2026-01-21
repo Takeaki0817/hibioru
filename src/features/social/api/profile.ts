@@ -4,6 +4,7 @@ import 'server-only'
 
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/e2e-auth'
 import { authActionClient } from '@/lib/safe-action'
 import { logger } from '@/lib/logger'
 import { createSafeError } from '@/lib/error-handler'
@@ -104,20 +105,43 @@ export async function getProfileByUsername(username: string): Promise<SocialResu
 
 /**
  * 自分のプロフィールを取得
+ * 認証後、単一のDBクエリでプロフィールを取得（最適化済み）
  */
 export async function getMyProfile(): Promise<SocialResult<PublicUserInfo>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
       }
     }
 
-    return getProfileById(userData.user.id)
+    // Single DB call instead of calling getProfileById
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, username, display_name, avatar_url')
+      .eq('id', user.id)
+      .single()
+
+    if (error || !data) {
+      return {
+        ok: false,
+        error: { code: 'NOT_FOUND', message: 'ユーザーが見つかりません' },
+      }
+    }
+
+    return {
+      ok: true,
+      value: {
+        id: data.id,
+        username: data.username,
+        displayName: data.display_name,
+        avatarUrl: data.avatar_url,
+      },
+    }
   } catch (error) {
     return {
       ok: false,

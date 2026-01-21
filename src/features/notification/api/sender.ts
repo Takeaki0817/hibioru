@@ -197,8 +197,7 @@ export async function shouldSkipNotification(
     const { startOfDay, endOfDay } = getDayBoundaries(timezone, currentTime)
 
     // 当日のエントリーが存在するかチェック
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('entries')
       .select('id')
       .eq('user_id', userId)

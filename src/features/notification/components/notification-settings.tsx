@@ -149,7 +149,7 @@ export function NotificationSettings({ initialSettings }: NotificationSettingsPr
   }
 
   return (
-    <FeatureCard title="通知設定" titleSize="xl">
+    <FeatureCard title="通知設定" titleSize="xl" data-testid="notification-settings-card">
       {error && (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{error}</AlertDescription>

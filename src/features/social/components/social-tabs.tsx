@@ -69,15 +69,15 @@ export function SocialTabs({
     >
       {/* タブナビゲーション（絶対配置でコンテンツの上に重なる） */}
       <TabsList className="absolute top-0 left-0 right-0 z-10 w-full grid grid-cols-3 p-4 h-auto rounded-none bg-background/40 backdrop-blur-md">
-        <TabsTrigger value="profile" className="flex items-center gap-1.5">
+        <TabsTrigger value="profile" className="flex items-center gap-1.5" data-testid="settings-tab">
           <Settings className="size-4" />
           <span>設定</span>
         </TabsTrigger>
-        <TabsTrigger value="social" className="flex items-center gap-1.5">
+        <TabsTrigger value="social" className="flex items-center gap-1.5" data-testid="feed-tab">
           <Users className="size-4" />
           <span>みんな</span>
         </TabsTrigger>
-        <TabsTrigger value="notifications" className="flex items-center gap-1.5">
+        <TabsTrigger value="notifications" className="flex items-center gap-1.5" data-testid="notification-tab">
           <Bell className="size-4" />
           <span>通知</span>
         </TabsTrigger>

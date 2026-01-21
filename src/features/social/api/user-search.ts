@@ -3,6 +3,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/e2e-auth'
 import { logger } from '@/lib/logger'
 import { createSafeError } from '@/lib/error-handler'
 import { rateLimits, checkRateLimit, getRateLimitErrorMessage } from '@/lib/rate-limit'
@@ -18,9 +19,9 @@ export async function searchUsers(
 ): Promise<SocialResult<UserSearchResult>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
@@ -28,7 +29,7 @@ export async function searchUsers(
     }
 
     // レート制限チェック
-    const rateCheck = await checkRateLimit(rateLimits.search, userData.user.id)
+    const rateCheck = await checkRateLimit(rateLimits.search, user.id)
     if (!rateCheck.success) {
       return {
         ok: false,
@@ -57,7 +58,7 @@ export async function searchUsers(
     let searchQuery = supabase
       .from('users')
       .select('id, username, display_name, avatar_url, created_at')
-      .neq('id', userData.user.id) // 自分を除外
+      .neq('id', user.id) // 自分を除外
       .or(`username.ilike.%${escapedTerm}%,display_name.ilike.%${escapedTerm}%`)
       .order('created_at', { ascending: false })
       .limit(SOCIAL_PAGINATION.USER_SEARCH_PAGE_SIZE + 1)

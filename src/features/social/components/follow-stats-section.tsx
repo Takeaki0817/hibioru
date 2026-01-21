@@ -2,11 +2,10 @@
 
 import { motion } from 'framer-motion'
 import { useQuery } from '@tanstack/react-query'
-import { Drawer, DrawerContent, DrawerTrigger } from '@/components/ui/drawer'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { getFollowCounts } from '../api/follows'
-import { FollowListContent } from './follow-list-content'
 import { ANIMATION_CONFIG } from '../constants'
+import Link from 'next/link'
 
 /**
  * フォロー統計（コンパクト版）
@@ -35,54 +34,56 @@ export function FollowStatsSection() {
   }
 
   return (
-    <div className="flex items-center gap-1">
-      {/* フォロー中 Drawer */}
-      <Drawer>
-        <DrawerTrigger asChild>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            transition={ANIMATION_CONFIG.springDefault}
-            aria-label={`フォロー中 ${counts.followingCount}人の一覧を表示`}
-            className="flex items-center gap-1.5 px-1 md:px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
+    <div data-testid="follow-stats" className="flex items-center gap-1">
+      {/* フォロー中リンク */}
+      <Link
+        href="/social/following"
+        data-testid="following-link"
+        aria-label={`フォロー中 ${counts.followingCount}人の一覧を表示`}
+        className="flex items-center gap-1.5 px-1 md:px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
+      >
+        <motion.div
+          whileTap={{ scale: 0.95 }}
+          transition={ANIMATION_CONFIG.springDefault}
+          className="flex items-center gap-1.5"
+        >
+          <span className="text-xs md:text-sm text-muted-foreground" aria-hidden="true">
+            フォロー
+          </span>
+          <span
+            data-testid="following-count"
+            className="text-xs md:text-sm font-semibold text-primary-600 dark:text-primary-400"
+            aria-hidden="true"
           >
-            <span className="text-xs md:text-sm text-muted-foreground" aria-hidden="true">フォロー</span>
-            <span className="text-xs md:text-sm font-semibold text-primary-600 dark:text-primary-400" aria-hidden="true">
-              {counts.followingCount}
-            </span>
-          </motion.button>
-        </DrawerTrigger>
-        <DrawerContent className="h-[70lvh] px-4">
-          <FollowListContent
-            defaultTab="following"
-            followingCount={counts.followingCount}
-            followerCount={counts.followerCount}
-          />
-        </DrawerContent>
-      </Drawer>
+            {counts.followingCount}
+          </span>
+        </motion.div>
+      </Link>
 
-      {/* フォロワー Drawer */}
-      <Drawer>
-        <DrawerTrigger asChild>
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            transition={ANIMATION_CONFIG.springDefault}
-            aria-label={`フォロワー ${counts.followerCount}人の一覧を表示`}
-            className="flex items-center gap-1.5 px-1 md:px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
+      {/* フォロワーリンク */}
+      <Link
+        href="/social/followers"
+        data-testid="follower-link"
+        aria-label={`フォロワー ${counts.followerCount}人の一覧を表示`}
+        className="flex items-center gap-1.5 px-1 md:px-2.5 py-1.5 rounded-lg hover:bg-muted transition-colors"
+      >
+        <motion.div
+          whileTap={{ scale: 0.95 }}
+          transition={ANIMATION_CONFIG.springDefault}
+          className="flex items-center gap-1.5"
+        >
+          <span className="text-xs md:text-sm text-muted-foreground" aria-hidden="true">
+            フォロワー
+          </span>
+          <span
+            data-testid="follower-count"
+            className="text-xs md:text-sm font-semibold text-primary-600 dark:text-primary-400"
+            aria-hidden="true"
           >
-            <span className="text-xs md:text-sm text-muted-foreground" aria-hidden="true">フォロワー</span>
-            <span className="text-xs md:text-sm font-semibold text-primary-600 dark:text-primary-400" aria-hidden="true">
-              {counts.followerCount}
-            </span>
-          </motion.button>
-        </DrawerTrigger>
-        <DrawerContent className="h-[70lvh] px-4">
-          <FollowListContent
-            defaultTab="followers"
-            followingCount={counts.followingCount}
-            followerCount={counts.followerCount}
-          />
-        </DrawerContent>
-      </Drawer>
+            {counts.followerCount}
+          </span>
+        </motion.div>
+      </Link>
     </div>
   )
 }

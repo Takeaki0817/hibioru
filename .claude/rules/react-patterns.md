@@ -1,5 +1,5 @@
 ---
-paths: src/app/**/*.tsx, src/features/**/components/**/*.tsx
+globs: src/app/**/*.tsx, src/features/**/components/**/*.tsx
 ---
 
 # React & Next.js パターン規約

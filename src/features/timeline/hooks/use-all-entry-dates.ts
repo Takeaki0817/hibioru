@@ -1,7 +1,8 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { fetchAllEntryDates } from '../api/queries'
+import { queryKeys } from '@/lib/constants/query-keys'
+import { fetchAllEntryDatesAction } from '../api/actions'
 
 export interface UseAllEntryDatesOptions {
   userId: string
@@ -26,8 +27,17 @@ export function useAllEntryDates(
   const { userId } = options
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['entries', 'dates', userId],
-    queryFn: () => fetchAllEntryDates({ userId }),
+    queryKey: queryKeys.entries.dates(userId),
+    queryFn: async () => {
+      const result = await fetchAllEntryDatesAction()
+      if (result?.serverError) {
+        throw new Error(result.serverError)
+      }
+      if (!result?.data) {
+        throw new Error('投稿日付の取得に失敗しました')
+      }
+      return result.data
+    },
     staleTime: 5 * 60 * 1000, // 5分間はstaleにしない
     gcTime: 30 * 60 * 1000, // 30分間キャッシュ保持
   })

@@ -3,9 +3,10 @@
 import { useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { useQueryClient } from '@tanstack/react-query'
+import { useShallow } from 'zustand/shallow'
 import type { Entry, CompressedImage } from '@/features/entry/types'
 import { updateEntry } from '@/features/entry/api/actions'
-import { uploadImage } from '@/features/entry/api/image-service'
+import { uploadImage, deleteImage } from '@/features/entry/api/image-service'
 import { clearDraft } from '@/features/entry/api/draft-storage'
 import { queryKeys } from '@/lib/constants/query-keys'
 import { useEntryFormStore } from '../stores/entry-form-store'
@@ -45,16 +46,25 @@ export function useEntrySubmit({
   const router = useRouter()
   const queryClient = useQueryClient()
 
-  // Zustandストアから必要な状態とアクションを取得
-  const content = useEntryFormStore((s) => s.content)
-  const images = useEntryFormStore((s) => s.images)
-  const existingImageUrls = useEntryFormStore((s) => s.existingImageUrls)
-  const removedImageUrls = useEntryFormStore((s) => s.removedImageUrls)
-  const isShared = useEntryFormStore((s) => s.isShared)
-  const submitStart = useEntryFormStore((s) => s.submitStart)
-  const submitSuccess = useEntryFormStore((s) => s.submitSuccess)
-  const submitError = useEntryFormStore((s) => s.submitError)
-  const reset = useEntryFormStore((s) => s.reset)
+  // Zustandストアから必要な状態とアクションを取得（useShallowでグルーピング）
+  const formData = useEntryFormStore(
+    useShallow((s) => ({
+      content: s.content,
+      images: s.images,
+      existingImageUrls: s.existingImageUrls,
+      removedImageUrls: s.removedImageUrls,
+      isShared: s.isShared,
+    }))
+  )
+
+  const actions = useEntryFormStore(
+    useShallow((s) => ({
+      submitStart: s.submitStart,
+      submitSuccess: s.submitSuccess,
+      submitError: s.submitError,
+      reset: s.reset,
+    }))
+  )
 
   // リダイレクトのタイマーを保持（エラー時にキャンセルするため）
   const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -73,27 +83,57 @@ export function useEntrySubmit({
         redirectTimerRef.current = null
       }
       // エラーメッセージはmutation内でtoast表示済み
-      submitError('投稿に失敗しました')
+      actions.submitError('投稿に失敗しました')
     },
   })
 
-  // 画像アップロード処理（editモード用）
+  // 画像アップロード処理（editモード用）- 並列アップロード with cleanup
   const uploadImages = useCallback(
     async (imagesToUpload: CompressedImage[]): Promise<string[] | null> => {
-      const uploadedUrls: string[] = []
+      const settledResults = await Promise.allSettled(
+        imagesToUpload.map((img) => uploadImage(img.file, userId))
+      )
 
-      for (const img of imagesToUpload) {
-        const uploadResult = await uploadImage(img.file, userId)
-        if (!uploadResult.ok) {
-          submitError(uploadResult.error.message)
-          return null
+      // Collect successful uploads and check for failures
+      const successfulUrls: string[] = []
+      let hasFailure = false
+      let failureMessage = 'アップロードに失敗しました'
+
+      for (const settled of settledResults) {
+        if (settled.status === 'rejected') {
+          hasFailure = true
+          failureMessage = settled.reason instanceof Error
+            ? settled.reason.message
+            : 'アップロードに失敗しました'
+        } else if (!settled.value.ok) {
+          hasFailure = true
+          failureMessage = settled.value.error.message
+        } else {
+          successfulUrls.push(settled.value.value)
         }
-        uploadedUrls.push(uploadResult.value)
       }
 
-      return uploadedUrls
+      // If any upload failed, clean up successfully uploaded images
+      if (hasFailure) {
+        await Promise.allSettled(successfulUrls.map((url) => deleteImage(url)))
+        actions.submitError(failureMessage)
+        return null
+      }
+
+      // All succeeded - extract URLs with explicit type narrowing
+      // 注: hasFailureチェック後なので以下のエラーは理論上到達不能
+      // TypeScriptの型ガードとして防御的に記述
+      return settledResults.map((settled) => {
+        if (settled.status === 'rejected') {
+          throw new Error('Unreachable: all rejections filtered by hasFailure check')
+        }
+        if (!settled.value.ok) {
+          throw new Error('Unreachable: all errors filtered by hasFailure check')
+        }
+        return settled.value.value
+      })
     },
-    [userId, submitError]
+    [userId, actions]
   )
 
   // 画像URL配列の構築（editモード用）
@@ -101,22 +141,22 @@ export function useEntrySubmit({
     (uploadedUrls: string[]): string[] | null => {
       const allUrls = [...uploadedUrls]
 
-      for (const url of existingImageUrls) {
-        if (!removedImageUrls.includes(url)) {
+      for (const url of formData.existingImageUrls) {
+        if (!formData.removedImageUrls.has(url)) {
           allUrls.push(url)
         }
       }
 
       return allUrls.length > 0 ? allUrls : null
     },
-    [existingImageUrls, removedImageUrls]
+    [formData]
   )
 
   // 送信処理
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault()
-      submitStart()
+      actions.submitStart()
 
       // createモード: 楽観的更新を使用
       if (mode === 'create') {
@@ -131,21 +171,21 @@ export function useEntrySubmit({
 
         // 3. 楽観的更新でmutationを開始
         createMutation.mutate({
-          content,
-          images,
-          existingImageUrls,
-          removedImageUrls,
-          isShared,
+          content: formData.content,
+          images: formData.images,
+          existingImageUrls: formData.existingImageUrls,
+          removedImageUrls: formData.removedImageUrls,
+          isShared: formData.isShared,
         })
 
         // 4. 成功アニメーションを表示
-        submitSuccess()
+        actions.submitSuccess()
 
         // 5. アニメーション表示後にリダイレクト（800msで以前と同等の体感時間）
         // エラー時はonErrorコールバックでタイマーがクリアされる
         redirectTimerRef.current = setTimeout(() => {
           redirectTimerRef.current = null
-          reset()
+          actions.reset()
           if (onSuccess) {
             onSuccess()
           } else {
@@ -158,11 +198,11 @@ export function useEntrySubmit({
       // editモード: 従来通りの処理
       try {
         if (!initialEntry) {
-          submitError('編集対象のエントリーが見つかりません')
+          actions.submitError('編集対象のエントリーが見つかりません')
           return
         }
 
-        const uploadedUrls = await uploadImages(images)
+        const uploadedUrls = await uploadImages(formData.images)
         if (uploadedUrls === null) {
           return
         }
@@ -171,21 +211,21 @@ export function useEntrySubmit({
 
         const result = await updateEntry({
           id: initialEntry.id,
-          content,
+          content: formData.content,
           imageUrls,
-          isShared,
+          isShared: formData.isShared,
         })
 
         if (result.serverError) {
-          submitError(result.serverError)
+          actions.submitError(result.serverError)
           return
         }
         if (!result.data) {
-          submitError('エラーが発生しました')
+          actions.submitError('エラーが発生しました')
           return
         }
 
-        submitSuccess()
+        actions.submitSuccess()
 
         await Promise.all([
           queryClient.invalidateQueries({ queryKey: queryKeys.entries.all }),
@@ -193,24 +233,21 @@ export function useEntrySubmit({
         ])
 
         setTimeout(() => {
-          onSuccess ? onSuccess() : router.push('/timeline')
+          if (onSuccess) {
+            onSuccess()
+          } else {
+            router.push('/timeline')
+          }
         }, 300)
       } catch (err) {
-        submitError(err instanceof Error ? err.message : '投稿に失敗しました')
+        actions.submitError(err instanceof Error ? err.message : '投稿に失敗しました')
       }
     },
     [
       mode,
       initialEntry,
-      content,
-      images,
-      existingImageUrls,
-      removedImageUrls,
-      isShared,
-      submitStart,
-      submitSuccess,
-      submitError,
-      reset,
+      formData,
+      actions,
       createMutation,
       uploadImages,
       buildImageUrls,

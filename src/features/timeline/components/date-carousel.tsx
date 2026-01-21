@@ -46,6 +46,7 @@ const DateCarouselItemComponent = memo(function DateCarouselItemComponent({
   return (
     <CarouselItem className="basis-1/5 pl-1">
       <button
+        data-testid="carousel-date-button"
         onClick={handleClick}
         className={cn(
           'relative w-full rounded-lg px-1 py-1 text-center transition-all',
@@ -98,7 +99,7 @@ export function DateCarousel({
   onDateClick,
 }: DateCarouselProps) {
   return (
-    <div className="relative flex h-10 w-45 items-center">
+    <div data-testid="date-carousel" className="relative flex h-10 w-45 items-center">
       {/* 中央の固定マーカー（Sage Green） */}
       <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <div className="h-8 w-9 rounded-lg bg-primary-400 dark:bg-primary-500" />

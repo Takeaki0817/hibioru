@@ -67,6 +67,7 @@ export function SocialNotificationsTab() {
         <motion.div
           role="list"
           aria-label="通知一覧"
+          data-testid="notification-list"
           className="space-y-4"
           variants={listContainerVariants}
           initial="initial"
@@ -125,6 +126,7 @@ function NotificationItem({ notification, currentUserId, isFollowing }: Notifica
     <motion.div
       role="listitem"
       aria-label={`${notificationLabel}（${timeAgo}）`}
+      data-testid="notification-item"
       variants={notificationItemVariants}
       initial="initial"
       animate="animate"

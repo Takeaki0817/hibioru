@@ -1,5 +1,5 @@
 ---
-paths: src/**/api/**/*.ts, src/**/actions/**/*.ts, src/features/**/api/**
+globs: src/**/api/**/*.ts, src/**/actions/**/*.ts, src/features/**/api/**
 ---
 
 # セキュリティ規約

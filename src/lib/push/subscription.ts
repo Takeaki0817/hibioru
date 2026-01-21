@@ -10,20 +10,6 @@ import type { Result } from '@/lib/types/result'
 import type { PushSubscriptionInfo } from './types'
 
 /**
- * データベースの購読情報行
- */
-interface PushSubscriptionRow {
-  id: string
-  user_id: string
-  endpoint: string
-  p256dh: string
-  auth: string
-  user_agent: string | null
-  created_at: string
-}
-
-
-/**
  * 購読情報（フル）
  */
 export interface PushSubscription {
@@ -70,8 +56,7 @@ export async function subscribe(
   try {
     const supabase = await createClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('push_subscriptions')
       .insert({
         user_id: userId,
@@ -98,17 +83,16 @@ export async function subscribe(
       }
     }
 
-    const row = data as PushSubscriptionRow
     return {
       ok: true,
       value: {
-        id: row.id,
-        userId: row.user_id,
-        endpoint: row.endpoint,
-        p256dhKey: row.p256dh,
-        authKey: row.auth,
-        userAgent: row.user_agent ?? null,
-        createdAt: new Date(row.created_at),
+        id: data.id,
+        userId: data.user_id,
+        endpoint: data.endpoint,
+        p256dhKey: data.p256dh,
+        authKey: data.auth,
+        userAgent: data.user_agent ?? null,
+        createdAt: new Date(data.created_at),
       },
     }
   } catch (error) {
@@ -136,8 +120,7 @@ export async function unsubscribe(
   try {
     const supabase = await createClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('push_subscriptions')
       .delete()
       .eq('user_id', userId)
@@ -175,8 +158,7 @@ export async function getSubscriptions(
   try {
     const supabase = await createClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase as any)
+    const { data, error } = await supabase
       .from('push_subscriptions')
       .select('id, endpoint, p256dh, auth')
       .eq('user_id', userId)
@@ -188,9 +170,7 @@ export async function getSubscriptions(
       }
     }
 
-    const subscriptions: PushSubscriptionInfo[] = (
-      (data ?? []) as { id: string; endpoint: string; p256dh: string; auth: string }[]
-    ).map((row) => ({
+    const subscriptions: PushSubscriptionInfo[] = (data ?? []).map((row) => ({
       id: row.id,
       endpoint: row.endpoint,
       p256dhKey: row.p256dh,
@@ -223,8 +203,7 @@ export async function removeInvalidSubscription(
   try {
     const supabase = await createClient()
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase as any)
+    const { error } = await supabase
       .from('push_subscriptions')
       .delete()
       .eq('id', subscriptionId)

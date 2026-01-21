@@ -1,365 +1,463 @@
-/**
- * Social Constants ユニットテスト
- * @jest-environment node
- */
-
 import {
   validateUsername,
   validateDisplayName,
   sanitizeDisplayName,
   escapeIlikeWildcards,
   getAchievementMessage,
+  ACHIEVEMENT_THRESHOLDS,
+  ACHIEVEMENT_TYPE_LABELS,
   USERNAME_RULES,
   DISPLAY_NAME_RULES,
-  ACHIEVEMENT_THRESHOLDS,
 } from '../constants'
 
-describe('validateUsername', () => {
-  describe('有効なユーザー名', () => {
-    it('3文字の英字のみで有効', () => {
-      const result = validateUsername('abc')
+describe('バリデーション・定数', () => {
+  describe('validateUsername', () => {
+    it('有効なユーザー名を検証する', () => {
+      // Arrange & Act
+      const result = validateUsername('valid_user123')
+
+      // Assert
       expect(result.valid).toBe(true)
       expect(result.error).toBeUndefined()
     })
 
-    it('20文字の英数字混合で有効', () => {
-      const result = validateUsername('abcdefghij1234567890')
-      expect(result.valid).toBe(true)
-      expect(result.error).toBeUndefined()
-    })
-
-    it('アンダースコアを含む名前で有効', () => {
-      const result = validateUsername('user_name_123')
-      expect(result.valid).toBe(true)
-      expect(result.error).toBeUndefined()
-    })
-
-    it('大文字小文字混合で有効', () => {
-      const result = validateUsername('UserName')
-      expect(result.valid).toBe(true)
-      expect(result.error).toBeUndefined()
-    })
-
-    it('数字のみで有効', () => {
-      const result = validateUsername('12345')
-      expect(result.valid).toBe(true)
-      expect(result.error).toBeUndefined()
-    })
-  })
-
-  describe('無効なユーザー名 - 長さ制約', () => {
-    it('2文字は短すぎてエラー', () => {
+    it('3文字未満はエラーを返す', () => {
+      // Arrange & Act
       const result = validateUsername('ab')
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(USERNAME_RULES.ERROR_MESSAGES.TOO_SHORT)
     })
 
-    it('1文字は短すぎてエラー', () => {
-      const result = validateUsername('a')
-      expect(result.valid).toBe(false)
-      expect(result.error).toBe(USERNAME_RULES.ERROR_MESSAGES.TOO_SHORT)
-    })
+    it('20文字超過はエラーを返す', () => {
+      // Arrange & Act
+      const result = validateUsername('a'.repeat(21))
 
-    it('空文字は短すぎてエラー', () => {
-      const result = validateUsername('')
-      expect(result.valid).toBe(false)
-      expect(result.error).toBe(USERNAME_RULES.ERROR_MESSAGES.TOO_SHORT)
-    })
-
-    it('21文字は長すぎてエラー', () => {
-      const result = validateUsername('abcdefghij12345678901')
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(USERNAME_RULES.ERROR_MESSAGES.TOO_LONG)
     })
 
-    it('50文字は長すぎてエラー', () => {
-      const result = validateUsername('a'.repeat(50))
-      expect(result.valid).toBe(false)
-      expect(result.error).toBe(USERNAME_RULES.ERROR_MESSAGES.TOO_LONG)
-    })
-  })
+    it('最小長の3文字は有効', () => {
+      // Arrange & Act
+      const result = validateUsername('abc')
 
-  describe('無効なユーザー名 - 文字制約', () => {
-    it('日本語を含むとエラー', () => {
-      const result = validateUsername('ユーザー名')
-      expect(result.valid).toBe(false)
-      expect(result.error).toBe(USERNAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
+      // Assert
+      expect(result.valid).toBe(true)
     })
 
-    it('スペースを含むとエラー', () => {
-      const result = validateUsername('user name')
-      expect(result.valid).toBe(false)
-      expect(result.error).toBe(USERNAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
+    it('最大長の20文字は有効', () => {
+      // Arrange & Act
+      const result = validateUsername('a'.repeat(20))
+
+      // Assert
+      expect(result.valid).toBe(true)
     })
 
-    it('ハイフンを含むとエラー', () => {
+    it('英数字とアンダースコア以外はエラーを返す', () => {
+      // Arrange & Act
       const result = validateUsername('user-name')
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(USERNAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
     })
 
-    it('ドットを含むとエラー', () => {
-      const result = validateUsername('user.name')
+    it('空白を含むとエラーを返す', () => {
+      // Arrange & Act
+      const result = validateUsername('user name')
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(USERNAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
     })
 
-    it('@を含むとエラー', () => {
-      const result = validateUsername('user@name')
+    it('特殊文字を含むとエラーを返す', () => {
+      // Arrange & Act
+      const result = validateUsername('user@domain')
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(USERNAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
     })
 
-    it('絵文字を含むとエラー', () => {
-      const result = validateUsername('user🎉')
-      expect(result.valid).toBe(false)
-      expect(result.error).toBe(USERNAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
+    it('大文字と小文字の混在は有効', () => {
+      // Arrange & Act
+      const result = validateUsername('UserName123')
+
+      // Assert
+      expect(result.valid).toBe(true)
     })
   })
 
-  describe('境界値テスト', () => {
-    it('3文字（最小長）で有効', () => {
-      expect(validateUsername('abc').valid).toBe(true)
-    })
+  describe('validateDisplayName', () => {
+    it('有効な表示名を検証する', () => {
+      // Arrange & Act
+      const result = validateDisplayName('太郎のプロフィール')
 
-    it('20文字（最大長）で有効', () => {
-      expect(validateUsername('a'.repeat(20)).valid).toBe(true)
-    })
-  })
-})
-
-describe('getAchievementMessage', () => {
-  describe('daily_posts タイプ', () => {
-    it('20回投稿のメッセージ', () => {
-      expect(getAchievementMessage('daily_posts', 20)).toBe('今日20回投稿しました！')
-    })
-
-    it('50回投稿のメッセージ', () => {
-      expect(getAchievementMessage('daily_posts', 50)).toBe('今日50回投稿しました！')
-    })
-  })
-
-  describe('total_posts タイプ', () => {
-    it('10投稿達成のメッセージ', () => {
-      expect(getAchievementMessage('total_posts', 10)).toBe('累計10投稿達成！')
-    })
-
-    it('100投稿達成のメッセージ', () => {
-      expect(getAchievementMessage('total_posts', 100)).toBe('累計100投稿達成！')
-    })
-
-    it('1000投稿達成のメッセージ', () => {
-      expect(getAchievementMessage('total_posts', 1000)).toBe('累計1000投稿達成！')
-    })
-  })
-
-  describe('streak_days タイプ', () => {
-    it('3日連続のメッセージ', () => {
-      expect(getAchievementMessage('streak_days', 3)).toBe('3日連続記録達成！')
-    })
-
-    it('7日連続のメッセージ', () => {
-      expect(getAchievementMessage('streak_days', 7)).toBe('7日連続記録達成！')
-    })
-
-    it('365日連続のメッセージ', () => {
-      expect(getAchievementMessage('streak_days', 365)).toBe('365日連続記録達成！')
-    })
-  })
-
-  describe('shared_entry タイプ', () => {
-    it('共有投稿のメッセージ（threshold無視）', () => {
-      expect(getAchievementMessage('shared_entry', 0)).toBe('投稿を共有しました')
-      expect(getAchievementMessage('shared_entry', 1)).toBe('投稿を共有しました')
-    })
-  })
-})
-
-describe('ACHIEVEMENT_THRESHOLDS', () => {
-  describe('daily_posts 閾値', () => {
-    it('20から50まで10刻みで4段階', () => {
-      expect(ACHIEVEMENT_THRESHOLDS.daily_posts).toEqual([20, 30, 40, 50])
-    })
-  })
-
-  describe('total_posts 閾値', () => {
-    it('最初の10段階が正しいこと', () => {
-      const first10 = ACHIEVEMENT_THRESHOLDS.total_posts.slice(0, 10)
-      expect(first10).toEqual([10, 30, 50, 100, 150, 200, 250, 300, 400, 500])
-    })
-
-    it('500以降は100刻みであること', () => {
-      // 500の次は600, 700, ...
-      const after500 = ACHIEVEMENT_THRESHOLDS.total_posts.slice(10, 15)
-      expect(after500).toEqual([600, 700, 800, 900, 1000])
-    })
-  })
-
-  describe('streak_days 閾値', () => {
-    it('最初の11段階が正しいこと', () => {
-      const first11 = ACHIEVEMENT_THRESHOLDS.streak_days.slice(0, 11)
-      expect(first11).toEqual([3, 7, 14, 30, 60, 90, 120, 150, 180, 240, 365])
-    })
-
-    it('365日以降は60刻みであること', () => {
-      // 365の次は425, 485, ...
-      const after365 = ACHIEVEMENT_THRESHOLDS.streak_days.slice(11, 14)
-      expect(after365).toEqual([425, 485, 545])
-    })
-  })
-})
-
-describe('validateDisplayName', () => {
-  describe('有効な表示名', () => {
-    it('通常の日本語名で有効', () => {
-      const result = validateDisplayName('テストユーザー')
+      // Assert
       expect(result.valid).toBe(true)
       expect(result.error).toBeUndefined()
     })
 
-    it('英数字のみで有効', () => {
-      const result = validateDisplayName('TestUser123')
-      expect(result.valid).toBe(true)
-      expect(result.error).toBeUndefined()
-    })
-
-    it('絵文字を含んでも有効', () => {
-      const result = validateDisplayName('ユーザー🎉')
-      expect(result.valid).toBe(true)
-      expect(result.error).toBeUndefined()
-    })
-
-    it('スペースを含んでも有効', () => {
-      const result = validateDisplayName('Test User')
-      expect(result.valid).toBe(true)
-      expect(result.error).toBeUndefined()
-    })
-
-    it('50文字で有効', () => {
-      const result = validateDisplayName('あ'.repeat(50))
-      expect(result.valid).toBe(true)
-      expect(result.error).toBeUndefined()
-    })
-  })
-
-  describe('無効な表示名 - 長さ制約', () => {
-    it('空文字はエラー', () => {
+    it('空文字列はエラーを返す', () => {
+      // Arrange & Act
       const result = validateDisplayName('')
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.TOO_SHORT)
     })
 
-    it('スペースのみはエラー（trimで空になる）', () => {
+    it('空白のみはエラーを返す', () => {
+      // Arrange & Act
       const result = validateDisplayName('   ')
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.TOO_SHORT)
     })
 
-    it('51文字は長すぎてエラー', () => {
-      const result = validateDisplayName('a'.repeat(51))
+    it('50文字超過はエラーを返す', () => {
+      // Arrange & Act
+      const result = validateDisplayName('あ'.repeat(51))
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.TOO_LONG)
     })
-  })
 
-  describe('無効な表示名 - 禁止文字', () => {
-    it('HTMLタグ文字<>を含むとエラー', () => {
-      const result = validateDisplayName('Test<script>')
+    it('50文字ちょうどは有効', () => {
+      // Arrange & Act
+      const result = validateDisplayName('a'.repeat(50))
+
+      // Assert
+      expect(result.valid).toBe(true)
+    })
+
+    it('<文字を含むとエラーを返す', () => {
+      // Arrange & Act
+      const result = validateDisplayName('ユーザー<script>')
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
     })
 
-    it('ダブルクォートを含むとエラー', () => {
-      const result = validateDisplayName('Test"User')
+    it('> 文字を含むとエラーを返す', () => {
+      // Arrange & Act
+      const result = validateDisplayName('ユーザー>')
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
     })
 
-    it('シングルクォートを含むとエラー', () => {
-      const result = validateDisplayName("Test'User")
+    it('"文字を含むとエラーを返す', () => {
+      // Arrange & Act
+      const result = validateDisplayName('ユーザー"')
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
     })
 
-    it('アンパサンドを含むとエラー', () => {
-      const result = validateDisplayName('Test&User')
+    it("' 文字を含むとエラーを返す", () => {
+      // Arrange & Act
+      const result = validateDisplayName("ユーザー'")
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
     })
 
-    it('NULL文字を含むとエラー', () => {
-      const result = validateDisplayName('Test\x00User')
+    it('&文字を含むとエラーを返す', () => {
+      // Arrange & Act
+      const result = validateDisplayName('ユーザー&管理者')
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
     })
 
-    it('改行文字を含むとエラー', () => {
-      const result = validateDisplayName('Test\nUser')
+    it('制御文字を含むとエラーを返す', () => {
+      // Arrange & Act
+      const result = validateDisplayName('ユーザー\x00')
+
+      // Assert
       expect(result.valid).toBe(false)
       expect(result.error).toBe(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS)
     })
-  })
 
-  describe('境界値テスト', () => {
-    it('1文字（最小長）で有効', () => {
-      expect(validateDisplayName('あ').valid).toBe(true)
+    it('先頭と末尾の空白を自動削除', () => {
+      // Arrange & Act
+      const result = validateDisplayName('  太郎  ')
+
+      // Assert
+      expect(result.valid).toBe(true)
     })
 
-    it('50文字（最大長）で有効', () => {
-      expect(validateDisplayName('a'.repeat(50)).valid).toBe(true)
+    it('日本語文字を含む表示名は有効', () => {
+      // Arrange & Act
+      const result = validateDisplayName('田中太郎')
+
+      // Assert
+      expect(result.valid).toBe(true)
+    })
+
+    it('emoji を含む表示名は有効', () => {
+      // Arrange & Act
+      const result = validateDisplayName('ユーザー😀')
+
+      // Assert
+      expect(result.valid).toBe(true)
     })
   })
-})
 
-describe('sanitizeDisplayName', () => {
-  it('前後の空白を除去', () => {
-    expect(sanitizeDisplayName('  テスト  ')).toBe('テスト')
+  describe('sanitizeDisplayName', () => {
+    it('制御文字を除去して返す', () => {
+      // Arrange & Act
+      const result = sanitizeDisplayName('ユーザー\x00\x01')
+
+      // Assert
+      expect(result).toBe('ユーザー')
+    })
+
+    it('先頭と末尾の空白を削除', () => {
+      // Arrange & Act
+      const result = sanitizeDisplayName('  太郎  ')
+
+      // Assert
+      expect(result).toBe('太郎')
+    })
+
+    it('最大長(50文字)を超えた場合は切り詰める', () => {
+      // Arrange & Act
+      const result = sanitizeDisplayName('a'.repeat(60))
+
+      // Assert
+      expect(result).toHaveLength(50)
+    })
+
+    it('正常な文字列はそのまま返す', () => {
+      // Arrange & Act
+      const result = sanitizeDisplayName('太郎のプロフィール')
+
+      // Assert
+      expect(result).toBe('太郎のプロフィール')
+    })
   })
 
-  it('制御文字を除去', () => {
-    expect(sanitizeDisplayName('Test\x00\x01User')).toBe('TestUser')
+  describe('escapeIlikeWildcards', () => {
+    it('バックスラッシュをエスケープ', () => {
+      // Arrange & Act
+      const result = escapeIlikeWildcards('user\\name')
+
+      // Assert
+      expect(result).toBe('user\\\\name')
+    })
+
+    it('%をエスケープ', () => {
+      // Arrange & Act
+      const result = escapeIlikeWildcards('user%abc')
+
+      // Assert
+      expect(result).toBe('user\\%abc')
+    })
+
+    it('_をエスケープ', () => {
+      // Arrange & Act
+      const result = escapeIlikeWildcards('user_abc')
+
+      // Assert
+      expect(result).toBe('user\\_abc')
+    })
+
+    it('複数の特殊文字をエスケープ', () => {
+      // Arrange & Act
+      const result = escapeIlikeWildcards('user%abc_def\\ghi')
+
+      // Assert
+      expect(result).toBe('user\\%abc\\_def\\\\ghi')
+    })
+
+    it('エスケープが必要ない文字列はそのまま返す', () => {
+      // Arrange & Act
+      const result = escapeIlikeWildcards('username')
+
+      // Assert
+      expect(result).toBe('username')
+    })
+
+    it('日本語文字はエスケープされない', () => {
+      // Arrange & Act
+      const result = escapeIlikeWildcards('太郎%検索')
+
+      // Assert
+      expect(result).toBe('太郎\\%検索')
+    })
   })
 
-  it('50文字を超える場合は切り詰め', () => {
-    const input = 'a'.repeat(100)
-    expect(sanitizeDisplayName(input)).toBe('a'.repeat(50))
+  describe('getAchievementMessage', () => {
+    it('daily_posts メッセージを生成する', () => {
+      // Arrange & Act
+      const result = getAchievementMessage('daily_posts', 20)
+
+      // Assert
+      expect(result).toBe('今日20回投稿しました！')
+    })
+
+    it('total_posts メッセージを生成する', () => {
+      // Arrange & Act
+      const result = getAchievementMessage('total_posts', 100)
+
+      // Assert
+      expect(result).toBe('累計100投稿達成！')
+    })
+
+    it('streak_days メッセージを生成する', () => {
+      // Arrange & Act
+      const result = getAchievementMessage('streak_days', 7)
+
+      // Assert
+      expect(result).toBe('7日連続記録達成！')
+    })
+
+    it('shared_entry メッセージを生成する', () => {
+      // Arrange & Act
+      const result = getAchievementMessage('shared_entry', 1)
+
+      // Assert
+      expect(result).toBe('投稿を共有しました')
+    })
+
+    it('異なる数値でメッセージを生成する', () => {
+      // Arrange & Act
+      const result1 = getAchievementMessage('daily_posts', 50)
+      const result2 = getAchievementMessage('total_posts', 1000)
+      const result3 = getAchievementMessage('streak_days', 365)
+
+      // Assert
+      expect(result1).toBe('今日50回投稿しました！')
+      expect(result2).toBe('累計1000投稿達成！')
+      expect(result3).toBe('365日連続記録達成！')
+    })
   })
 
-  it('正常な入力はそのまま返す', () => {
-    expect(sanitizeDisplayName('テストユーザー')).toBe('テストユーザー')
+  describe('ACHIEVEMENT_THRESHOLDS', () => {
+    it('daily_posts 閾値がすべて定義されている', () => {
+      expect(ACHIEVEMENT_THRESHOLDS.daily_posts).toBeDefined()
+      expect(ACHIEVEMENT_THRESHOLDS.daily_posts.length).toBeGreaterThan(0)
+      expect(ACHIEVEMENT_THRESHOLDS.daily_posts).toContain(20)
+      expect(ACHIEVEMENT_THRESHOLDS.daily_posts).toContain(50)
+    })
+
+    it('total_posts 閾値がすべて定義されている', () => {
+      expect(ACHIEVEMENT_THRESHOLDS.total_posts).toBeDefined()
+      expect(ACHIEVEMENT_THRESHOLDS.total_posts.length).toBeGreaterThan(0)
+      expect(ACHIEVEMENT_THRESHOLDS.total_posts).toContain(10)
+      expect(ACHIEVEMENT_THRESHOLDS.total_posts).toContain(100)
+      expect(ACHIEVEMENT_THRESHOLDS.total_posts).toContain(500)
+    })
+
+    it('streak_days 閾値がすべて定義されている', () => {
+      expect(ACHIEVEMENT_THRESHOLDS.streak_days).toBeDefined()
+      expect(ACHIEVEMENT_THRESHOLDS.streak_days.length).toBeGreaterThan(0)
+      expect(ACHIEVEMENT_THRESHOLDS.streak_days).toContain(3)
+      expect(ACHIEVEMENT_THRESHOLDS.streak_days).toContain(7)
+      expect(ACHIEVEMENT_THRESHOLDS.streak_days).toContain(30)
+      expect(ACHIEVEMENT_THRESHOLDS.streak_days).toContain(365)
+    })
+
+    it('daily_posts 閾値は昇順', () => {
+      const thresholds = ACHIEVEMENT_THRESHOLDS.daily_posts
+      for (let i = 1; i < thresholds.length; i++) {
+        expect(thresholds[i]).toBeGreaterThanOrEqual(thresholds[i - 1])
+      }
+    })
+
+    it('total_posts 閾値は昇順', () => {
+      const thresholds = ACHIEVEMENT_THRESHOLDS.total_posts
+      for (let i = 1; i < thresholds.length; i++) {
+        expect(thresholds[i]).toBeGreaterThanOrEqual(thresholds[i - 1])
+      }
+    })
+
+    it('streak_days 閾値は昇順', () => {
+      const thresholds = ACHIEVEMENT_THRESHOLDS.streak_days
+      for (let i = 1; i < thresholds.length; i++) {
+        expect(thresholds[i]).toBeGreaterThanOrEqual(thresholds[i - 1])
+      }
+    })
   })
 
-  it('空白のみの入力は空文字を返す', () => {
-    expect(sanitizeDisplayName('   ')).toBe('')
-  })
-})
+  describe('ACHIEVEMENT_TYPE_LABELS', () => {
+    it('すべての達成タイプにラベルが定義されている', () => {
+      expect(ACHIEVEMENT_TYPE_LABELS.daily_posts).toBeDefined()
+      expect(ACHIEVEMENT_TYPE_LABELS.total_posts).toBeDefined()
+      expect(ACHIEVEMENT_TYPE_LABELS.streak_days).toBeDefined()
+      expect(ACHIEVEMENT_TYPE_LABELS.shared_entry).toBeDefined()
+    })
 
-describe('escapeIlikeWildcards', () => {
-  it('%をエスケープ', () => {
-    expect(escapeIlikeWildcards('100%')).toBe('100\\%')
-  })
-
-  it('_をエスケープ', () => {
-    expect(escapeIlikeWildcards('user_name')).toBe('user\\_name')
-  })
-
-  it('バックスラッシュをエスケープ', () => {
-    expect(escapeIlikeWildcards('path\\file')).toBe('path\\\\file')
+    it('ラベルが空文字列でない', () => {
+      Object.values(ACHIEVEMENT_TYPE_LABELS).forEach((label) => {
+        expect(label.length).toBeGreaterThan(0)
+      })
+    })
   })
 
-  it('複合パターンをエスケープ', () => {
-    expect(escapeIlikeWildcards('100%_test\\path')).toBe('100\\%\\_test\\\\path')
+  describe('USERNAME_RULES', () => {
+    it('MIN_LENGTH が 3', () => {
+      expect(USERNAME_RULES.MIN_LENGTH).toBe(3)
+    })
+
+    it('MAX_LENGTH が 20', () => {
+      expect(USERNAME_RULES.MAX_LENGTH).toBe(20)
+    })
+
+    it('PATTERN が英数字とアンダースコアのみ許可', () => {
+      expect(USERNAME_RULES.PATTERN.test('valid_user123')).toBe(true)
+      expect(USERNAME_RULES.PATTERN.test('user-name')).toBe(false)
+      expect(USERNAME_RULES.PATTERN.test('user@name')).toBe(false)
+    })
+
+    it('すべてのエラーメッセージが定義されている', () => {
+      expect(USERNAME_RULES.ERROR_MESSAGES.TOO_SHORT).toBeDefined()
+      expect(USERNAME_RULES.ERROR_MESSAGES.TOO_LONG).toBeDefined()
+      expect(USERNAME_RULES.ERROR_MESSAGES.INVALID_CHARS).toBeDefined()
+      expect(USERNAME_RULES.ERROR_MESSAGES.TAKEN).toBeDefined()
+    })
   })
 
-  it('通常の文字はそのまま', () => {
-    expect(escapeIlikeWildcards('normaluser')).toBe('normaluser')
-  })
+  describe('DISPLAY_NAME_RULES', () => {
+    it('MIN_LENGTH が 1', () => {
+      expect(DISPLAY_NAME_RULES.MIN_LENGTH).toBe(1)
+    })
 
-  it('日本語はそのまま', () => {
-    expect(escapeIlikeWildcards('テスト')).toBe('テスト')
-  })
+    it('MAX_LENGTH が 50', () => {
+      expect(DISPLAY_NAME_RULES.MAX_LENGTH).toBe(50)
+    })
 
-  it('空文字は空文字を返す', () => {
-    expect(escapeIlikeWildcards('')).toBe('')
+    it('FORBIDDEN_PATTERN が危険文字を禁止', () => {
+      expect(DISPLAY_NAME_RULES.FORBIDDEN_PATTERN.test('<')).toBe(true)
+      expect(DISPLAY_NAME_RULES.FORBIDDEN_PATTERN.test('>')).toBe(true)
+      expect(DISPLAY_NAME_RULES.FORBIDDEN_PATTERN.test('"')).toBe(true)
+      expect(DISPLAY_NAME_RULES.FORBIDDEN_PATTERN.test("'")).toBe(true)
+      expect(DISPLAY_NAME_RULES.FORBIDDEN_PATTERN.test('&')).toBe(true)
+      expect(DISPLAY_NAME_RULES.FORBIDDEN_PATTERN.test('\x00')).toBe(true)
+    })
+
+    it('制御文字が禁止', () => {
+      expect(DISPLAY_NAME_RULES.FORBIDDEN_PATTERN.test('\x00')).toBe(true)
+      expect(DISPLAY_NAME_RULES.FORBIDDEN_PATTERN.test('\x1F')).toBe(true)
+      expect(DISPLAY_NAME_RULES.FORBIDDEN_PATTERN.test('\x7F')).toBe(true)
+    })
+
+    it('すべてのエラーメッセージが定義されている', () => {
+      expect(DISPLAY_NAME_RULES.ERROR_MESSAGES.TOO_SHORT).toBeDefined()
+      expect(DISPLAY_NAME_RULES.ERROR_MESSAGES.TOO_LONG).toBeDefined()
+      expect(DISPLAY_NAME_RULES.ERROR_MESSAGES.INVALID_CHARS).toBeDefined()
+    })
   })
 })

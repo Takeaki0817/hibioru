@@ -1,7 +1,5 @@
 ---
-paths:
-  - ".claude/skills/**/*"
-  - ".claude/commands/**/*"
+globs: .claude/skills/**/*
 ---
 
 # Skills 活用ガイド

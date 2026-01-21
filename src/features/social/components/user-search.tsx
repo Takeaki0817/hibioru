@@ -10,6 +10,7 @@ import { FollowButton } from './follow-button'
 import type { PublicUserInfo } from '../types'
 import { useDebouncedCallback } from 'use-debounce'
 import { ANIMATION_CONFIG } from '../constants'
+import Link from 'next/link'
 
 const containerVariants = {
   animate: {
@@ -92,7 +93,7 @@ export function UserSearch() {
           id={inputId}
           value={query}
           onChange={handleQueryChange}
-          placeholder="ユーザー検索"
+          placeholder="ユーザーを検索"
           className="pl-9 h-9 rounded-lg text-sm"
           role="combobox"
           aria-expanded={hasSearched}
@@ -170,25 +171,31 @@ interface UserSearchResultItemProps {
 function UserSearchResultItem({ user }: UserSearchResultItemProps) {
   return (
     <motion.div
+      data-testid="search-result-item"
       role="option"
       aria-selected={false}
       aria-label={`${user.displayName} (@${user.username})`}
       variants={itemVariants}
       className="flex items-center justify-between p-2.5 rounded-lg transition-colors hover:bg-muted"
     >
-      <div className="flex items-center gap-2.5">
+      <Link
+        href={`/social/profile/${user.username}`}
+        className="flex items-center gap-2.5 flex-1 min-w-0"
+      >
         <Avatar className="size-8">
           <AvatarImage src={user.avatarUrl ?? undefined} alt="" />
           <AvatarFallback className="bg-primary-100 text-primary-600 dark:bg-primary-900 dark:text-primary-400 text-xs">
             {user.displayName?.charAt(0) ?? user.username.charAt(0)}
           </AvatarFallback>
         </Avatar>
-        <div>
-          <p className="font-medium text-sm">{user.displayName}</p>
-          <p className="text-xs text-muted-foreground">@{user.username}</p>
+        <div className="min-w-0">
+          <p className="font-medium text-sm truncate">{user.displayName}</p>
+          <p className="text-xs text-muted-foreground truncate">@{user.username}</p>
         </div>
+      </Link>
+      <div onClick={(e) => e.stopPropagation()}>
+        <FollowButton userId={user.id} username={user.displayName} size="sm" />
       </div>
-      <FollowButton userId={user.id} username={user.displayName} size="sm" />
     </motion.div>
   )
 }

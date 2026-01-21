@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/client'
-import { isoToJSTDateString } from '@/lib/date-utils'
+import { isoToJSTDateString, getJSTMonthBounds, parseJSTDateString } from '@/lib/date-utils'
 import { logger } from '@/lib/logger'
 import type { Entry } from '@/lib/types/database'
 import type { TimelinePage } from '../types'
@@ -83,9 +83,10 @@ export async function fetchCalendarData(
   const { userId, year, month } = params
   const supabase = createClient()
 
-  // 月の最初と最後の日を計算
-  const startDate = new Date(year, month - 1, 1)
-  const endDate = new Date(year, month, 0, 23, 59, 59, 999)
+  // JST基準で月の開始・終了を計算
+  // year, month (1-12) から基準日を作成してgetJSTMonthBoundsに渡す
+  const referenceDate = parseJSTDateString(`${year}-${String(month).padStart(2, '0')}-15`)
+  const { start: startDate, end: endDate } = getJSTMonthBounds(referenceDate)
 
   // entries と streaks を並列取得（パフォーマンス最適化）
   const [entriesResult, streaksResult] = await Promise.all([
@@ -95,7 +96,7 @@ export async function fetchCalendarData(
       .eq('user_id', userId)
       .eq('is_deleted', false)
       .gte('created_at', startDate.toISOString())
-      .lte('created_at', endDate.toISOString()),
+      .lt('created_at', endDate.toISOString()),
     supabase
       .from('streaks')
       .select('hotsure_used_dates')

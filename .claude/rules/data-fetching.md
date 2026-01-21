@@ -1,5 +1,5 @@
 ---
-paths: src/features/**/api/**, src/features/**/hooks/use-*.ts
+globs: src/features/**/api/**, src/features/**/hooks/use-*.ts
 ---
 
 # データフェッチ規約

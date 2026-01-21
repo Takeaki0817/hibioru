@@ -3,7 +3,7 @@
 import { useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/constants/query-keys'
-import { fetchCalendarData } from '../api/queries'
+import { fetchCalendarDataAction } from '../api/actions'
 import type { CalendarDayData } from '../types'
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, isToday } from 'date-fns'
 
@@ -29,7 +29,16 @@ export function useCalendarData(
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: queryKeys.entries.calendar(userId, year, month),
-    queryFn: () => fetchCalendarData({ userId, year, month }),
+    queryFn: async () => {
+      const result = await fetchCalendarDataAction({ year, month })
+      if (result?.serverError) {
+        throw new Error(result.serverError)
+      }
+      if (!result?.data) {
+        throw new Error('カレンダーデータの取得に失敗しました')
+      }
+      return result.data
+    },
     // カレンダーは日次更新なので中程度のstaleTime
     staleTime: 5 * 60 * 1000, // 5分
     gcTime: 30 * 60 * 1000, // 30分（月移動時のキャッシュ保持）
@@ -40,7 +49,16 @@ export function useCalendarData(
     const prefetchMonth = (y: number, m: number) => {
       queryClient.prefetchQuery({
         queryKey: queryKeys.entries.calendar(userId, y, m),
-        queryFn: () => fetchCalendarData({ userId, year: y, month: m }),
+        queryFn: async () => {
+          const result = await fetchCalendarDataAction({ year: y, month: m })
+          if (result?.serverError) {
+            throw new Error(result.serverError)
+          }
+          if (!result?.data) {
+            throw new Error('カレンダーデータの取得に失敗しました')
+          }
+          return result.data
+        },
         staleTime: 5 * 60 * 1000, // 5分間はstaleにしない
       })
     }

@@ -1,5 +1,5 @@
 ---
-paths: src/**/api/**/*.ts, supabase/**/*
+globs: src/**/api/**/*.ts, supabase/**/*
 ---
 
 # Supabase 操作規約

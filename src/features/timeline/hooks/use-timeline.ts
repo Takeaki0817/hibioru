@@ -4,7 +4,8 @@ import { useEffect } from 'react'
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query'
 import type { InfiniteData } from '@tanstack/react-query'
 import { queryKeys } from '@/lib/constants/query-keys'
-import { fetchEntries } from '../api/queries'
+import { getJSTDayBounds } from '@/lib/date-utils'
+import { fetchEntriesAction } from '../api/actions'
 import type { TimelineEntry, TimelinePage } from '../types'
 
 export interface UseTimelineOptions {
@@ -35,17 +36,10 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
   const { userId, initialDate, pageSize = 20 } = options
   const queryClient = useQueryClient()
 
-  // initialDateが指定されている場合、その日付の翌日0:00をcursorとして使用
+  // initialDateが指定されている場合、その日付の翌日0:00(JST)をcursorとして使用
   // これにより、その日付を含むデータから取得を開始する
   const initialCursor = initialDate
-    ? new Date(
-        initialDate.getFullYear(),
-        initialDate.getMonth(),
-        initialDate.getDate() + 1,
-        0,
-        0,
-        0
-      ).toISOString()
+    ? getJSTDayBounds(initialDate).end.toISOString()
     : undefined
 
   // 既存のキャッシュがあれば初期データとして使用（ローディング状態を回避）
@@ -64,13 +58,17 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
     refetch,
   } = useInfiniteQuery({
     queryKey: queryKey,
-    queryFn: ({ pageParam }) =>
-      fetchEntries({
-        userId,
+    queryFn: async ({ pageParam }) => {
+      const result = await fetchEntriesAction({
         cursor: (pageParam as PageParam).cursor,
         limit: pageSize,
         direction: (pageParam as PageParam).direction,
-      }),
+      })
+      if (result?.data) {
+        return result.data
+      }
+      throw new Error(result?.serverError || '投稿の取得に失敗しました')
+    },
     // タイムラインは更新頻度が低いため長めのstaleTime
     staleTime: 10 * 60 * 1000, // 10分
     // 過去方向（古いデータ）
@@ -99,13 +97,17 @@ export function useTimeline(options: UseTimelineOptions): UseTimelineReturn {
       const prefetchKey = queryKeys.entries.timeline(userId, nextCursor)
       queryClient.prefetchInfiniteQuery({
         queryKey: prefetchKey,
-        queryFn: ({ pageParam }) =>
-          fetchEntries({
-            userId,
+        queryFn: async ({ pageParam }) => {
+          const result = await fetchEntriesAction({
             cursor: (pageParam as PageParam).cursor,
             limit: pageSize,
             direction: (pageParam as PageParam).direction,
-          }),
+          })
+          if (result?.data) {
+            return result.data
+          }
+          throw new Error(result?.serverError || '投稿の取得に失敗しました')
+        },
         initialPageParam: { cursor: nextCursor, direction: 'before' } as PageParam,
         staleTime: 10 * 60 * 1000, // 10分
       })

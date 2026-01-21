@@ -74,6 +74,7 @@ export function FollowButton({ userId, username, initialIsFollowing, size = 'def
       type="button"
       onClick={toggle}
       disabled={isPending}
+      data-testid="follow-button"
       aria-pressed={isFollowing ?? false}
       aria-label={ariaLabel}
       aria-busy={isPending}
