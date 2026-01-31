@@ -1,15 +1,17 @@
 import { createSafeActionClient } from 'next-safe-action'
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { logger } from '@/lib/logger'
 import { isBusinessLogicError } from '@/lib/errors'
-import type { User, SupabaseClient } from '@supabase/supabase-js'
+import { getAuthenticatedUser, isE2ETestMode, type AuthenticatedUser } from '@/lib/supabase/e2e-auth'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Database } from '@/lib/types/database.generated'
 
 /**
  * 認証済みコンテキスト型
  */
 export interface AuthContext {
-  user: User
+  user: AuthenticatedUser
   supabase: SupabaseClient<Database>
 }
 
@@ -34,12 +36,14 @@ export const actionClient = createSafeActionClient({
 /**
  * 認証必須クライアント
  * ミドルウェアで認証チェックを行い、user と supabase をコンテキストに渡す
+ * E2Eテストモードではモックユーザーとadminクライアント（RLSバイパス）を使用
  */
 export const authActionClient = actionClient.use(async ({ next }) => {
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // E2Eテストモードではadminクライアントを使用（RLSバイパス）
+  // 通常モードでは通常のクライアントを使用
+  const isE2E = isE2ETestMode()
+  const supabase = isE2E ? createAdminClient() : await createClient()
+  const user = await getAuthenticatedUser(supabase)
 
   if (!user) {
     throw new Error('認証が必要です')

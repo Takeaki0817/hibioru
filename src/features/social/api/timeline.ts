@@ -3,6 +3,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/e2e-auth'
 import { createSafeError } from '@/lib/error-handler'
 import type { SocialFeedItem, SocialResult, SocialFeedResult, AchievementType } from '../types'
 import { SOCIAL_PAGINATION } from '../constants'
@@ -14,9 +15,9 @@ import { SOCIAL_PAGINATION } from '../constants'
 export async function getSocialFeed(cursor?: string): Promise<SocialResult<SocialFeedResult>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
@@ -27,7 +28,7 @@ export async function getSocialFeed(cursor?: string): Promise<SocialResult<Socia
     const { data: followingData, error: followingError } = await supabase
       .from('follows')
       .select('following_id, created_at')
-      .eq('follower_id', userData.user.id)
+      .eq('follower_id', user.id)
 
     if (followingError) {
       return {
@@ -141,7 +142,7 @@ export async function getSocialFeed(cursor?: string): Promise<SocialResult<Socia
         from_user_id: string
       }[]
 
-      const isCelebrated = celebrations.some((c) => c.from_user_id === userData.user!.id)
+      const isCelebrated = celebrations.some((c) => c.from_user_id === user.id)
 
       return {
         id: achievement.id,

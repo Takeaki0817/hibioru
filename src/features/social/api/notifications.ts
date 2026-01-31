@@ -3,6 +3,7 @@
 import 'server-only'
 
 import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/e2e-auth'
 import { createSafeError } from '@/lib/error-handler'
 import type {
   SocialNotificationItem,
@@ -21,9 +22,9 @@ export async function getSocialNotifications(
 ): Promise<SocialResult<SocialNotificationsResult>> {
   try {
     const supabase = await createClient()
-    const { data: userData } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
-    if (!userData.user) {
+    if (!user) {
       return {
         ok: false,
         error: { code: 'UNAUTHORIZED', message: '未認証です' },
@@ -50,7 +51,7 @@ export async function getSocialNotifications(
           threshold
         )
       `)
-      .eq('user_id', userData.user.id)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(SOCIAL_PAGINATION.NOTIFICATIONS_PAGE_SIZE + 1)
 

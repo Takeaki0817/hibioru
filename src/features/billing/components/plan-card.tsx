@@ -36,6 +36,7 @@ export function PlanCard({
         <Badge
           className="absolute -top-2 left-1/2 -translate-x-1/2 whitespace-nowrap"
           variant="default"
+          data-testid="recommended-badge"
         >
           おすすめ
         </Badge>
@@ -72,6 +73,7 @@ export function PlanCard({
           onClick={onSelect}
           disabled={disabled}
           variant={recommended ? 'default' : 'outline'}
+          data-testid="purchase-hotsure-btn"
         >
           {disabled ? '処理中...' : 'このプランを選択'}
         </Button>

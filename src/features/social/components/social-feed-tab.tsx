@@ -84,7 +84,7 @@ export function SocialFeedTab() {
             description="ユーザーをフォローすると、達成や共有投稿がここに表示されます"
           />
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4" data-testid="social-feed">
             <AnimatePresence mode="popLayout">
               {visibleFeedItems.map((item) => (
                 <FeedItem key={item.id} item={item} />

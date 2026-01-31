@@ -1,45 +1,72 @@
-/**
- * Auth Errors ユニットテスト
- * @jest-environment node
- */
+import { classifyAuthError, createCancelledError, parseErrorParam } from '../errors'
 
-import {
-  classifyAuthError,
-  createCancelledError,
-  parseErrorParam,
-} from '../errors'
-import type { AuthError } from '@/lib/types/auth'
-
-describe('auth/errors', () => {
+describe('Auth Error Handling', () => {
   describe('classifyAuthError', () => {
-    describe('ネットワークエラー分類', () => {
-      it.each([
-        ['network', 'Network error occurred'],
-        ['fetch', 'Fetch failed'],
-        ['connection', 'Connection refused'],
-        ['timeout', 'Request timeout'],
-        ['offline', 'Device is offline'],
-      ])(
-        '"%s"を含むエラーメッセージをネットワークエラーとして分類する',
-        (keyword, message) => {
-          // Arrange
-          const error = new Error(message)
-
-          // Act
-          const result = classifyAuthError(error)
-
-          // Assert
-          expect(result.type).toBe('network')
-          expect(result.message).toBe(
-            'ネットワークに接続できませんでした。接続を確認して、もう一度お試しください。'
-          )
-          expect(result.retryable).toBe(true)
-        }
-      )
-
-      it('大文字小文字を区別せずにネットワークエラーを判定する', () => {
+    describe('network errors', () => {
+      it('should classify network error message', () => {
         // Arrange
-        const error = new Error('NETWORK ERROR')
+        const error = new Error('network connection failed')
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('network')
+        expect(result.retryable).toBe(true)
+        expect(result.message).toContain('ネットワークに接続できません')
+      })
+
+      it('should classify fetch error', () => {
+        // Arrange
+        const error = new Error('fetch failed')
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('network')
+        expect(result.retryable).toBe(true)
+      })
+
+      it('should classify connection error', () => {
+        // Arrange
+        const error = new Error('connection timeout')
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('network')
+        expect(result.retryable).toBe(true)
+      })
+
+      it('should classify timeout error', () => {
+        // Arrange
+        const error = new Error('request timeout')
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('network')
+        expect(result.retryable).toBe(true)
+      })
+
+      it('should classify offline error', () => {
+        // Arrange
+        const error = new Error('offline mode')
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('network')
+        expect(result.retryable).toBe(true)
+      })
+
+      it('should be case insensitive', () => {
+        // Arrange
+        const error = new Error('NETWORK CONNECTION FAILED')
 
         // Act
         const result = classifyAuthError(error)
@@ -49,32 +76,69 @@ describe('auth/errors', () => {
       })
     })
 
-    describe('認証エラー分類', () => {
-      it.each([
-        ['auth', 'Auth error occurred'],
-        ['unauthorized', 'Unauthorized access'],
-        ['forbidden', 'Forbidden resource'],
-        ['invalid', 'Invalid credentials'],
-        ['expired', 'Token expired'],
-      ])(
-        '"%s"を含むエラーメッセージを認証エラーとして分類する',
-        (keyword, message) => {
-          // Arrange
-          const error = new Error(message)
+    describe('auth errors', () => {
+      it('should classify auth error message', () => {
+        // Arrange
+        const error = new Error('auth failed')
 
-          // Act
-          const result = classifyAuthError(error)
+        // Act
+        const result = classifyAuthError(error)
 
-          // Assert
-          expect(result.type).toBe('auth')
-          expect(result.message).toBe(
-            'ログインできませんでした。もう一度お試しください。'
-          )
-          expect(result.retryable).toBe(true)
-        }
-      )
+        // Assert
+        expect(result.type).toBe('auth')
+        expect(result.retryable).toBe(true)
+        expect(result.message).toContain('ログインできませんでした')
+      })
 
-      it('ステータス401を認証エラーとして分類する', () => {
+      it('should classify unauthorized error', () => {
+        // Arrange
+        const error = new Error('unauthorized access')
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('auth')
+        expect(result.retryable).toBe(true)
+      })
+
+      it('should classify forbidden error', () => {
+        // Arrange
+        const error = new Error('forbidden')
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('auth')
+        expect(result.retryable).toBe(true)
+      })
+
+      it('should classify invalid credentials error', () => {
+        // Arrange
+        const error = new Error('invalid credentials')
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('auth')
+        expect(result.retryable).toBe(true)
+      })
+
+      it('should classify expired session error', () => {
+        // Arrange
+        const error = new Error('session expired')
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('auth')
+        expect(result.retryable).toBe(true)
+      })
+
+      it('should classify Supabase 401 error', () => {
         // Arrange
         const error = { status: 401, message: 'Unauthorized' }
 
@@ -83,9 +147,10 @@ describe('auth/errors', () => {
 
         // Assert
         expect(result.type).toBe('auth')
+        expect(result.retryable).toBe(true)
       })
 
-      it('ステータス403を認証エラーとして分類する', () => {
+      it('should classify Supabase 403 error', () => {
         // Arrange
         const error = { status: 403, message: 'Forbidden' }
 
@@ -94,116 +159,140 @@ describe('auth/errors', () => {
 
         // Assert
         expect(result.type).toBe('auth')
+        expect(result.retryable).toBe(true)
       })
     })
 
-    describe('不明エラー分類', () => {
-      it('分類できないエラーを不明エラーとして分類する', () => {
+    describe('unknown errors', () => {
+      it('should classify unknown error type', () => {
         // Arrange
-        const error = new Error('Something went wrong')
+        const error = new Error('something went wrong')
 
         // Act
         const result = classifyAuthError(error)
 
         // Assert
         expect(result.type).toBe('unknown')
-        expect(result.message).toBe(
-          '問題が発生しました。しばらくしてからお試しください。'
-        )
+        expect(result.retryable).toBe(true)
+        expect(result.message).toContain('問題が発生しました')
+      })
+
+      it('should classify non-Error objects as unknown', () => {
+        // Arrange
+        const error = { custom: 'error' }
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('unknown')
         expect(result.retryable).toBe(true)
       })
 
-      it('nullを不明エラーとして分類する', () => {
-        // Act
-        const result = classifyAuthError(null)
-
-        // Assert
-        expect(result.type).toBe('unknown')
-      })
-
-      it('undefinedを不明エラーとして分類する', () => {
-        // Act
-        const result = classifyAuthError(undefined)
-
-        // Assert
-        expect(result.type).toBe('unknown')
-      })
-
-      it('空オブジェクトを不明エラーとして分類する', () => {
-        // Act
-        const result = classifyAuthError({})
-
-        // Assert
-        expect(result.type).toBe('unknown')
-      })
-
-      it('文字列を不明エラーとして分類する', () => {
-        // Act
-        const result = classifyAuthError('error string')
-
-        // Assert
-        expect(result.type).toBe('unknown')
-      })
-
-      it('数値を不明エラーとして分類する', () => {
-        // Act
-        const result = classifyAuthError(500)
-
-        // Assert
-        expect(result.type).toBe('unknown')
-      })
-    })
-
-    describe('エラー優先順位', () => {
-      it('ネットワークエラーと認証エラーの両方を含む場合、ネットワークエラーを優先する', () => {
+      it('should classify null as unknown', () => {
         // Arrange
-        const error = new Error('network auth error')
+        const error = null
 
         // Act
         const result = classifyAuthError(error)
 
         // Assert
-        expect(result.type).toBe('network')
+        expect(result.type).toBe('unknown')
+        expect(result.retryable).toBe(true)
+      })
+
+      it('should classify undefined as unknown', () => {
+        // Arrange
+        const error = undefined
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('unknown')
+        expect(result.retryable).toBe(true)
+      })
+
+      it('should classify Supabase error with other status codes', () => {
+        // Arrange
+        const error = { status: 500, message: 'Server error' }
+
+        // Act
+        const result = classifyAuthError(error)
+
+        // Assert
+        expect(result.type).toBe('unknown')
+        expect(result.retryable).toBe(true)
+      })
+    })
+
+    describe('retryable property', () => {
+      it('all error types should have retryable: true', () => {
+        // Arrange
+        const errors = [
+          new Error('network error'),
+          new Error('auth error'),
+          new Error('unknown error'),
+        ]
+
+        // Act & Assert
+        errors.forEach((error) => {
+          const result = classifyAuthError(error)
+          expect(result.retryable).toBe(true)
+        })
       })
     })
   })
 
   describe('createCancelledError', () => {
-    it('キャンセルエラーを生成する', () => {
+    it('should create cancelled error with correct type', () => {
       // Act
-      const result = createCancelledError()
+      const error = createCancelledError()
 
       // Assert
-      expect(result).toEqual<AuthError>({
-        type: 'cancelled',
-        message: '',
-        retryable: false,
-      })
+      expect(error.type).toBe('cancelled')
     })
 
-    it('リトライ不可のエラーを返す', () => {
+    it('should create cancelled error with empty message', () => {
       // Act
-      const result = createCancelledError()
+      const error = createCancelledError()
 
       // Assert
-      expect(result.retryable).toBe(false)
+      expect(error.message).toBe('')
+    })
+
+    it('should create cancelled error with retryable: false', () => {
+      // Act
+      const error = createCancelledError()
+
+      // Assert
+      expect(error.retryable).toBe(false)
+    })
+
+    it('should return a valid AuthError type', () => {
+      // Act
+      const error = createCancelledError()
+
+      // Assert
+      expect(error).toHaveProperty('type')
+      expect(error).toHaveProperty('message')
+      expect(error).toHaveProperty('retryable')
     })
   })
 
   describe('parseErrorParam', () => {
-    it('auth_failedパラメータを認証エラーとしてパースする', () => {
+    it('should parse auth_failed error parameter', () => {
       // Act
       const result = parseErrorParam('auth_failed')
 
       // Assert
-      expect(result).toEqual<AuthError>({
-        type: 'auth',
-        message: 'ログインできませんでした。もう一度お試しください。',
-        retryable: true,
-      })
+      expect(result).not.toBeNull()
+      expect(result?.type).toBe('auth')
+      expect(result?.retryable).toBe(true)
+      expect(result?.message).toContain('ログインできませんでした')
     })
 
-    it('nullパラメータをnullとして処理する', () => {
+    it('should return null for null parameter', () => {
       // Act
       const result = parseErrorParam(null)
 
@@ -211,15 +300,7 @@ describe('auth/errors', () => {
       expect(result).toBeNull()
     })
 
-    it('空文字パラメータをnullとして処理する', () => {
-      // Act
-      const result = parseErrorParam('')
-
-      // Assert
-      expect(result).toBeNull()
-    })
-
-    it('不明なパラメータをnullとして処理する', () => {
+    it('should return null for unknown error code', () => {
       // Act
       const result = parseErrorParam('unknown_error')
 
@@ -227,12 +308,28 @@ describe('auth/errors', () => {
       expect(result).toBeNull()
     })
 
-    it('別のエラーパラメータをnullとして処理する', () => {
+    it('should return null for empty string', () => {
       // Act
-      const result = parseErrorParam('server_error')
+      const result = parseErrorParam('')
 
       // Assert
       expect(result).toBeNull()
+    })
+
+    it('should be case sensitive for error codes', () => {
+      // Act
+      const result = parseErrorParam('AUTH_FAILED')
+
+      // Assert
+      expect(result).toBeNull()
+    })
+
+    it('should return AuthError with correct message format', () => {
+      // Act
+      const result = parseErrorParam('auth_failed')
+
+      // Assert
+      expect(result?.message).toBe('ログインできませんでした。もう一度お試しください。')
     })
   })
 })

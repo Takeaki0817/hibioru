@@ -288,7 +288,7 @@ export const EntryForm = forwardRef<EntryFormHandle, EntryFormProps>(function En
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
           >
-            <Alert variant="destructive" className="mt-4">
+            <Alert variant="destructive" className="mt-4" data-testid="daily-limit-error-message">
               <AlertDescription>{uiState.error}</AlertDescription>
             </Alert>
           </motion.div>

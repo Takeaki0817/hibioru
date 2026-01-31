@@ -14,7 +14,6 @@ import {
   validateFollowUpMaxCount,
   validateActiveDays,
   validateNotificationSettings,
-  type ValidationResult,
   type NotificationSettingsInput,
 } from '@/features/notification/api/validation';
 

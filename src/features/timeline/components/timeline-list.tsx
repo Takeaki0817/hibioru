@@ -197,6 +197,7 @@ export function TimelineList({
   return (
     <div
       ref={containerRef}
+      data-testid="timeline-list"
       className="relative h-full overflow-auto snap-y snap-proximity"
     >
       {/* 上端検出用センチネル */}
@@ -224,11 +225,12 @@ export function TimelineList({
             key={dateKey}
             ref={setDateRef(dateKey)}
             data-date={dateKey}
+            data-testid="date-section"
             aria-label={`${dateKey.replace(/-/g, '/')}の記録`}
             className="min-h-full border-b border-border snap-start"
           >
             <div className="space-y-2 px-4 py-2">
-              <h2 className="pt-3 text-center text-sm text-gray-400 dark:text-gray-500">
+              <h2 data-testid="date-header" className="pt-3 text-center text-sm text-gray-400 dark:text-gray-500">
                 {dateKey.replace(/-/g, '/')}
               </h2>
               {hasEntries ? (

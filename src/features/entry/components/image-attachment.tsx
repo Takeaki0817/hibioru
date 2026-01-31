@@ -60,6 +60,7 @@ export function ImageAttachment({
           disabled={isDisabled}
           className="hidden"
           id="image-upload"
+          data-testid="image-upload-input"
         />
         <label
           htmlFor="image-upload"

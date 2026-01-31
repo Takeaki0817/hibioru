@@ -101,6 +101,8 @@ export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
     return (
       <motion.div
         ref={ref}
+        data-testid="entry-card"
+        data-entry-id={entry.id}
         role={isOptimistic ? 'article' : 'button'}
         tabIndex={isOptimistic ? -1 : 0}
         aria-label={`${timeLabel}の記録を編集`}
@@ -127,19 +129,19 @@ export const EntryCard = memo(forwardRef<HTMLDivElement, EntryCardProps>(
       >
         <div className="px-4 py-6">
           {/* 時刻表示 */}
-          <div className="text-xs text-muted-foreground font-medium">
+          <div data-testid="entry-time" className="text-xs text-muted-foreground font-medium">
             {timeLabel}
           </div>
 
         {/* コンテンツ表示 */}
         {emojiOnly ? (
           // 絵文字のみの場合：中央配置・大きく表示
-          <div className="mt-3 flex items-center justify-center py-4">
+          <div data-testid="entry-content" className="mt-3 flex items-center justify-center py-4">
             <span className="text-5xl">{entry.content.trim()}</span>
           </div>
         ) : (
           // 通常テキストの場合
-          <div className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed">
+          <div data-testid="entry-content" className="mt-2 whitespace-pre-wrap break-words text-sm leading-relaxed">
             {entry.content}
           </div>
         )}

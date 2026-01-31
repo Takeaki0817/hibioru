@@ -4,6 +4,7 @@ import 'server-only'
 
 import { z } from 'zod'
 import { createClient } from '@/lib/supabase/server'
+import { getAuthenticatedUser } from '@/lib/supabase/e2e-auth'
 import { authActionClient } from '@/lib/safe-action'
 import { logger } from '@/lib/logger'
 import { createSafeError } from '@/lib/error-handler'
@@ -109,9 +110,7 @@ export async function getProfileByUsername(username: string): Promise<SocialResu
 export async function getMyProfile(): Promise<SocialResult<PublicUserInfo>> {
   try {
     const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const user = await getAuthenticatedUser(supabase)
 
     if (!user) {
       return {
